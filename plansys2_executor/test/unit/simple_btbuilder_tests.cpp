@@ -73,10 +73,11 @@ public:
 
   bool is_action_executable(
     const plansys2::ActionStamped & action,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions) const
   {
-    return SimpleBTBuilder::is_action_executable(action, predicates, functions);
+    return SimpleBTBuilder::is_action_executable(action, instances, predicates, functions);
   }
 
   plansys2::ActionGraph::Ptr get_graph(const plansys2_msgs::msg::Plan & current_plan)
@@ -86,11 +87,12 @@ public:
 
   std::list<plansys2::ActionNode::Ptr> get_roots(
     std::vector<plansys2::ActionStamped> & action_sequence,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions,
     int & node_counter)
   {
-    return SimpleBTBuilder::get_roots(action_sequence, predicates, functions, node_counter);
+    return SimpleBTBuilder::get_roots(action_sequence, instances, predicates, functions, node_counter);
   }
 
   plansys2::ActionNode::Ptr get_node_satisfy(
@@ -128,10 +130,11 @@ public:
 
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions) const
   {
-    SimpleBTBuilder::remove_existing_requirements(requirements, predicates, functions);
+    SimpleBTBuilder::remove_existing_requirements(requirements, instances, predicates, functions);
   }
 };
 
@@ -223,6 +226,7 @@ TEST(simple_btbuilder_tests, test_plan_1)
   ASSERT_TRUE(plan);
 
 
+  auto instances = problem_client->getInstances();
   auto predicates = problem_client->getPredicates();
   auto functions = problem_client->getFunctions();
 
@@ -273,12 +277,12 @@ TEST(simple_btbuilder_tests, test_plan_1)
       action_sequence[5].action.get_at_start_requirements(),
       problem_client));
 
-  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[0], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[1], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], predicates, functions));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[0], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[1], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
 
   ASSERT_NE(
     std::find_if(
@@ -295,10 +299,10 @@ TEST(simple_btbuilder_tests, test_plan_1)
 
   plansys2::apply(
     action_sequence[0].action.get_at_start_effects(),
-    predicates, functions);
+    instances, predicates, functions);
   plansys2::apply(
     action_sequence[0].action.get_at_end_effects(),
-    predicates, functions);
+    instances, predicates, functions);
 
   ASSERT_EQ(
     std::find_if(
@@ -313,55 +317,55 @@ TEST(simple_btbuilder_tests, test_plan_1)
         &parser::pddl::checkNodeEquality, std::placeholders::_1,
         parser::pddl::fromStringPredicate("(robot_at leia chargingroom)"))), predicates.end());
 
-  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[1], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], predicates, functions));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[1], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
   plansys2::apply(
     action_sequence[1].action.get_at_start_effects(),
-    predicates, functions);
+    instances, predicates, functions);
   plansys2::apply(
     action_sequence[1].action.get_at_end_effects(),
-    predicates, functions);
+    instances, predicates, functions);
 
-  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[2], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], predicates, functions));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[2], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
   plansys2::apply(
     action_sequence[2].action.get_at_start_effects(),
-    predicates, functions);
+    instances, predicates, functions);
   plansys2::apply(
     action_sequence[2].action.get_at_end_effects(),
-    predicates, functions);
+    instances, predicates, functions);
 
-  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[3], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], predicates, functions));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[3], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
   plansys2::apply(
     action_sequence[3].action.get_at_start_effects(),
-    predicates, functions);
+    instances, predicates, functions);
   plansys2::apply(
     action_sequence[3].action.get_at_end_effects(),
-    predicates, functions);
+    instances, predicates, functions);
 
-  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[4], predicates, functions));
-  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], predicates, functions));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[4], instances, predicates, functions));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
   plansys2::apply(
     action_sequence[4].action.get_at_start_effects(),
-    predicates, functions);
+    instances, predicates, functions);
   plansys2::apply(
     action_sequence[4].action.get_at_end_effects(),
-    predicates, functions);
+    instances, predicates, functions);
 
-  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[5], predicates, functions));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
   plansys2::apply(
     action_sequence[5].action.get_at_start_effects(),
-    predicates, functions);
+    instances, predicates, functions);
   plansys2::apply(
     action_sequence[5].action.get_at_end_effects(),
-    predicates, functions);
+    instances, predicates, functions);
 
   ASSERT_NE(
     std::find_if(
@@ -499,6 +503,7 @@ TEST(simple_btbuilder_tests, test_plan_2)
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
+  auto instances = problem_client->getInstances();
   auto predicates = problem_client->getPredicates();
   auto functions = problem_client->getFunctions();
 
@@ -508,7 +513,7 @@ TEST(simple_btbuilder_tests, test_plan_2)
 
   std::vector<plansys2_msgs::msg::Tree> check_predicates = parser::pddl::getSubtrees(tree);
 
-  btbuilder->remove_existing_requirements(check_predicates, predicates, functions);
+  btbuilder->remove_existing_requirements(check_predicates, instances, predicates, functions);
 
   ASSERT_EQ(check_predicates.size(), 1);
   ASSERT_EQ(
@@ -522,16 +527,16 @@ TEST(simple_btbuilder_tests, test_plan_2)
   ASSERT_EQ(action_sequence.size(), 22u);
 
   int node_counter = 0;
-  auto roots = btbuilder->get_roots(action_sequence, predicates, functions, node_counter);
+  auto roots = btbuilder->get_roots(action_sequence, instances, predicates, functions, node_counter);
   ASSERT_EQ(roots.size(), 3u);
   // Apply roots actions
   for (auto & action_node : roots) {
     plansys2::apply(
       action_node->action.action.get_at_start_effects(),
-      predicates, functions);
+      instances, predicates, functions);
     plansys2::apply(
       action_node->action.action.get_at_end_effects(),
-      predicates, functions);
+      instances, predicates, functions);
   }
 
   ASSERT_NE(

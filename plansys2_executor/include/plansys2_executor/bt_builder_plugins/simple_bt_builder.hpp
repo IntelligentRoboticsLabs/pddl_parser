@@ -23,6 +23,7 @@
 #include <map>
 #include <utility>
 #include <tuple>
+#include <unordered_set>
 
 #include "std_msgs/msg/empty.hpp"
 
@@ -49,7 +50,8 @@ struct ActionNode
   int node_num;
   int level_num;
 
-  std::vector<plansys2::Predicate> predicates;
+  std::unordered_set<plansys2::Instance> instances;
+  std::unordered_set<plansys2::Predicate> predicates;
   std::vector<plansys2::Function> functions;
 
   std::list<ActionNode::Ptr> in_arcs;
@@ -98,16 +100,19 @@ protected:
   void get_state(
     const ActionNode::Ptr & node,
     std::list<ActionNode::Ptr> & used_nodes,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions) const;
 
   bool is_action_executable(
     const ActionStamped & action,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions) const;
   std::list<ActionNode::Ptr> get_roots(
     std::vector<plansys2::ActionStamped> & action_sequence,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions,
     int & node_counter);
   ActionNode::Ptr get_node_satisfy(
@@ -127,11 +132,13 @@ protected:
     std::list<ActionNode::Ptr> & parents);
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
-    std::vector<plansys2::Predicate> & predicates,
+    std::unordered_set<plansys2::Instance> & instances,
+    std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions) const;
   bool is_parallelizable(
     const plansys2::ActionStamped & action,
-    const std::vector<plansys2::Predicate> & predicates,
+    const std::unordered_set<plansys2::Instance> & instances,
+    const std::unordered_set<plansys2::Predicate> & predicates,
     const std::vector<plansys2::Function> & functions,
     const std::list<ActionNode::Ptr> & ret) const;
 

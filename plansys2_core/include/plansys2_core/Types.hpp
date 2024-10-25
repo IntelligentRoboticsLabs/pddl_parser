@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/param.hpp"
