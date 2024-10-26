@@ -18,6 +18,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "plansys2_problem_expert/ProblemExpertInterface.hpp"
 #include "plansys2_core/Types.hpp"

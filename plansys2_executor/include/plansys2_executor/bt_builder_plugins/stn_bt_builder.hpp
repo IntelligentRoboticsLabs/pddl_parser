@@ -24,6 +24,7 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <unordered_set>
 #include <vector>
 
 #include "plansys2_domain_expert/DomainExpertClient.hpp"

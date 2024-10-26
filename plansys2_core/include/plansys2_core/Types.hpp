@@ -38,7 +38,8 @@ public:
   Instance(const plansys2_msgs::msg::Param & instance)  // NOLINT(runtime/explicit)
   : plansys2_msgs::msg::Param(instance) {}
 
-  bool operator==(const Instance& i2) const {
+  bool operator==(const Instance & i2) const
+  {
     return parser::pddl::checkParamEquality(*this, i2);
   }
 };
@@ -53,7 +54,8 @@ public:
   Predicate(const plansys2_msgs::msg::Node & pred)  // NOLINT(runtime/explicit)
   : plansys2_msgs::msg::Node(pred) {}
 
-  bool operator==(const Predicate& p2) const {
+  bool operator==(const Predicate & p2) const
+  {
     return parser::pddl::checkNodeEquality(*this, p2);
   }
 };
@@ -114,17 +116,19 @@ convertUnorderedSetToVector(const std::unordered_set<fromT> & in_unordered_set)
 }
 
 
-
 }  // namespace plansys2
 
-namespace std {
-template <>
-struct hash<plansys2::Predicate> {
-  std::size_t operator()(const plansys2::Predicate& pred) const noexcept {
+namespace std
+{
+template<>
+struct hash<plansys2::Predicate>
+{
+  std::size_t operator()(const plansys2::Predicate & pred) const noexcept
+  {
     std::size_t h1 = std::hash<std::string>{}(pred.name);
     std::size_t h2 = 0;
 
-    for (const auto& param : pred.parameters) {
+    for (const auto & param : pred.parameters) {
       h2 ^= std::hash<std::string>{}(param.name) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
     }
 
@@ -132,12 +136,14 @@ struct hash<plansys2::Predicate> {
   }
 };
 
-template <>
-struct hash<plansys2::Instance> {
-  std::size_t operator()(const plansys2::Instance& inst) const noexcept {
+template<>
+struct hash<plansys2::Instance>
+{
+  std::size_t operator()(const plansys2::Instance & inst) const noexcept
+  {
     return std::hash<std::string>{}(inst.name);
   }
 };
-}
+}  // namespace std
 
 #endif  // PLANSYS2_CORE__TYPES_HPP_

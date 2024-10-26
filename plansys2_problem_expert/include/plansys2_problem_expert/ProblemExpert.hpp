@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
+#include <unordered_set>
 
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/param.hpp"
@@ -42,11 +44,13 @@ public:
   std::optional<plansys2::Instance> getInstance(const std::string & name);
 
   void groundPredicate(
-    std::unordered_set<plansys2::Predicate>& current_predicates,
-    const plansys2::Predicate& predicate,
-    const std::vector<std::map<std::string, std::string>>& params_values_vector);
-  std::unordered_set<plansys2::Predicate> solveDerivedPredicates(std::unordered_set<plansys2::Predicate>& predicates);
-  std::unordered_set<plansys2::Predicate> solveAllDerivedPredicates(const std::unordered_set<plansys2::Predicate>& predicates);
+    std::unordered_set<plansys2::Predicate> & current_predicates,
+    const plansys2::Predicate & predicate,
+    const std::vector<std::map<std::string, std::string>> & params_values_vector);
+  std::unordered_set<plansys2::Predicate> solveDerivedPredicates(
+    std::unordered_set<plansys2::Predicate> & predicates);
+  std::unordered_set<plansys2::Predicate> solveAllDerivedPredicates(
+    const std::unordered_set<plansys2::Predicate> & predicates);
 
   std::unordered_set<plansys2::Predicate> getPredicates();
   bool addPredicate(const plansys2::Predicate & predicate);

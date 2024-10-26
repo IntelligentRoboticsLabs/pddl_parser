@@ -490,10 +490,12 @@ STNBTBuilder::get_states(
     for (auto iter = it.first; iter != it.second; ++iter) {
       if (iter->second.type == ActionType::START) {
         apply(
-          iter->second.action.get_at_start_effects(), state_vec.instances, state_vec.predicates, state_vec.functions);
+          iter->second.action.get_at_start_effects(),
+          state_vec.instances, state_vec.predicates, state_vec.functions);
       } else if (iter->second.type == ActionType::END) {
         apply(
-          iter->second.action.get_at_end_effects(), state_vec.instances, state_vec.predicates, state_vec.functions);
+          iter->second.action.get_at_end_effects(),
+          state_vec.instances, state_vec.predicates, state_vec.functions);
       }
     }
     states.insert(std::make_pair(time, state_vec));

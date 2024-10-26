@@ -22,6 +22,7 @@
 #include <vector>
 #include <set>
 #include <utility>
+#include <unordered_set>
 
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
@@ -31,29 +32,29 @@ namespace plansys2
 {
 
 std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyPredicate(
-  const plansys2::Predicate& predicate,
-  const std::unordered_set<plansys2::Predicate>& predicates);
+  const plansys2::Predicate & predicate,
+  const std::unordered_set<plansys2::Predicate> & predicates);
 
 std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyFunction(
-  const plansys2::Function& function,
-  const std::vector<plansys2::Function>& functions);
+  const plansys2::Function & function,
+  const std::vector<plansys2::Function> & functions);
 
 void mergeParamsValuesDicts(
-  const std::map<std::string, std::string>& dict1,
-  const std::map<std::string, std::string>& dict2,
-  std::map<std::string, std::string>& dict3);
+  const std::map<std::string, std::string> & dict1,
+  const std::map<std::string, std::string> & dict2,
+  std::map<std::string, std::string> & dict3);
 std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
-  const std::vector<std::map<std::string, std::string>>& vector1,
-  const std::vector<std::map<std::string, std::string>>& vector2);
+  const std::vector<std::map<std::string, std::string>> & vector1,
+  const std::vector<std::map<std::string, std::string>> & vector2);
 std::vector<std::map<std::string, std::string>> complementParamsValuesVector(
   const std::vector<plansys2_msgs::msg::Param> & params,
-  const std::vector<std::map<std::string, std::string>>& param_dict_vector,
+  const std::vector<std::map<std::string, std::string>> & param_dict_vector,
   const std::unordered_set<plansys2::Instance> & instances);
 
 std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
   const plansys2_msgs::msg::Node & node,
-  const bool &result,
-  const std::vector<std::map<std::string, std::string>>& param_dict_vector,
+  const bool & result,
+  const std::vector<std::map<std::string, std::string>> & param_dict_vector,
   const std::unordered_set<plansys2::Instance> & instances
 );
 
@@ -73,7 +74,7 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
  *         result(2) value of numeric expression
  *         result(3) vector with the set of possible  values for the expression parameters
  */
-std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>>  evaluate(
+std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
   std::unordered_set<plansys2::Instance> & instances,

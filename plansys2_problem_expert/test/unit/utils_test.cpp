@@ -11,31 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include <string>
-#include <vector>
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
 #include <tuple>
+#include <vector>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
-
-#include "gtest/gtest.h"
-
+#include "plansys2_domain_expert/DomainExpert.hpp"
+#include "plansys2_domain_expert/DomainExpertNode.hpp"
+#include "plansys2_msgs/msg/knowledge.hpp"
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/param.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
-
-#include "plansys2_problem_expert/ProblemExpert.hpp"
-#include "plansys2_domain_expert/DomainExpert.hpp"
-#include "plansys2_domain_expert/DomainExpertNode.hpp"
-#include "plansys2_problem_expert/ProblemExpertNode.hpp"
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
-#include "plansys2_problem_expert/Utils.hpp"
 #include "plansys2_pddl_parser/Utils.hpp"
+#include "plansys2_problem_expert/ProblemExpert.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertNode.hpp"
+#include "plansys2_problem_expert/Utils.hpp"
 
-#include "plansys2_msgs/msg/knowledge.hpp"
+#include "gtest/gtest.h"
 
 TEST(utils, evaluate_and)
 {
@@ -83,8 +79,7 @@ TEST(utils, evaluate_or)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(or (patrolled wp1) (patrolled wp2))", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(or (patrolled wp1) (patrolled wp2))", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, false, true),
@@ -120,8 +115,7 @@ TEST(utils, evaluate_not)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(not (patrolled wp1))", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(not (patrolled wp1))", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, false, true),
@@ -134,16 +128,14 @@ TEST(utils, evaluate_not)
     std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
 
   plansys2_msgs::msg::Tree test_tree2;
-  parser::pddl::fromString(
-    test_tree2, "(not (= wp1 wp2))");
+  parser::pddl::fromString(test_tree2, "(not (= wp1 wp2))");
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree2, problem_client, instances, predicates, functions, false, true),
     std::make_tuple(true, true, 0, std::vector<std::map<std::string, std::string>>{}));
 
   plansys2_msgs::msg::Tree test_tree3;
-  parser::pddl::fromString(
-    test_tree3, "(not (= wp1 wp1))");
+  parser::pddl::fromString(test_tree3, "(not (= wp1 wp1))");
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree3, problem_client, instances, predicates, functions, false, true),
@@ -166,7 +158,8 @@ TEST(utils, evaluate_predicate_use_state)
     std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
 
   ASSERT_EQ(
-    plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, false, true, 0, true),
+    plansys2::evaluate(
+      test_tree, problem_client, instances, predicates, functions, false, true, 0, true),
     std::make_tuple(true, true, 0, std::vector<std::map<std::string, std::string>>{}));
 
   ASSERT_TRUE(plansys2::apply(test_tree, instances, predicates, functions));
@@ -178,11 +171,13 @@ TEST(utils, evaluate_predicate_use_state)
     std::make_tuple(true, true, 0, std::vector<std::map<std::string, std::string>>{}));
 
   ASSERT_EQ(
-    plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, false, true, 0, true),
+    plansys2::evaluate(
+      test_tree, problem_client, instances, predicates, functions, false, true, 0, true),
     std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
 
   ASSERT_EQ(
-    plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, true, true, 0, true),
+    plansys2::evaluate(
+      test_tree, problem_client, instances, predicates, functions, true, true, 0, true),
     std::make_tuple(true, true, 0, std::vector<std::map<std::string, std::string>>{}));
   ASSERT_TRUE(predicates.empty());
 }
@@ -215,7 +210,9 @@ TEST(utils, evaluate_predicate_client)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("bedroom", "room")));
@@ -231,15 +228,15 @@ TEST(utils, evaluate_predicate_client)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(is_teleporter_destination bedroom)", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(is_teleporter_destination bedroom)", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_FALSE(plansys2::check(test_tree, problem_client));
   ASSERT_TRUE(plansys2::apply(test_tree, problem_client));
   ASSERT_TRUE(plansys2::check(test_tree, problem_client));
 
   ASSERT_EQ(
-    plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, true, false, 0, true),
+    plansys2::evaluate(
+      test_tree, problem_client, instances, predicates, functions, true, false, 0, true),
     std::make_tuple(true, true, 0.0, std::vector<std::map<std::string, std::string>>{}));
   ASSERT_FALSE(plansys2::check(test_tree, problem_client));
 
@@ -256,8 +253,7 @@ TEST(utils, evaluate_function_use_state)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(distance wp1 wp2)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(distance wp1 wp2)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions),
@@ -314,8 +310,7 @@ TEST(utils, evaluate_expression_gt)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(> (distance wp1 wp2) 3.0)", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(> (distance wp1 wp2) 3.0)", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions),
@@ -344,8 +339,7 @@ TEST(utils, evaluate_expression_le)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(<= (vx) -3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(<= (vx) -3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions),
@@ -380,8 +374,7 @@ TEST(utils, evaluate_expression_lt)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(< (distance wp1 wp2) -3.0)", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(< (distance wp1 wp2) -3.0)", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions),
@@ -563,7 +556,9 @@ TEST(utils, evaluate_expression_invalid_client)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("leia", "robot")));
@@ -582,8 +577,7 @@ TEST(utils, evaluate_expression_invalid_client)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(> (room_distance bedroom kitchen) 0)", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(> (room_distance bedroom kitchen) 0)", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client),
@@ -599,8 +593,7 @@ TEST(utils, evaluate_expression_invalid_client)
 
   test_tree.nodes.clear();
   parser::pddl::fromString(
-    test_tree, "(> 0 (room_distance bedroom kitchen))", false,
-    plansys2_msgs::msg::Node::AND);
+    test_tree, "(> 0 (room_distance bedroom kitchen))", false, plansys2_msgs::msg::Node::AND);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client),
@@ -620,17 +613,17 @@ TEST(utils, evaluate_function_mod)
 
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(assign (vx) 3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(assign (vx) 3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   parser::pddl::getPredicates(predicates_msg, test_tree);
   parser::pddl::getFunctions(functions_msg, test_tree);
 
   std::unordered_set<plansys2::Instance> instances;
-  auto predicates = plansys2::convertVectorToUnorderedSet<plansys2::Predicate, plansys2_msgs::msg::Node>(
+  auto predicates =
+    plansys2::convertVectorToUnorderedSet<plansys2::Predicate, plansys2_msgs::msg::Node>(
     predicates_msg);
-  auto functions = plansys2::convertVector<plansys2::Function, plansys2_msgs::msg::Node>(
-    functions_msg);
+  auto functions =
+    plansys2::convertVector<plansys2::Function, plansys2_msgs::msg::Node>(functions_msg);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions),
@@ -644,8 +637,7 @@ TEST(utils, evaluate_function_mod)
 
   test_tree.nodes.clear();
   parser::pddl::fromString(
-    test_tree, "(increase (vx) 3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(increase (vx) 3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions, true),
@@ -654,8 +646,7 @@ TEST(utils, evaluate_function_mod)
 
   test_tree.nodes.clear();
   parser::pddl::fromString(
-    test_tree, "(decrease (vx) 3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(decrease (vx) 3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions, true),
@@ -664,8 +655,7 @@ TEST(utils, evaluate_function_mod)
 
   test_tree.nodes.clear();
   parser::pddl::fromString(
-    test_tree, "(scale-up (vx) 3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(scale-up (vx) 3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions, true),
@@ -674,8 +664,7 @@ TEST(utils, evaluate_function_mod)
 
   test_tree.nodes.clear();
   parser::pddl::fromString(
-    test_tree, "(scale-down (vx) 3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(scale-down (vx) 3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions, true),
@@ -685,8 +674,7 @@ TEST(utils, evaluate_function_mod)
   // divide by zero
   test_tree.nodes.clear();
   parser::pddl::fromString(
-    test_tree, "(scale-down (vx) 0.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(scale-down (vx) 0.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, instances, predicates, functions, true),
@@ -719,15 +707,15 @@ TEST(utils, evaluate_function_mod_client)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("bedroom", "room")));
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("kitchen", "room")));
   ASSERT_TRUE(
-    problem_client->addFunction(
-      plansys2::Function(
-        "(= (room_distance bedroom kitchen) 1.0)")));
+    problem_client->addFunction(plansys2::Function("(= (room_distance bedroom kitchen) 1.0)")));
 
   {
     rclcpp::Rate rate(10);
@@ -745,8 +733,8 @@ TEST(utils, evaluate_function_mod_client)
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client, true),
     std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
-  std::optional<plansys2_msgs::msg::Node> func = problem_client->getFunction(
-    "(room_distance bedroom kitchen)");
+  std::optional<plansys2_msgs::msg::Node> func =
+    problem_client->getFunction("(room_distance bedroom kitchen)");
   ASSERT_TRUE(func.has_value());
   ASSERT_EQ(func.value().value, 0.0);
 
@@ -777,8 +765,7 @@ TEST(utils, evaluate_function_mod_invalid)
   // Unknown function modifier type
   plansys2_msgs::msg::Tree test_tree;
   parser::pddl::fromString(
-    test_tree, "(assign (vx) 3.0)", false,
-    plansys2_msgs::msg::Node::EXPRESSION);
+    test_tree, "(assign (vx) 3.0)", false, plansys2_msgs::msg::Node::EXPRESSION);
   test_tree.nodes[0].node_type = plansys2_msgs::msg::Node::UNKNOWN;
 
   ASSERT_EQ(
@@ -811,7 +798,9 @@ TEST(utils, evaluate_function_mod_invalid_client)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   plansys2_msgs::msg::Tree test_tree;
@@ -905,7 +894,8 @@ TEST(utils, evaluate_exists)
 
   predicates.insert(parser::pddl::fromStringPredicate("(connected bedroom kitchen)"));
 
-  std::vector<std::map<std::string, std::string>> expected_result = {{{"?1", "bedroom"}, {"?2", "kitchen"}}};
+  std::vector<std::map<std::string, std::string>> expected_result = {
+    {{"?1", "bedroom"}, {"?2", "kitchen"}}};
   ASSERT_EQ(
     plansys2::evaluate(goal, problem_client, instances, predicates, functions, false, true),
     std::make_tuple(true, true, 0, expected_result));
@@ -934,7 +924,9 @@ TEST(utils, evaluate_exists_client)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   {
@@ -954,16 +946,14 @@ TEST(utils, evaluate_exists_client)
     std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
 
   ASSERT_TRUE(
-    problem_client->addPredicate(
-      parser::pddl::fromStringPredicate("(robot_at rob1 bedroom)")));
+    problem_client->addPredicate(parser::pddl::fromStringPredicate("(robot_at rob1 bedroom)")));
 
   ASSERT_EQ(
     plansys2::evaluate(goal, problem_client, instances, predicates, functions, false, false),
     std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
 
   ASSERT_TRUE(
-    problem_client->addPredicate(
-      parser::pddl::fromStringPredicate("(connected bedroom kitchen)")));
+    problem_client->addPredicate(parser::pddl::fromStringPredicate("(connected bedroom kitchen)")));
 
   ASSERT_EQ(
     plansys2::evaluate(goal, problem_client, instances, predicates, functions, false, false),
@@ -1015,14 +1005,17 @@ TEST(utils, get_action_from_string)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   std::string invalid_action_str = "(invalid r2d2 kitchen bedroom)";
   ASSERT_EQ(
     domain_client->getAction(
       plansys2::get_action_name(invalid_action_str),
-      plansys2::get_action_params(invalid_action_str)), nullptr);
+      plansys2::get_action_params(invalid_action_str)),
+    nullptr);
 
   std::string action_str = "(teleport r2d2 kitchen bedroom)";
 
@@ -1042,22 +1035,15 @@ TEST(utils, get_action_from_string)
   expected->preconditions = test_tree;
 
   test_tree.nodes.clear();
-  parser::pddl::fromString(
-    test_tree,
-    "(and (not(robot_at r2d2 kitchen))(robot_at r2d2 bedroom))");
+  parser::pddl::fromString(test_tree, "(and (not(robot_at r2d2 kitchen))(robot_at r2d2 bedroom))");
   expected->effects = test_tree;
-  std::shared_ptr<plansys2_msgs::msg::Action> actual =
-    domain_client->getAction(
-    plansys2::get_action_name(action_str),
-    plansys2::get_action_params(action_str));
+  std::shared_ptr<plansys2_msgs::msg::Action> actual = domain_client->getAction(
+    plansys2::get_action_name(action_str), plansys2::get_action_params(action_str));
 
   ASSERT_EQ(parser::pddl::nameActionsToString(actual), parser::pddl::nameActionsToString(expected));
   ASSERT_EQ(
-    parser::pddl::toString(actual->preconditions),
-    parser::pddl::toString(expected->preconditions));
-  ASSERT_EQ(
-    parser::pddl::toString(actual->effects),
-    parser::pddl::toString(expected->effects));
+    parser::pddl::toString(actual->preconditions), parser::pddl::toString(expected->preconditions));
+  ASSERT_EQ(parser::pddl::toString(actual->effects), parser::pddl::toString(expected->effects));
 
   std::string durative_action_str = "(move r2d2 kitchen bedroom)";
 
@@ -1119,12 +1105,8 @@ TEST(utils, get_action_from_string)
   parser::pddl::fromString(
     overall_expected->over_all_requirements,
     "(and (robot_at leia kitchen) (person_at Jack kitchen))");
-  parser::pddl::fromString(
-    overall_expected->at_end_requirements,
-    "(and (person_at Jack kitchen))");
-  parser::pddl::fromString(
-    overall_expected->at_end_effects,
-    "(and (robot_near_person leia Jack))");
+  parser::pddl::fromString(overall_expected->at_end_requirements, "(and (person_at Jack kitchen))");
+  parser::pddl::fromString(overall_expected->at_end_effects, "(and (robot_near_person leia Jack))");
 
   std::shared_ptr<plansys2_msgs::msg::DurativeAction> overall_actual =
     domain_client->getDurativeAction(
@@ -1210,7 +1192,8 @@ TEST(utils, get_name)
 //     "(exists (bedroom bathroom) (and (robot_at ?0 bedroom)(connected bedroom bathroom)))");
 // }
 
-TEST(utils, unify_predicate) {
+TEST(utils, unify_predicate)
+{
   std::unordered_set<plansys2::Predicate> predicates;
   auto predicate1 = parser::pddl::fromStringPredicate("(predicate a b)");
   auto predicate2 = parser::pddl::fromStringPredicate("(predicate a c)");
@@ -1227,42 +1210,36 @@ TEST(utils, unify_predicate) {
   ASSERT_EQ(std::get<0>(res), true);
   ASSERT_EQ(std::get<1>(res).size(), 0);
 
-  res = plansys2::unifyPredicate(
-    parser::pddl::fromStringPredicate("(predicate ?x c)"), predicates);
-  std::vector<std::map<std::string, std::string>> expected_param_values =
-    {{{"?x", "a"}}, {{"?x", "b"}}, {{"?x", "d"}}, {{"?x", "e"}}};
+  res = plansys2::unifyPredicate(parser::pddl::fromStringPredicate("(predicate ?x c)"), predicates);
+  std::vector<std::map<std::string, std::string>> expected_param_values = {
+    {{"?x", "a"}}, {{"?x", "b"}}, {{"?x", "d"}}, {{"?x", "e"}}};
   std::sort(std::get<1>(res).begin(), std::get<1>(res).end());
   std::sort(expected_param_values.begin(), expected_param_values.end());
   ASSERT_EQ(std::get<0>(res), true);
   ASSERT_EQ(std::get<1>(res), expected_param_values);
 
-  res = plansys2::unifyPredicate(
-    parser::pddl::fromStringPredicate("(predicate ?x ?y)"), predicates);
-  expected_param_values =
-    {
-      {{"?x", "a"}, {"?y", "b"}},
-      {{"?x", "a"}, {"?y", "c"}},
-      {{"?x", "b"}, {"?y", "c"}},
-      {{"?x", "d"}, {"?y", "c"}},
-      {{"?x", "e"}, {"?y", "c"}},
-    };
+  res =
+    plansys2::unifyPredicate(parser::pddl::fromStringPredicate("(predicate ?x ?y)"), predicates);
+  expected_param_values = {
+    {{"?x", "a"}, {"?y", "b"}}, {{"?x", "a"}, {"?y", "c"}}, {{"?x", "b"}, {"?y", "c"}},
+    {{"?x", "d"}, {"?y", "c"}}, {{"?x", "e"}, {"?y", "c"}},
+  };
   std::sort(std::get<1>(res).begin(), std::get<1>(res).end());
   std::sort(expected_param_values.begin(), expected_param_values.end());
   ASSERT_EQ(std::get<0>(res), true);
   ASSERT_EQ(std::get<1>(res), expected_param_values);
 
-  res = plansys2::unifyPredicate(
-    parser::pddl::fromStringPredicate("(predicate ?x f)"), predicates);
+  res = plansys2::unifyPredicate(parser::pddl::fromStringPredicate("(predicate ?x f)"), predicates);
   ASSERT_EQ(std::get<0>(res), false);
   ASSERT_EQ(std::get<1>(res).size(), 0);
 
-  res = plansys2::unifyPredicate(
-    parser::pddl::fromStringPredicate("(predicate z f)"), predicates);
+  res = plansys2::unifyPredicate(parser::pddl::fromStringPredicate("(predicate z f)"), predicates);
   ASSERT_EQ(std::get<0>(res), false);
   ASSERT_EQ(std::get<1>(res).size(), 0);
 }
 
-TEST(utils, intersection_parameters) {
+TEST(utils, intersection_parameters)
+{
   std::vector<std::map<std::string, std::string>> vector1 = {
     {{"?x", "a"}, {"?y", "a"}},
     {{"?x", "b"}, {"?y", "b"}},
@@ -1317,18 +1294,12 @@ TEST(utils, intersection_parameters) {
   ASSERT_EQ(res.size(), 0);
 
   expected_intersection = {
-    {{"?x", "a"}, {"?y", "a"}, {"?z", "a"}},
-    {{"?x", "a"}, {"?y", "a"}, {"?z", "b"}},
-    {{"?x", "a"}, {"?y", "a"}, {"?z", "d"}},
-    {{"?x", "b"}, {"?y", "b"}, {"?z", "a"}},
-    {{"?x", "b"}, {"?y", "b"}, {"?z", "b"}},
-    {{"?x", "b"}, {"?y", "b"}, {"?z", "d"}},
-    {{"?x", "c"}, {"?y", "c"}, {"?z", "a"}},
-    {{"?x", "c"}, {"?y", "c"}, {"?z", "b"}},
-    {{"?x", "c"}, {"?y", "c"}, {"?z", "d"}},
-    {{"?x", "d"}, {"?y", "d"}, {"?z", "a"}},
-    {{"?x", "d"}, {"?y", "d"}, {"?z", "b"}},
-    {{"?x", "d"}, {"?y", "d"}, {"?z", "d"}},
+    {{"?x", "a"}, {"?y", "a"}, {"?z", "a"}}, {{"?x", "a"}, {"?y", "a"}, {"?z", "b"}},
+    {{"?x", "a"}, {"?y", "a"}, {"?z", "d"}}, {{"?x", "b"}, {"?y", "b"}, {"?z", "a"}},
+    {{"?x", "b"}, {"?y", "b"}, {"?z", "b"}}, {{"?x", "b"}, {"?y", "b"}, {"?z", "d"}},
+    {{"?x", "c"}, {"?y", "c"}, {"?z", "a"}}, {{"?x", "c"}, {"?y", "c"}, {"?z", "b"}},
+    {{"?x", "c"}, {"?y", "c"}, {"?z", "d"}}, {{"?x", "d"}, {"?y", "d"}, {"?z", "a"}},
+    {{"?x", "d"}, {"?y", "d"}, {"?z", "b"}}, {{"?x", "d"}, {"?y", "d"}, {"?z", "d"}},
   };
   res = plansys2::mergeParamsValuesVector(vector1, vector5);
   std::sort(res.begin(), res.end());
@@ -1336,18 +1307,12 @@ TEST(utils, intersection_parameters) {
   ASSERT_EQ(res, expected_intersection);
 
   expected_intersection = {
-    {{"?x", "a"}, {"?y", "a"}, {"?z", "a"}},
-    {{"?x", "b"}, {"?y", "b"}, {"?z", "a"}},
-    {{"?x", "c"}, {"?y", "c"}, {"?z", "a"}},
-    {{"?x", "d"}, {"?y", "d"}, {"?z", "a"}},
-    {{"?x", "a"}, {"?y", "a"}, {"?z", "b"}},
-    {{"?x", "b"}, {"?y", "b"}, {"?z", "b"}},
-    {{"?x", "c"}, {"?y", "c"}, {"?z", "b"}},
-    {{"?x", "d"}, {"?y", "d"}, {"?z", "b"}},
-    {{"?x", "a"}, {"?y", "a"}, {"?z", "d"}},
-    {{"?x", "b"}, {"?y", "b"}, {"?z", "d"}},
-    {{"?x", "c"}, {"?y", "c"}, {"?z", "d"}},
-    {{"?x", "d"}, {"?y", "d"}, {"?z", "d"}},
+    {{"?x", "a"}, {"?y", "a"}, {"?z", "a"}}, {{"?x", "b"}, {"?y", "b"}, {"?z", "a"}},
+    {{"?x", "c"}, {"?y", "c"}, {"?z", "a"}}, {{"?x", "d"}, {"?y", "d"}, {"?z", "a"}},
+    {{"?x", "a"}, {"?y", "a"}, {"?z", "b"}}, {{"?x", "b"}, {"?y", "b"}, {"?z", "b"}},
+    {{"?x", "c"}, {"?y", "c"}, {"?z", "b"}}, {{"?x", "d"}, {"?y", "d"}, {"?z", "b"}},
+    {{"?x", "a"}, {"?y", "a"}, {"?z", "d"}}, {{"?x", "b"}, {"?y", "b"}, {"?z", "d"}},
+    {{"?x", "c"}, {"?y", "c"}, {"?z", "d"}}, {{"?x", "d"}, {"?y", "d"}, {"?z", "d"}},
   };
   res = plansys2::mergeParamsValuesVector(vector5, vector1);
   std::sort(res.begin(), res.end());
@@ -1355,9 +1320,9 @@ TEST(utils, intersection_parameters) {
   ASSERT_EQ(res, expected_intersection);
 
   expected_intersection = {
-    {{"?a", "a"}, {"?b", "a"}, {"?x", "a"}, {"?y", "a"},  {"?z", "a"}},
+    {{"?a", "a"}, {"?b", "a"}, {"?x", "a"}, {"?y", "a"}, {"?z", "a"}},
     {{"?a", "a"}, {"?b", "a"}, {"?c", "a"}, {"?x", "a"}, {"?y", "a"}, {"?z", "d"}},
-    {{"?a", "a"}, {"?b", "a"}, {"?x", "b"}, {"?y", "b"},  {"?z", "a"}},
+    {{"?a", "a"}, {"?b", "a"}, {"?x", "b"}, {"?y", "b"}, {"?z", "a"}},
     {{"?b", "a"}, {"?x", "b"}, {"?y", "b"}, {"?z", "b"}},
     {{"?a", "a"}, {"?b", "a"}, {"?c", "a"}, {"?x", "b"}, {"?y", "b"}, {"?z", "d"}},
     {{"?a", "a"}, {"?b", "a"}, {"?x", "c"}, {"?y", "c"}, {"?z", "a"}},
@@ -1371,7 +1336,8 @@ TEST(utils, intersection_parameters) {
   ASSERT_EQ(res, expected_intersection);
 }
 
-TEST(utils, complement_parameters) {
+TEST(utils, complement_parameters)
+{
   auto predicate = parser::pddl::fromStringPredicate("(robot_at ?x ?y)");
   predicate.parameters[0].type = "robot";
   predicate.parameters[1].type = "room";
@@ -1390,7 +1356,8 @@ TEST(utils, complement_parameters) {
     {{"?0", "leia"}, {"?1", "kitchen"}},
   };
 
-  auto result = complementParamsValuesVector({predicate.parameters[0], predicate.parameters[1]}, vector1, instances);
+  auto result = complementParamsValuesVector(
+    {predicate.parameters[0], predicate.parameters[1]}, vector1, instances);
 
   ASSERT_EQ(result.size(), 3);
   std::vector<std::map<std::string, std::string>> expected = {
