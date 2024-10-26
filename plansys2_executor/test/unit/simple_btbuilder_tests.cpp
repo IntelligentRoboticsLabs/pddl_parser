@@ -284,18 +284,8 @@ TEST(simple_btbuilder_tests, test_plan_1)
   ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], instances, predicates, functions));
   ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], instances, predicates, functions));
 
-  ASSERT_NE(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at leia entrance)"))), predicates.end());
-  ASSERT_EQ(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at leia chargingroom)"))), predicates.end());
+  ASSERT_NE(predicates.find(parser::pddl::fromStringPredicate("(robot_at leia entrance)")), predicates.end());
+  ASSERT_EQ(predicates.find(parser::pddl::fromStringPredicate("(robot_at leia chargingroom)")), predicates.end());
 
   plansys2::apply(
     action_sequence[0].action.get_at_start_effects(),
@@ -304,18 +294,8 @@ TEST(simple_btbuilder_tests, test_plan_1)
     action_sequence[0].action.get_at_end_effects(),
     instances, predicates, functions);
 
-  ASSERT_EQ(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at leia entrance)"))), predicates.end());
-  ASSERT_NE(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at leia chargingroom)"))), predicates.end());
+  ASSERT_EQ(predicates.find(parser::pddl::fromStringPredicate("(robot_at leia entrance)")), predicates.end());
+  ASSERT_NE(predicates.find(parser::pddl::fromStringPredicate("(robot_at leia chargingroom)")), predicates.end());
 
   ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[1], instances, predicates, functions));
   ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], instances, predicates, functions));
@@ -540,34 +520,24 @@ TEST(simple_btbuilder_tests, test_plan_2)
   }
 
   ASSERT_NE(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at robot1 body_car_zone)"))), predicates.end());
-  ASSERT_NE(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at robot2 steering_wheels_zone)"))),
+    predicates.find(parser::pddl::fromStringPredicate("(robot_at robot1 wheels_zone)")),
     predicates.end());
   ASSERT_NE(
-    std::find_if(
-      predicates.begin(), predicates.end(),
-      std::bind(
-        &parser::pddl::checkNodeEquality, std::placeholders::_1,
-        parser::pddl::fromStringPredicate("(robot_at robot3 wheels_zone)"))), predicates.end());
+    predicates.find(parser::pddl::fromStringPredicate("(robot_at robot2 steering_wheels_zone)")),
+    predicates.end());
+  ASSERT_NE(
+    predicates.find(parser::pddl::fromStringPredicate("(robot_at robot3 body_car_zone)")),
+    predicates.end());
 
   tree.nodes.clear();
   parser::pddl::fromString(
-    tree, "(robot_at robot1 body_car_zone)", false,
+    tree, "(robot_at robot3 body_car_zone)", false,
     plansys2_msgs::msg::Node::AND);
   auto node_satisfy_1 = btbuilder->get_node_satisfy(tree, *roots.begin(), nullptr);
   ASSERT_NE(node_satisfy_1, nullptr);
   ASSERT_EQ(node_satisfy_1->action.action.get_action_name(), "move");
   ASSERT_EQ(node_satisfy_1->action.action.get_action_params().size(), 3u);
-  ASSERT_EQ(node_satisfy_1->action.action.get_action_params()[0].name, "robot1");
+  ASSERT_EQ(node_satisfy_1->action.action.get_action_params()[0].name, "robot3");
   ASSERT_EQ(node_satisfy_1->action.action.get_action_params()[1].name, "assembly_zone");
   ASSERT_EQ(node_satisfy_1->action.action.get_action_params()[2].name, "body_car_zone");
 
