@@ -183,7 +183,7 @@ TEST(utils, evaluate_predicate_use_state)
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, true, true, 0, true),
-    std::make_tuple(true, false, 0, std::vector<std::map<std::string, std::string>>{}));
+    std::make_tuple(true, true, 0, std::vector<std::map<std::string, std::string>>{}));
   ASSERT_TRUE(predicates.empty());
 }
 
@@ -240,7 +240,7 @@ TEST(utils, evaluate_predicate_client)
 
   ASSERT_EQ(
     plansys2::evaluate(test_tree, problem_client, instances, predicates, functions, true, false, 0, true),
-    std::make_tuple(true, false, 0.0, std::vector<std::map<std::string, std::string>>{}));
+    std::make_tuple(true, true, 0.0, std::vector<std::map<std::string, std::string>>{}));
   ASSERT_FALSE(plansys2::check(test_tree, problem_client));
 
   finish = true;

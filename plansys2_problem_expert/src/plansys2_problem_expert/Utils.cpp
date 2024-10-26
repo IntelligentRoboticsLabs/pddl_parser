@@ -103,20 +103,14 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
 
       if (apply) {
         if (use_state) {
-          auto it = std::find_if(predicates.begin(), predicates.end(),
-            std::bind(&parser::pddl::checkNodeEquality, std::placeholders::_1, current_node));
-
-          if (negate) {
-            if (it != predicates.end()) {
-              predicates.erase(it);
-            }
-            value = false;
-          } else if (it == predicates.end()) {
-            predicates.emplace(current_node);
+          auto it = predicates.find(current_node);
+          if (negate && it != predicates.end()) {
+            predicates.erase(it);
+          } else if (!negate && it == predicates.end()) {
+            auto insert_res = predicates.insert(current_node);
           }
         } else {
           success &= negate ? problem_client->removePredicate(current_node) : problem_client->addPredicate(current_node);
-          value = !negate;
         }
       } else {
         if (use_state) {
