@@ -8,7 +8,7 @@
   room - object
 );; end Types ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(:constants drone123 - robot)
+(:constants drone123 - robot drone_area - room)
 
 ;; Predicates ;;;;;;;;;;;;;;;;;;;;;;;;;
 (:predicates
@@ -18,6 +18,7 @@
   (is_drone ?r - robot)
   (is_rocket ?r)
   (inferred-robot_at ?r - robot ?ro - room)
+  (inferred-exists-another-drone-at-drone_area ?r - robot)
   (inferred-person_at ?p - person ?ro - room)
   (inferred-party ?p ?p2 ?p3 ?p4 ?p5 ?r ?r2 ?room)
   (inferred-exists-party-in-room ?room)
@@ -32,16 +33,24 @@
   (inferred-exists-another-drone ?r)
 );; end Predicates ;;;;;;;;;;;;;;;;;;;;
 
-(:functions
-  (battery_level ?r - robot)
-)
-
 ;; Derived predicates ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (:derived (inferred-robot_at ?r - robot ?ro - room)
   (and
     (robot_at ?r ?ro)
   )
 )
+(:derived (inferred-exists-another-drone-at-drone_area ?r - robot)
+  (and
+    (is_drone ?r)
+    (exists (?r)
+      (and
+        (robot_at ?r drone_area)
+        (not (= ?r drone123))
+      )
+    )
+  )
+)
+
 (:derived (inferred-person_at ?p - person ?ro - room)
   (and
     (person_at ?p ?ro)
@@ -135,7 +144,9 @@
   (and
     (exists (?r2)
       (and
-        (inferred-not-same-drone ?r ?r2)
+        (is_drone ?r)
+        (is_drone ?r2)
+        (not (= ?r ?r2))
       )
     )
   )

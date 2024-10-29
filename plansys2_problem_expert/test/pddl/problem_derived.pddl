@@ -17,6 +17,7 @@
     (robot_at rob1 bedroom)
     (robot_at eva kitchen)
     (robot_at rob2 livingroom)
+    (robot_at drone123 drone_area)
     (person_at Jack bedroom)
     (person_at Alice bedroom)
     (person_at bob livingroom)

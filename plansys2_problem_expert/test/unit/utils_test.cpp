@@ -1338,7 +1338,7 @@ TEST(utils, intersection_parameters)
 
 TEST(utils, complement_parameters)
 {
-  auto predicate = parser::pddl::fromStringPredicate("(robot_at ?x ?y)");
+  auto predicate = parser::pddl::fromStringPredicate("(robot_at ?0 ?1)");
   predicate.parameters[0].type = "robot";
   predicate.parameters[1].type = "room";
 
@@ -1350,20 +1350,52 @@ TEST(utils, complement_parameters)
   instances.insert(parser::pddl::fromStringParam("bedroom", "room"));
   instances.insert(parser::pddl::fromStringParam("garage", "room"));
 
-  std::vector<std::map<std::string, std::string>> vector1 = {
+  std::vector<std::map<std::string, std::string>> vector = {
     {{"?0", "r2d2"}, {"?1", "kitchen"}},
     {{"?0", "leia"}, {"?1", "garage"}},
     {{"?0", "leia"}, {"?1", "kitchen"}},
   };
 
   auto result = complementParamsValuesVector(
-    {predicate.parameters[0], predicate.parameters[1]}, vector1, instances);
+    {predicate.parameters[0], predicate.parameters[1]}, vector, instances);
 
   ASSERT_EQ(result.size(), 3);
   std::vector<std::map<std::string, std::string>> expected = {
     {{"?0", "leia"}, {"?1", "bedroom"}},
     {{"?0", "r2d2"}, {"?1", "garage"}},
     {{"?0", "r2d2"}, {"?1", "bedroom"}},
+  };
+  ASSERT_EQ(result, expected);
+
+  predicate.parameters[0].name = "?1";
+  predicate.parameters[1].name = "?3";
+  vector = {
+    {{"?1", "r2d2"}, {"?3", "kitchen"}},
+    {{"?1", "leia"}, {"?3", "garage"}},
+    {{"?1", "leia"}, {"?3", "kitchen"}},
+  };
+
+  result = complementParamsValuesVector(
+    {predicate.parameters[0], predicate.parameters[1]}, vector, instances);
+
+  ASSERT_EQ(result.size(), 3);
+  expected = {
+    {{"?1", "leia"}, {"?3", "bedroom"}},
+    {{"?1", "r2d2"}, {"?3", "garage"}},
+    {{"?1", "r2d2"}, {"?3", "bedroom"}},
+  };
+  ASSERT_EQ(result, expected);
+
+  vector = {
+    {{"?1", "r2d2"}},
+  };
+
+  result = complementParamsValuesVector(
+    {predicate.parameters[0]}, vector, instances);
+
+  ASSERT_EQ(result.size(), 1);
+  expected = {
+    {{"?1", "leia"}},
   };
   ASSERT_EQ(result, expected);
 }

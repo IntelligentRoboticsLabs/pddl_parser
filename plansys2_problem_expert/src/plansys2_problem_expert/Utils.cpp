@@ -56,14 +56,17 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
           success &= child_success;
           truth_value &= child_value;
           if (!truth_value) {
-            return {success, truth_value, 0, {}};
+            return {success, false, 0, {}};
             break;
           }
 
           if (param_values.empty()) {
             param_values = std::move(child_param_values);
-          } else {
+          } else if (!child_param_values.empty()) {
             param_values = mergeParamsValuesVector(param_values, std::move(child_param_values));
+            if (param_values.empty()) {
+              return {success, false, 0, {}};
+            }
           }
         }
         return {success, truth_value, 0, param_values};
@@ -360,11 +363,14 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
       }
 
     case plansys2_msgs::msg::Node::PARAMETER: {
+        std::vector<std::map<std::string, std::string>> param_values;
         auto current_parameter = current_node.parameters[0];
         if (current_parameter.name.front() != '?') {
-          return {true, true, 0, {}};
+          std::map<std::string, std::string> param_value = {
+            {current_node.name, current_parameter.name}};
+          param_values.emplace_back(param_value);
+          return {true, true, 0, param_values};
         }
-        std::vector<std::map<std::string, std::string>> param_values;
         for (const auto & instance : instances) {
           if (parser::pddl::checkParamTypeEquivalence(current_parameter, instance)) {
             std::map<std::string, std::string> param_value = {
@@ -490,7 +496,7 @@ std::vector<std::map<std::string, std::string>> complementParamsValuesVector(
     for (const auto & combination : complement_set) {
       for (const auto & element : parameters_vector[i]) {
         std::map<std::string, std::string> new_combination = combination;
-        new_combination["?" + std::to_string(i)] = element;
+        new_combination[params[i].name] = element;
 
         if (
           i == parameters_vector.size() - 1 &&

@@ -757,6 +757,10 @@ TEST(problem_expert, get_predicate_with_derived)
     predicates.find(parser::pddl::fromStringPredicate("(inferred-robot_at leia kitchen)")) !=
     predicates.end());
 
+  ASSERT_FALSE(
+    predicates.find(parser::pddl::fromStringPredicate("(inferred-exists-another-drone-at-drone_area drone123)")) !=
+    predicates.end());
+
   ASSERT_TRUE(
     predicates.find(parser::pddl::fromStringPredicate("(person_at jack bedroom)")) !=
     predicates.end());
