@@ -355,13 +355,6 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
         return {true, false, 0, {}};
       }
 
-    case plansys2_msgs::msg::Node::OBJECT: {
-        if (current_node.name.size() > 0) {
-          return {true, true, 0, {}};
-        }
-        return {true, false, 0, {}};
-      }
-
     case plansys2_msgs::msg::Node::PARAMETER: {
         std::vector<std::map<std::string, std::string>> param_values;
         auto current_parameter = current_node.parameters[0];
