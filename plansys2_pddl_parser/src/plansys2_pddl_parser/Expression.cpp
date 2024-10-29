@@ -164,7 +164,13 @@ Expression * createExpression(Stringreader & f, TokenStruct<std::string> & ts, D
       // It is a constant!
       IntPair ct = d.constantTypeIdConstId(s);
       return new ConstExpression(ct.first, ct.second);
-    } else if (s == "#t") {
+    }
+    // else if (d.isObject(s)) {
+    //   // It is a object!
+    //   IntPair ct = d.objectTypeIdObjectId(s);
+    //   return new ObjectExpression(ct.first, ct.second);
+    // }
+    else if (s == "#t") {
       // This construct is used in PDDL+ to model continuous evolution
       // of some function within processes
       std::ostringstream os;
