@@ -104,6 +104,17 @@ protected:
     std::unordered_set<plansys2::Predicate> & predicates,
     std::vector<plansys2::Function> & functions) const;
 
+  std::vector<plansys2_msgs::msg::Tree> check_requirements(
+    const std::vector<plansys2_msgs::msg::Tree>& requirements,
+    std::shared_ptr<plansys2::ActionGraph>& graph,
+    std::shared_ptr<plansys2::ActionNode>& new_node
+  );
+  bool check_requirement(
+    const plansys2_msgs::msg::Tree& requirement,
+    std::shared_ptr<plansys2::ActionGraph>& graph,
+    std::shared_ptr<plansys2::ActionNode>& new_node
+  );
+
   bool is_action_executable(
     const ActionStamped & action,
     std::unordered_set<plansys2::Instance> & instances,

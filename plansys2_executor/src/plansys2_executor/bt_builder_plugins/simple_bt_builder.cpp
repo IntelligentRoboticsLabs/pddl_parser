@@ -340,6 +340,56 @@ SimpleBTBuilder::get_state(
   }
 }
 
+std::vector<plansys2_msgs::msg::Tree> SimpleBTBuilder::check_requirements(
+  const std::vector<plansys2_msgs::msg::Tree>& requirements,
+  std::shared_ptr<plansys2::ActionGraph>& graph,
+  std::shared_ptr<plansys2::ActionNode>& new_node
+)
+{
+  std::vector<plansys2_msgs::msg::Tree> non_satisfied_requirements;
+  for (const auto& requirement : requirements) {
+    if (requirement.nodes[0].node_type == plansys2_msgs::msg::Node::AND ||
+        requirement.nodes[0].node_type == plansys2_msgs::msg::Node::EXISTS)
+    {
+      auto result = check_requirements(parser::pddl::getSubtrees(requirement), graph, new_node);
+      non_satisfied_requirements.insert(
+        std::end(non_satisfied_requirements), std::begin(result),
+        std::end(result));
+    } else {
+      if (!check_requirement(requirement, graph, new_node)) {
+        non_satisfied_requirements.emplace_back(std::move(requirement));
+      }
+    }
+  }
+  return std::move(non_satisfied_requirements);
+}
+
+bool SimpleBTBuilder::check_requirement(
+  const plansys2_msgs::msg::Tree& requirement,
+  std::shared_ptr<plansys2::ActionGraph>& graph,
+  std::shared_ptr<plansys2::ActionNode>& new_node
+)
+{
+  auto parent = get_node_satisfy(requirement, graph, new_node);
+  if (parent != nullptr) {
+    prune_backwards(new_node, parent);
+
+    // Create the connections to the parent node
+    if (std::find(new_node->in_arcs.begin(), new_node->in_arcs.end(), parent) ==
+      new_node->in_arcs.end())
+    {
+      new_node->in_arcs.push_back(parent);
+    }
+    if (std::find(parent->out_arcs.begin(), parent->out_arcs.end(), new_node) ==
+      parent->out_arcs.end())
+    {
+      parent->out_arcs.push_back(new_node);
+    }
+    return true;
+  }
+  return false;
+}
+
 ActionGraph::Ptr
 SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
 {
@@ -393,29 +443,7 @@ SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
 
     // Look for satisfying nodes
     // A satisfying node is a node with an effect that satisfies a requirement of the new node
-    auto it = requirements.begin();
-    while (it != requirements.end()) {
-      auto parent = get_node_satisfy(*it, graph, new_node);
-      if (parent != nullptr) {
-        prune_backwards(new_node, parent);
-
-        // Create the connections to the parent node
-        if (std::find(new_node->in_arcs.begin(), new_node->in_arcs.end(), parent) ==
-          new_node->in_arcs.end())
-        {
-          new_node->in_arcs.push_back(parent);
-        }
-        if (std::find(parent->out_arcs.begin(), parent->out_arcs.end(), new_node) ==
-          parent->out_arcs.end())
-        {
-          parent->out_arcs.push_back(new_node);
-        }
-
-        it = requirements.erase(it);
-      } else {
-        ++it;
-      }
-    }
+    requirements = check_requirements(requirements, graph, new_node);
 
     // Look for contradicting parallel actions
     // A1 and A2 cannot run in parallel if the effects of A1 contradict the requirements of A2
@@ -455,7 +483,7 @@ SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
         parser::pddl::toString(req) << "]" << std::endl;
     }
 
-    // Return and empyt graph to fail the serveice call
+    // Return and empyt graph to fail the service call
     if (!requirements.empty()) {
       return nullptr;
     }
