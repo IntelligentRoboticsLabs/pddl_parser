@@ -212,8 +212,8 @@ public:
    */
   void get_domain_derived_predicates_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<plansys2_msgs::srv::GetStates::Request> request,
-    const std::shared_ptr<plansys2_msgs::srv::GetStates::Response> response);
+    const std::shared_ptr<plansys2_msgs::srv::GetDomainDerivedPredicateDetails::Request> request,
+    const std::shared_ptr<plansys2_msgs::srv::GetDomainDerivedPredicateDetails::Response> response);
 
   /// Receives the result of the GetDomainDerivedPredicateDetails service call
   /**
@@ -257,7 +257,7 @@ private:
     get_domain_functions_service_;
   rclcpp::Service<plansys2_msgs::srv::GetNodeDetails>::SharedPtr
     get_domain_function_details_service_;
-  rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr
+  rclcpp::Service<plansys2_msgs::srv::GetDomainDerivedPredicateDetails>::SharedPtr
     get_domain_derived_predicates_service_;
   rclcpp::Service<plansys2_msgs::srv::GetDomainDerivedPredicateDetails>::SharedPtr
     get_domain_derived_predicate_details_service_;

@@ -96,11 +96,14 @@ public:
    */
   std::optional<plansys2::Function> getFunction(const std::string & function);
 
+  plansys2_msgs::msg::Derived getDerivedFromDomain(
+    unsigned int i, const std::vector<std::string> & params = {});
+
   /// Get the derived predicates existing in the domain.
   /**
    * \return The vector containing the derived predicates.
    */
-  std::vector<plansys2::Predicate> getDerivedPredicates();
+  std::vector<plansys2_msgs::msg::Derived> getDerivedPredicates();
 
   /// Get the details of a derived predicate existing in the domain.
   /**

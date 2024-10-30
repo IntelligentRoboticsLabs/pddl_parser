@@ -107,7 +107,7 @@ public:
   /**
    * \return The vector containing the derived predicates.
    */
-  std::vector<plansys2::Predicate> getDerivedPredicates();
+  std::vector<plansys2_msgs::msg::Derived> getDerivedPredicates();
 
   /// Get the details of a derived predicate existing in the domain.
   /**
@@ -166,7 +166,8 @@ private:
   rclcpp::Client<plansys2_msgs::srv::GetDomainConstants>::SharedPtr get_constants_client_;
   rclcpp::Client<plansys2_msgs::srv::GetStates>::SharedPtr get_predicates_client_;
   rclcpp::Client<plansys2_msgs::srv::GetStates>::SharedPtr get_functions_client_;
-  rclcpp::Client<plansys2_msgs::srv::GetStates>::SharedPtr get_derived_predicates_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetDomainDerivedPredicateDetails>::SharedPtr
+    get_derived_predicates_client_;
   rclcpp::Client<plansys2_msgs::srv::GetDomainDerivedPredicateDetails>::SharedPtr
     get_derived_predicate_details_client_;
   rclcpp::Client<plansys2_msgs::srv::GetDomainActions>::SharedPtr get_actions_client_;
