@@ -69,7 +69,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
             }
           }
         }
-        return {success, truth_value, 0, param_values};
+        return {success, truth_value, 0, std::move(param_values)};
       }
 
     case plansys2_msgs::msg::Node::OR: {
@@ -86,15 +86,13 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
           param_values.insert(
             param_values.end(), child_param_values.begin(), child_param_values.end());
         }
-        return {success, truth_value, 0, param_values};
+        return {success, truth_value, 0, std::move(param_values)};
       }
 
     case plansys2_msgs::msg::Node::NOT: {
-        auto result = evaluate(
+        return std::move(evaluate(
           tree, problem_client, instances, predicates, functions, apply, use_state,
-          current_node.children[0], !negate);
-
-        return result;
+          current_node.children[0], !negate));
       }
 
     case plansys2_msgs::msg::Node::PREDICATE: {
@@ -125,7 +123,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
             value = negate ^ problem_client->existPredicate(current_node);
           }
         }
-        return {success, value, 0, param_values};
+        return {success, value, 0, std::move(param_values)};
       }
 
     case plansys2_msgs::msg::Node::FUNCTION: {
@@ -153,7 +151,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
           }
         }
 
-        return {success, false, value, param_values};
+        return {success, false, value, std::move(param_values)};
       }
 
     case plansys2_msgs::msg::Node::EXPRESSION: {
@@ -224,7 +222,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
                   std::tie(result, param_values) =
                     negateResult(aux_node, result, param_values, instances);
                 }
-                return {true, result, 0, param_values};
+                return {true, result, 0, std::move(param_values)};
               }
 
               if (c0_type == p_t && c1_type == p_t) {
@@ -245,7 +243,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
                   std::tie(result, param_values) =
                     negateResult(aux_node, result, param_values, instances);
                 }
-                return {true, result, 0, param_values};
+                return {true, result, 0, std::move(param_values)};
               }
 
               if (c0_type == c_t && c1_type == c_t) {
@@ -362,7 +360,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
           std::map<std::string, std::string> param_value = {
             {current_node.name, current_parameter.name}};
           param_values.emplace_back(param_value);
-          return {true, true, 0, param_values};
+          return {true, true, 0, std::move(param_values)};
         }
         for (const auto & instance : instances) {
           if (parser::pddl::checkParamTypeEquivalence(current_parameter, instance)) {
@@ -371,16 +369,13 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
             param_values.emplace_back(param_value);
           }
         }
-        return {true, false, 0, param_values};
+        return {true, false, 0, std::move(param_values)};
       }
 
     case plansys2_msgs::msg::Node::EXISTS: {
-        std::vector<std::map<std::string, std::string>> param_values;
-
-        auto [child_success, child_value, _, child_param_values] = evaluate(
+        return std::move(evaluate(
           tree, problem_client, instances, predicates, functions, apply, use_state,
-          current_node.children[0], negate);
-        return {child_success, child_value, 0, child_param_values};
+          current_node.children[0], negate));
       }
 
     default:
