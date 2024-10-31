@@ -101,18 +101,7 @@ void ProblemExpert::groundPredicate(
 
   current_predicates.reserve(current_predicates.size() + params_values_size);
 
-  // Declare a thread-local unordered_set to hold predicates created by each thread
-  std::vector<std::unordered_set<plansys2::Predicate>> thread_local_sets(omp_get_max_threads());
-
-// Parallelize the outer loop
-#pragma omp parallel
-  {
-    size_t thread_id = omp_get_thread_num();
-    auto & local_set = thread_local_sets[thread_id];
-
-    local_set.reserve(params_values_size / omp_get_num_threads());
-
-#pragma omp for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
     for (size_t j = 0; j < params_values_size; ++j) {
       const auto & params_values = params_values_vector[j];
       plansys2::Predicate new_predicate;
@@ -142,17 +131,11 @@ void ProblemExpert::groundPredicate(
         new_predicate.parameters.emplace_back(std::move(new_param));
       }
 
-      // Insert the new_predicate into the thread-local set
       if (add_predicate) {
-        local_set.emplace(std::move(new_predicate));
+        #pragma omp critical
+        current_predicates.emplace(std::move(new_predicate));
       }
     }
-  }
-
-  // Merge all thread-local sets into the main set (current_predicates)
-  for (const auto & local_set : thread_local_sets) {
-    current_predicates.insert(local_set.begin(), local_set.end());
-  }
 }
 
 std::unordered_set<plansys2::Predicate> ProblemExpert::solveDerivedPredicates(
@@ -160,29 +143,20 @@ std::unordered_set<plansys2::Predicate> ProblemExpert::solveDerivedPredicates(
 {
   std::unordered_set<plansys2::Predicate> inferred_predicates = predicates;
 
-  const std::vector<plansys2::Predicate> & derived_predicates =
+  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates =
     domain_expert_->getDerivedPredicates();
 
   inferred_predicates.reserve(inferred_predicates.size() + derived_predicates.size());
-
-  std::unordered_map<std::string, std::vector<plansys2_msgs::msg::Derived>> derived_cache;
-  for (const plansys2::Predicate & derived_name : derived_predicates) {
-    if (derived_cache.find(derived_name.name) != derived_cache.end()) {
-      continue;
-    }
-    derived_cache[derived_name.name] = domain_expert_->getDerivedPredicate(derived_name.name);
-    const auto & derived = derived_cache[derived_name.name];
-    for (const plansys2_msgs::msg::Derived & d : derived) {
+  for (const auto& derived : derived_predicates) {
       std::shared_ptr<plansys2::ProblemExpertClient> new_problem_client;
 
       auto [_, evaluate_value, __, params_values] = evaluate(
-        d.preconditions, new_problem_client, instances_, inferred_predicates, functions_, false,
-        true, d.preconditions.nodes[0].node_id, false);
+        derived.preconditions, new_problem_client, instances_, inferred_predicates, functions_, false,
+        true, derived.preconditions.nodes[0].node_id, false);
 
       if (evaluate_value && !params_values.empty()) {
-        groundPredicate(inferred_predicates, d.predicate, params_values);
+        groundPredicate(inferred_predicates, derived.predicate, params_values);
       }
-    }
   }
   return std::move(inferred_predicates);
 }
