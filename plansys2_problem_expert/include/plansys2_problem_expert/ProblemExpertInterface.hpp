@@ -39,17 +39,20 @@ public:
   virtual std::optional<plansys2::Instance> getInstance(const std::string & name) = 0;
 
   virtual std::unordered_set<plansys2::Predicate> getPredicates() = 0;
+  virtual std::unordered_set<plansys2::Predicate> getInferredPredicates() = 0;
   virtual bool addPredicate(const plansys2::Predicate & predicate) = 0;
   virtual bool removePredicate(const plansys2::Predicate & predicate) = 0;
   virtual bool existPredicate(const plansys2::Predicate & predicate) = 0;
   virtual std::optional<plansys2::Predicate> getPredicate(const std::string & expr) = 0;
 
-  virtual std::vector<plansys2::Function> getFunctions() = 0;
+  virtual std::unordered_set<plansys2::Function> getFunctions() = 0;
   virtual bool addFunction(const plansys2::Function & function) = 0;
   virtual bool removeFunction(const plansys2::Function & function) = 0;
   virtual bool existFunction(const plansys2::Function & function) = 0;
   virtual bool updateFunction(const plansys2::Function & function) = 0;
   virtual std::optional<plansys2::Function> getFunction(const std::string & expr) = 0;
+
+  virtual plansys2::State getState() = 0;
 
   virtual plansys2::Goal getGoal() = 0;
   virtual bool setGoal(const plansys2::Goal & goal) = 0;

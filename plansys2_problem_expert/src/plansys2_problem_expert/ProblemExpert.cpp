@@ -37,6 +37,12 @@ namespace plansys2
 ProblemExpert::ProblemExpert(std::shared_ptr<DomainExpert> & domain_expert)
 : domain_expert_(domain_expert)
 {
+  state_.setDerivedPredicates(domain_expert_->getDerivedPredicates());
+}
+
+plansys2::State ProblemExpert::getState()
+{
+  return std::move(solveAllDerivedPredicates(state_));
 }
 
 bool ProblemExpert::addInstance(const plansys2::Instance & instance)
@@ -63,29 +69,28 @@ bool ProblemExpert::addInstance(const plansys2::Instance & instance)
   }
 
   if (!exist_instance) {
-    instances_.insert(lowercase_instance);
+    state_.addInstance(lowercase_instance);
   }
 
   return true;
 }
 
-std::unordered_set<plansys2::Instance> ProblemExpert::getInstances() {return instances_;}
+std::unordered_set<plansys2::Instance> ProblemExpert::getInstances() {return state_.getInstances();}
 
 bool ProblemExpert::removeInstance(const plansys2::Instance & instance)
 {
-  auto res = instances_.erase(instance);
-  removeInvalidPredicates(predicates_, instance);
-  removeInvalidFunctions(functions_, instance);
+  auto res = state_.removeInstance(instance);
+  removeInvalidPredicates(instance);
+  removeInvalidFunctions(instance);
   removeInvalidGoals(instance);
 
-  return res == 1;
+  return res;
 }
 
 std::optional<plansys2::Instance> ProblemExpert::getInstance(const std::string & instance_name)
 {
-  auto instance = parser::pddl::fromStringParam(instance_name);
-  auto it = instances_.find(instance);
-  if (it != instances_.end()) {
+  auto it = state_.getInstance(parser::pddl::fromStringParam(instance_name));
+  if (it != state_.getInstances().end()) {
     return *it;
   }
   return {};
@@ -93,15 +98,19 @@ std::optional<plansys2::Instance> ProblemExpert::getInstance(const std::string &
 
 std::unordered_set<plansys2::Predicate> ProblemExpert::getPredicates()
 {
-  return std::move(solveAllDerivedPredicates(
-    instances_, predicates_, functions_, domain_expert_->getDerivedPredicates()));
+  return state_.getPredicates();
+}
+
+std::unordered_set<plansys2::Predicate> ProblemExpert::getInferredPredicates()
+{
+  return std::move(solveAllDerivedPredicates(state_).getInferredPredicates());
 }
 
 bool ProblemExpert::addPredicate(const plansys2::Predicate & predicate)
 {
   if (!existPredicate(predicate)) {
     if (isValidPredicate(predicate)) {
-      predicates_.emplace(predicate);
+      state_.addPredicate(predicate);
       return true;
     } else {
       return false;
@@ -116,25 +125,25 @@ bool ProblemExpert::removePredicate(const plansys2::Predicate & predicate)
   if (!isValidPredicate(predicate)) {  // if predicate is not valid, error
     return false;
   }
-  return predicates_.erase(predicate) == 1;
+  return state_.removePredicate(predicate) == 1;
 }
 
 std::optional<plansys2::Predicate> ProblemExpert::getPredicate(const std::string & expr)
 {
-  auto it = predicates_.find(parser::pddl::fromStringPredicate(expr));
-  if (it != predicates_.end()) {
+  auto it = state_.getPredicate(parser::pddl::fromStringPredicate(expr));
+  if (it != state_.getPredicates().end()) {
     return *it;
   }
   return {};
 }
 
-std::vector<plansys2::Function> ProblemExpert::getFunctions() {return functions_;}
+std::unordered_set<plansys2::Function> ProblemExpert::getFunctions() {return state_.getFunctions();}
 
 bool ProblemExpert::addFunction(const plansys2::Function & function)
 {
   if (!existFunction(function)) {
     if (isValidFunction(function)) {
-      functions_.push_back(function);
+      state_.addFunction(function);
       return true;
     } else {
       return false;
@@ -146,21 +155,7 @@ bool ProblemExpert::addFunction(const plansys2::Function & function)
 
 bool ProblemExpert::removeFunction(const plansys2::Function & function)
 {
-  bool found = false;
-  int i = 0;
-
-  if (!isValidFunction(function)) {  // if function is not valid, error
-    return false;
-  }
-  while (!found && i < functions_.size()) {
-    if (parser::pddl::checkNodeEquality(functions_[i], function)) {
-      found = true;
-      functions_.erase(functions_.begin() + i);
-    }
-    i++;
-  }
-
-  return true;
+  return state_.removeFunction(function);
 }
 
 bool ProblemExpert::updateFunction(const plansys2::Function & function)
@@ -168,7 +163,7 @@ bool ProblemExpert::updateFunction(const plansys2::Function & function)
   if (existFunction(function)) {
     if (isValidFunction(function)) {
       removeFunction(function);
-      functions_.push_back(function);
+      state_.addFunction(function);
       return true;
     } else {
       return false;
@@ -180,54 +175,41 @@ bool ProblemExpert::updateFunction(const plansys2::Function & function)
 
 std::optional<plansys2::Function> ProblemExpert::getFunction(const std::string & expr)
 {
-  plansys2::Function ret;
-  plansys2::Function func = parser::pddl::fromStringFunction(expr);
-
-  bool found = false;
-  size_t i = 0;
-  while (i < functions_.size() && !found) {
-    if (parser::pddl::checkNodeEquality(functions_[i], func)) {
-      found = true;
-      ret = functions_[i];
-    }
-    i++;
+  auto it = state_.getFunction(parser::pddl::fromStringFunction(expr));
+  if (it != state_.getFunctions().end()) {
+    return *it;
   }
-
-  if (found) {
-    return ret;
-  } else {
-    return {};
-  }
+  return {};
 }
 
-void ProblemExpert::removeInvalidPredicates(
-  std::unordered_set<plansys2::Predicate> & predicates, const plansys2::Instance & instance)
+void ProblemExpert::removeInvalidPredicates(const plansys2::Instance & instance)
 {
-  for (auto it = predicates.begin(); it != predicates.end(); ) {
+  for (auto it = state_.getPredicates().begin(); it != state_.getPredicates().end(); ) {
     if (
       std::find_if(
         it->parameters.begin(), it->parameters.end(), [&](const plansys2_msgs::msg::Param & param) {
           return param.name == instance.name;
         }) != it->parameters.end())
     {
-      it = predicates.erase(it);
+      it = state_.removePredicate(it);
     } else {
       ++it;
     }
   }
 }
 
-void ProblemExpert::removeInvalidFunctions(
-  std::vector<plansys2::Function> & functions, const plansys2::Instance & instance)
+void ProblemExpert::removeInvalidFunctions(const plansys2::Instance & instance)
 {
-  for (auto rit = functions.rbegin(); rit != functions.rend(); ++rit) {
+  for (auto it = state_.getFunctions().begin(); it != state_.getFunctions().end(); ) {
     if (
       std::find_if(
-        rit->parameters.begin(), rit->parameters.end(),
-        [&](const plansys2_msgs::msg::Param & param) {return param.name == instance.name;}) !=
-      rit->parameters.end())
+        it->parameters.begin(), it->parameters.end(), [&](const plansys2_msgs::msg::Param & param) {
+          return param.name == instance.name;
+        }) != it->parameters.end())
     {
-      functions.erase(std::next(rit).base());
+      it = state_.removeFunction(it);
+    } else {
+      ++it;
     }
   }
 }
@@ -315,7 +297,7 @@ bool ProblemExpert::setGoal(const plansys2::Goal & goal)
 
 bool ProblemExpert::isGoalSatisfied(const plansys2::Goal & goal)
 {
-  return check(goal, instances_, predicates_, functions_);
+  return check(goal, state_.getInstances(), state_.getPredicates(), state_.getFunctions());
 }
 
 bool ProblemExpert::clearGoal()
@@ -326,9 +308,7 @@ bool ProblemExpert::clearGoal()
 
 bool ProblemExpert::clearKnowledge()
 {
-  instances_.clear();
-  predicates_.clear();
-  functions_.clear();
+  state_.clearState();
   clearGoal();
 
   return true;
@@ -349,12 +329,12 @@ bool ProblemExpert::isValidType(const std::string & type)
 
 bool ProblemExpert::existInstance(const std::string & name)
 {
-  return instances_.find(parser::pddl::fromStringParam(name)) != instances_.end();
+  return state_.hasInstance(parser::pddl::fromStringParam(name));
 }
 
 bool ProblemExpert::existPredicate(const plansys2::Predicate & predicate)
 {
-  bool found = predicates_.find(predicate) != predicates_.end();
+  bool found = state_.hasPredicate(predicate);
   if (!found) {
     std::vector<std::string> parameters_names;
     std::for_each(
@@ -363,7 +343,7 @@ bool ProblemExpert::existPredicate(const plansys2::Predicate & predicate)
       });
     auto derived_predicates = domain_expert_->getDerivedPredicate(predicate.name, parameters_names);
     for (auto derived : derived_predicates) {
-      if (check(derived.preconditions, instances_, predicates_, functions_)) {
+      if (check(derived.preconditions, state_.getInstances(), state_.getPredicates(), state_.getFunctions())) {
         found = true;
         break;
       }
@@ -375,17 +355,7 @@ bool ProblemExpert::existPredicate(const plansys2::Predicate & predicate)
 
 bool ProblemExpert::existFunction(const plansys2::Function & function)
 {
-  bool found = false;
-  int i = 0;
-
-  while (!found && i < functions_.size()) {
-    if (parser::pddl::checkNodeEquality(functions_[i], function)) {
-      found = true;
-    }
-    i++;
-  }
-
-  return found;
+  return state_.hasFunction(function);
 }
 
 bool ProblemExpert::isValidPredicate(const plansys2::Predicate & predicate)
@@ -559,7 +529,7 @@ std::string ProblemExpert::getProblem()
 
   problem.name = "problem_1";
 
-  for (const auto & instance : instances_) {
+  for (const auto & instance : state_.getInstances()) {
     bool is_constant = domain.getType(instance.type)->parseConstant(instance.name).first;
     if (is_constant) {
       std::cout << "Skipping adding constant to problem :object: " << instance.name << " "
@@ -569,7 +539,7 @@ std::string ProblemExpert::getProblem()
     }
   }
 
-  for (plansys2_msgs::msg::Node predicate : predicates_) {
+  for (plansys2_msgs::msg::Node predicate : state_.getPredicates()) {
     StringVec v;
 
     for (size_t i = 0; i < predicate.parameters.size(); i++) {
@@ -581,7 +551,7 @@ std::string ProblemExpert::getProblem()
     problem.addInit(predicate.name, v);
   }
 
-  for (plansys2_msgs::msg::Node function : functions_) {
+  for (plansys2_msgs::msg::Node function : state_.getFunctions()) {
     StringVec v;
 
     for (size_t i = 0; i < function.parameters.size(); i++) {

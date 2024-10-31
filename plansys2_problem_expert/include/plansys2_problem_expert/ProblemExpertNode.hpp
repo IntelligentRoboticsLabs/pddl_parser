@@ -112,6 +112,11 @@ public:
     const std::shared_ptr<plansys2_msgs::srv::GetStates::Request> request,
     const std::shared_ptr<plansys2_msgs::srv::GetStates::Response> response);
 
+  void get_problem_inferred_predicates_service_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<plansys2_msgs::srv::GetStates::Request> request,
+    const std::shared_ptr<plansys2_msgs::srv::GetStates::Response> response);
+
   void get_problem_function_details_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<plansys2_msgs::srv::GetNodeDetails::Request> request,
@@ -195,6 +200,8 @@ private:
     get_problem_predicate_details_service_;
   rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr
     get_problem_predicates_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr
+    get_problem_inferred_predicates_service_;
   rclcpp::Service<plansys2_msgs::srv::GetNodeDetails>::SharedPtr
     get_problem_function_details_service_;
   rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr

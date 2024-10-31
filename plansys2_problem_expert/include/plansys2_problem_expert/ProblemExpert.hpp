@@ -44,17 +44,20 @@ public:
   std::optional<plansys2::Instance> getInstance(const std::string & name);
 
   std::unordered_set<plansys2::Predicate> getPredicates();
+  std::unordered_set<plansys2::Predicate> getInferredPredicates();
   bool addPredicate(const plansys2::Predicate & predicate);
   bool removePredicate(const plansys2::Predicate & predicate);
   bool existPredicate(const plansys2::Predicate & predicate);
   std::optional<plansys2::Predicate> getPredicate(const std::string & expr);
 
-  std::vector<plansys2::Function> getFunctions();
+  std::unordered_set<plansys2::Function> getFunctions();
   bool addFunction(const plansys2::Function & function);
   bool removeFunction(const plansys2::Function & function);
   bool existFunction(const plansys2::Function & function);
   bool updateFunction(const plansys2::Function & function);
   std::optional<plansys2::Function> getFunction(const std::string & expr);
+
+  plansys2::State getState();
 
   plansys2::Goal getGoal();
   bool setGoal(const plansys2::Goal & goal);
@@ -78,17 +81,11 @@ private:
     std::shared_ptr<DomainExpert> & domain_expert_,
     uint8_t node_id = 0);
 
-  void removeInvalidPredicates(
-    std::unordered_set<plansys2::Predicate> & predicates,
-    const plansys2::Instance & instance);
-  void removeInvalidFunctions(
-    std::vector<plansys2::Function> & functions,
-    const plansys2::Instance & instance);
+  void removeInvalidPredicates(const plansys2::Instance & instance);
+  void removeInvalidFunctions(const plansys2::Instance & instance);
   void removeInvalidGoals(const plansys2::Instance & instance);
 
-  std::unordered_set<plansys2::Instance> instances_;
-  std::unordered_set<plansys2::Predicate> predicates_;
-  std::vector<plansys2::Function> functions_;
+  plansys2::State state_;
   plansys2::Goal goal_;
 
   std::shared_ptr<DomainExpert> domain_expert_;
