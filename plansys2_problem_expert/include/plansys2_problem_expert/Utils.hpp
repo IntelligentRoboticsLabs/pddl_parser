@@ -58,6 +58,27 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
   const std::unordered_set<plansys2::Instance> & instances
 );
 
+std::unordered_set<plansys2::Predicate> solveAllDerivedPredicates(
+  std::unordered_set<plansys2::Instance> & instances,
+  std::unordered_set<plansys2::Predicate> & predicates,
+  std::vector<plansys2::Function> & functions,
+  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates
+);
+
+std::unordered_set<plansys2::Predicate> solveDerivedPredicates(
+  std::unordered_set<plansys2::Instance> & instances,
+  std::unordered_set<plansys2::Predicate> & predicates,
+  std::vector<plansys2::Function> & functions,
+  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates
+);
+
+void groundPredicate(
+  std::unordered_set<plansys2::Instance> & instances,
+  std::unordered_set<plansys2::Predicate> & current_predicates,
+  const plansys2::Predicate & predicate,
+  const std::vector<std::map<std::string, std::string>> & params_values_vector
+);
+
 /// Evaluate a PDDL expression represented as a tree.
 /**
  * \param[in] node The root node of the PDDL expression.

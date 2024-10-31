@@ -664,6 +664,95 @@ bool apply(
   return std::get<0>(ret);
 }
 
+std::unordered_set<plansys2::Predicate> solveAllDerivedPredicates(
+  std::unordered_set<plansys2::Instance> & instances,
+  std::unordered_set<plansys2::Predicate> & predicates,
+  std::vector<plansys2::Function> & functions,
+  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates
+)
+{
+  std::unordered_set<plansys2::Predicate> current_predicates = predicates;
+  std::unordered_set<plansys2::Predicate> new_predicates =
+    solveDerivedPredicates(instances, current_predicates, functions, derived_predicates);
+  while (current_predicates != new_predicates) {
+    std::swap(current_predicates, new_predicates);
+    new_predicates = solveDerivedPredicates(instances, current_predicates, functions, derived_predicates);
+  }
+  return std::move(new_predicates);
+}
+
+std::unordered_set<plansys2::Predicate> solveDerivedPredicates(
+  std::unordered_set<plansys2::Instance> & instances,
+  std::unordered_set<plansys2::Predicate> & predicates,
+  std::vector<plansys2::Function> & functions,
+  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates)
+{
+  std::unordered_set<plansys2::Predicate> inferred_predicates = predicates;
+
+  inferred_predicates.reserve(inferred_predicates.size() + derived_predicates.size());
+  for (const auto& derived : derived_predicates) {
+      std::shared_ptr<plansys2::ProblemExpertClient> new_problem_client;
+
+      auto [_, evaluate_value, __, params_values] = evaluate(
+        derived.preconditions, new_problem_client, instances, inferred_predicates, functions, false,
+        true, derived.preconditions.nodes[0].node_id, false);
+
+      if (evaluate_value && !params_values.empty()) {
+        groundPredicate(instances, inferred_predicates, derived.predicate, params_values);
+      }
+  }
+  return std::move(inferred_predicates);
+}
+
+void groundPredicate(
+  std::unordered_set<plansys2::Instance> & instances,
+  std::unordered_set<plansys2::Predicate> & current_predicates,
+  const plansys2::Predicate & predicate,
+  const std::vector<std::map<std::string, std::string>> & params_values_vector
+)
+{
+  size_t num_params = predicate.parameters.size();
+  size_t params_values_size = params_values_vector.size();
+
+  current_predicates.reserve(current_predicates.size() + params_values_size);
+
+#pragma omp parallel for schedule(dynamic)
+    for (size_t j = 0; j < params_values_size; ++j) {
+      const auto & params_values = params_values_vector[j];
+      plansys2::Predicate new_predicate;
+      new_predicate.node_type = plansys2_msgs::msg::Node::PREDICATE;
+      new_predicate.name = predicate.name;
+      new_predicate.parameters.reserve(num_params);
+      bool add_predicate = true;
+
+      for (size_t i = 0; i < num_params; ++i) {
+        plansys2_msgs::msg::Param new_param = predicate.parameters[i];
+
+        // Only perform lookup and assignment if the parameter is a variable (starts with '?')
+        if (new_param.name.front() == '?') {
+          auto it = params_values.find("?" + std::to_string(i));
+          if (it != params_values.end()) {
+            auto instance = instances.find(parser::pddl::fromStringParam(it->second));
+            if (
+              instance == instances.end() ||
+              !parser::pddl::checkParamTypeEquivalence(new_param, *instance))
+            {
+              add_predicate = false;
+              break;
+            }
+            new_param.name = it->second;
+          }
+        }
+        new_predicate.parameters.emplace_back(std::move(new_param));
+      }
+
+      if (add_predicate) {
+        #pragma omp critical
+        current_predicates.emplace(std::move(new_predicate));
+      }
+    }
+}
+
 std::pair<std::string, int> parse_action(const std::string & input)
 {
   std::string action = parser::pddl::getReducedString(input);
