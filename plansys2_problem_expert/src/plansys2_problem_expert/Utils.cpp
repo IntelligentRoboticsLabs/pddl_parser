@@ -571,36 +571,22 @@ std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
   const std::vector<std::map<std::string, std::string>> & vector2)
 {
   std::vector<std::map<std::string, std::string>> vector3;
-  vector3.reserve(vector1.size() * vector2.size());  // Reserve space to avoid reallocations
+  vector3.reserve(vector1.size() * vector2.size());
 
-  // Store results in thread-local vectors
-  std::vector<std::vector<std::map<std::string, std::string>>> local_results(omp_get_max_threads());
-
-#pragma omp parallel
-  {
-    int thread_id = omp_get_thread_num();
-    std::vector<std::map<std::string, std::string>> & local_vector = local_results[thread_id];
-
-#pragma omp for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < vector1.size(); ++i) {
       for (const auto & dict2 : vector2) {
         std::map<std::string, std::string> dict3;
 
-        // Perform the merge of dict1 and dict2 into dict3
         mergeParamsValuesDicts(vector1[i], dict2, dict3);
 
         if (!dict3.empty()) {
-          local_vector.emplace_back(std::move(dict3));  // Safely push to local vector
+          #pragma omp critical
+          vector3.emplace_back(std::move(dict3));
         }
       }
     }
-  }
-
-  // Combine results from all threads
-  for (const auto & local_vector : local_results) {
-    vector3.insert(vector3.end(), local_vector.begin(), local_vector.end());
-  }
-  return std::move(vector3);  // Return the merged vector
+  return std::move(vector3);
 }
 
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
