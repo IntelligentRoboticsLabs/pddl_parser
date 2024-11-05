@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #ifndef RQT_PLANSYS2_PLAN__RQTPLAN_HPP_
 #define RQT_PLANSYS2_PLAN__RQTPLAN_HPP_
 
 #include <ui_rqt_plansys2_plan.h>
-#include <rqt_gui_cpp/plugin.h>
-
 
 #include <QAction>
 #include <QImage>
@@ -30,6 +29,8 @@
 #include <map>
 #include <memory>
 #include <string>
+
+#include "rqt_gui_cpp/plugin.hpp"
 
 #include "rqt_plansys2_plan/PlanTree.hpp"
 

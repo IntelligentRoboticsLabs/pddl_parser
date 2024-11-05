@@ -38,7 +38,7 @@ TEST(domain_expert, lifecycle)
   std::string pkgpath = ament_index_cpp::get_package_share_directory("plansys2_domain_expert");
 
   domain_node->set_parameter({"model_file", pkgpath + "/pddl/domain_simple.pddl"});
-  rclcpp::executors::MultiThreadedExecutor exe(rclcpp::ExecutorOptions(), 8);
+  rclcpp::experimental::executors::EventsExecutor exe;
 
   exe.add_node(domain_node->get_node_base_interface());
 
@@ -105,7 +105,7 @@ TEST(domain_expert, lifecycle_error)
   std::string pkgpath = ament_index_cpp::get_package_share_directory("plansys2_domain_expert");
 
   domain_node->set_parameter({"model_file", pkgpath + "/pddl/domain_2_error.pddl"});
-  rclcpp::executors::MultiThreadedExecutor exe(rclcpp::ExecutorOptions(), 8);
+  rclcpp::experimental::executors::EventsExecutor exe;
 
   exe.add_node(domain_node->get_node_base_interface());
 

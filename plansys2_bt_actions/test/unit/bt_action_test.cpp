@@ -245,7 +245,7 @@ TEST(bt_actions, bt_action)
 
   bt_action->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
-  rclcpp::executors::MultiThreadedExecutor exe;
+  rclcpp::experimental::executors::EventsExecutor exe;
   exe.add_node(bt_action->get_node_base_interface());
   exe.add_node(lc_node->get_node_base_interface());
 
@@ -282,7 +282,7 @@ TEST(bt_actions, cancel_bt_action)
 
   bt_action->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
-  rclcpp::executors::MultiThreadedExecutor exe;
+  rclcpp::experimental::executors::EventsExecutor exe;
   exe.add_node(bt_action->get_node_base_interface());
   exe.add_node(lc_node->get_node_base_interface());
 

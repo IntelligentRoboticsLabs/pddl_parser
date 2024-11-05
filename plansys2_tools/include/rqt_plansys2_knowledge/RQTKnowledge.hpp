@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #ifndef RQT_PLANSYS2_KNOWLEDGE__RQTKNOWLEDGE_HPP_
 #define RQT_PLANSYS2_KNOWLEDGE__RQTKNOWLEDGE_HPP_
 
 #include <ui_rqt_plansys2_knowledge.h>
-#include <rqt_gui_cpp/plugin.h>
-
 
 #include <QAction>
 #include <QImage>
@@ -29,6 +28,8 @@
 
 #include <map>
 #include <memory>
+
+#include "rqt_gui_cpp/plugin.hpp"
 
 #include "rqt_plansys2_knowledge/KnowledgeTree.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"

@@ -33,7 +33,7 @@ TEST(lifecycle_manager, lf_client)
   auto test_node = rclcpp_lifecycle::LifecycleNode::make_shared("test");
   auto client_node = std::make_shared<plansys2::LifecycleServiceClient>("mng_client", "test");
 
-  auto exe = rclcpp::executors::SingleThreadedExecutor::make_shared();
+  auto exe = rclcpp::experimental::executors::EventsExecutor::make_shared();
   exe->add_node(test_node->get_node_base_interface());
   exe->add_node(client_node->get_node_base_interface());
 
@@ -97,7 +97,7 @@ TEST(lifecycle_manager, lf_startup)
   manager_nodes["executor"] = std::make_shared<plansys2::LifecycleServiceClient>(
     "domain_expert_lc_mngr", "executor");
 
-  rclcpp::executors::SingleThreadedExecutor exe;
+  rclcpp::experimental::executors::EventsExecutor exe;
   for (auto & manager_node : manager_nodes) {
     manager_node.second->init();
     exe.add_node(manager_node.second);

@@ -54,7 +54,7 @@ TEST(test_2, test_2)
   domain_node->set_parameter({"model_file", pkgpath + "/test_2/pddl/test_2.pddl"});
   problem_node->set_parameter({"model_file", pkgpath + "/test_2/pddl/test_2.pddl"});
 
-  rclcpp::executors::MultiThreadedExecutor exe(rclcpp::ExecutorOptions(), 8);
+  rclcpp::experimental::executors::EventsExecutor exe;
 
   exe.add_node(domain_node->get_node_base_interface());
   exe.add_node(problem_node->get_node_base_interface());
