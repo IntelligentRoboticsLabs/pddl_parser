@@ -67,17 +67,15 @@ WAIT_PREV_ACTIONS
 bool
 SimpleBTBuilder::is_action_executable(
   const ActionStamped & action,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions) const
+  const plansys2::State & state) const
 {
   if (action.action.is_action()) {
-    return check(action.action.get_overall_requirements(), instances, predicates, functions);
+    return plansys2::check(action.action.get_overall_requirements(), state);
   }
 
-  return check(action.action.get_at_start_requirements(), instances, predicates, functions) &&
-         check(action.action.get_at_end_requirements(), instances, predicates, functions) &&
-         check(action.action.get_overall_requirements(), instances, predicates, functions);
+  return plansys2::check(action.action.get_at_start_requirements(), state) &&
+         plansys2::check(action.action.get_at_end_requirements(), state) &&
+         plansys2::check(action.action.get_overall_requirements(), state);
 }
 
 ActionNode::Ptr
@@ -93,21 +91,19 @@ SimpleBTBuilder::get_node_satisfy(
   ActionNode::Ptr ret = nullptr;
 
   // Get the state prior to applying the effects
-  auto instances = node->instances;
-  auto predicates = node->predicates;
-  auto functions = node->functions;
+  plansys2::State state = node->state;
 
   // Is the requirement satisfied before applying the effects?
-  bool satisfied_before = check(requirement, instances, predicates, functions);
+  bool satisfied_before = plansys2::check(requirement, state);
 
   // Apply the effects
   if (node->action.action.is_durative_action()) {
-    apply(node->action.action.get_at_start_effects(), instances, predicates, functions);
+    plansys2::apply(node->action.action.get_at_start_effects(), state);
   }
-  apply(node->action.action.get_at_end_effects(), instances, predicates, functions);
+  plansys2::apply(node->action.action.get_at_end_effects(), state);
 
   // Is the requirement satisfied after applying the effects?
-  bool satisfied_after = check(requirement, instances, predicates, functions);
+  bool satisfied_after = plansys2::check(requirement, state);
 
   if (satisfied_after && !satisfied_before) {
     ret = node;
@@ -136,19 +132,17 @@ SimpleBTBuilder::get_node_contradict(
   }
 
   // Get the state prior to applying the effects
-  auto predicates = node->predicates;
-  auto functions = node->functions;
-  auto instances = node->instances;
+  auto state = node->state;
 
   // Are all of the requirements satisfied?
-  if (is_action_executable(current->action, instances, predicates, functions)) {
+  if (is_action_executable(current->action, state)) {
     // Apply the effects
     if (current->action.action.is_durative_action()) {
-      apply(current->action.action.get_at_start_effects(), instances, predicates, functions);
+      plansys2::apply(current->action.action.get_at_start_effects(), state);
     }
 
     // Look for a contradiction
-    if (!is_action_executable(node->action, instances, predicates, functions)) {
+    if (!is_action_executable(node->action, state)) {
       contradictions.push_back(node);
     }
   }
@@ -162,22 +156,18 @@ SimpleBTBuilder::get_node_contradict(
 bool
 SimpleBTBuilder::is_parallelizable(
   const plansys2::ActionStamped & action,
-  const std::unordered_set<plansys2::Instance> & instances,
-  const std::unordered_set<plansys2::Predicate> & predicates,
-  const std::vector<plansys2::Function> & functions,
+  const plansys2::State & state,
   const std::list<ActionNode::Ptr> & nodes) const
 {
   // Apply the "at start" effects of the new action.
-  auto insts = instances;
-  auto preds = predicates;
-  auto funcs = functions;
+  auto temp_state = state;
   if (action.action.is_durative_action()) {
-    apply(action.action.get_at_start_effects(), insts, preds, funcs);
+    plansys2::apply(action.action.get_at_start_effects(), temp_state);
   }
 
   // Check the requirements of the actions in the input set.
   for (const auto & other : nodes) {
-    if (!is_action_executable(other->action, insts, preds, funcs)) {
+    if (!is_action_executable(other->action, temp_state)) {
       return false;
     }
   }
@@ -185,16 +175,14 @@ SimpleBTBuilder::is_parallelizable(
   // Apply the effects of the actions in the input set one at a time.
   for (const auto & other : nodes) {
     // Apply the "at start" effects of the action.
-    insts = instances;
-    preds = predicates;
-    funcs = functions;
+    temp_state = state;
 
     if (other->action.action.is_durative_action()) {
-      apply(other->action.action.get_at_start_effects(), insts, preds, funcs);
+      plansys2::apply(other->action.action.get_at_start_effects(), temp_state);
     }
 
     // Check the requirements of the new action.
-    if (!is_action_executable(action, insts, preds, funcs)) {
+    if (!is_action_executable(action, temp_state)) {
       return false;
     }
   }
@@ -236,9 +224,7 @@ SimpleBTBuilder::get_node_contradict(
 std::list<ActionNode::Ptr>
 SimpleBTBuilder::get_roots(
   std::vector<plansys2::ActionStamped> & action_sequence,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
+  const plansys2::State & state,
   int & node_counter)
 {
   std::list<ActionNode::Ptr> ret;
@@ -246,16 +232,14 @@ SimpleBTBuilder::get_roots(
   auto it = action_sequence.begin();
   while (it != action_sequence.end()) {
     const auto & action = *it;
-    if (is_action_executable(action, instances, predicates, functions) &&
-      is_parallelizable(action, instances, predicates, functions, ret))
+    if (is_action_executable(action, state) &&
+      is_parallelizable(action, state, ret))
     {
       auto new_root = ActionNode::make_shared();
       new_root->action = action;
       new_root->node_num = node_counter++;
       new_root->level_num = 0;
-      new_root->instances = instances;
-      new_root->predicates = predicates;
-      new_root->functions = functions;
+      new_root->state = state;
 
       ret.push_back(new_root);
       it = action_sequence.erase(it);
@@ -270,13 +254,11 @@ SimpleBTBuilder::get_roots(
 void
 SimpleBTBuilder::remove_existing_requirements(
   std::vector<plansys2_msgs::msg::Tree> & requirements,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions) const
+  const plansys2::State & state) const
 {
   auto it = requirements.begin();
   while (it != requirements.end()) {
-    if (check(*it, instances, predicates, functions)) {
+    if (plansys2::check(*it, state)) {
       it = requirements.erase(it);
     } else {
       ++it;
@@ -323,18 +305,16 @@ void
 SimpleBTBuilder::get_state(
   const ActionNode::Ptr & node,
   std::list<ActionNode::Ptr> & used_nodes,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions) const
+  plansys2::State & state) const
 {
   // Traverse graph to the root
   for (auto & in : node->in_arcs) {
     if (std::find(used_nodes.begin(), used_nodes.end(), in) == used_nodes.end()) {
-      get_state(in, used_nodes, instances, predicates, functions);
+      get_state(in, used_nodes, state);
       if (in->action.action.is_durative_action()) {
-        apply(in->action.action.get_at_start_effects(), instances, predicates, functions);
+        plansys2::apply(in->action.action.get_at_start_effects(), state);
       }
-      apply(in->action.action.get_at_end_effects(), instances, predicates, functions);
+      plansys2::apply(in->action.action.get_at_end_effects(), state);
       used_nodes.push_back(in);
     }
   }
@@ -398,12 +378,10 @@ SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
   auto graph = ActionGraph::make_shared();
 
   auto action_sequence = get_plan_actions(current_plan);
-  auto instances = problem_client_->getInstances();
-  auto predicates = problem_client_->getPredicates();
-  auto functions = problem_client_->getFunctions();
+  auto state = problem_client_->getState();
 
   // Get root actions that can be run in parallel
-  graph->roots = get_roots(action_sequence, instances, predicates, functions, node_counter);
+  graph->roots = get_roots(action_sequence, state, node_counter);
 
   // Build the rest of the graph
   while (!action_sequence.empty()) {
@@ -467,17 +445,14 @@ SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
     // Compute the state up to the new node
     // The effects of the new node are not applied
     std::list<ActionNode::Ptr> used_nodes;
-    instances = problem_client_->getInstances();
-    predicates = problem_client_->getPredicates();
-    functions = problem_client_->getFunctions();
-    get_state(new_node, used_nodes, instances, predicates, functions);
-    new_node->instances = instances;
-    new_node->predicates = predicates;
-    new_node->functions = functions;
+    state = problem_client_->getState();
+
+    get_state(new_node, used_nodes, state);
+    new_node->state = state;
 
     // Check any requirements that do not have satisfying nodes.
     // These should be satisfied by the initial state.
-    remove_existing_requirements(requirements, instances, predicates, functions);
+    remove_existing_requirements(requirements, state);
     for (const auto & req : requirements) {
       std::cerr << "[ERROR] requirement not met: [" <<
         parser::pddl::toString(req) << "]" << std::endl;
