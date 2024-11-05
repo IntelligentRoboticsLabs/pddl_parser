@@ -33,6 +33,10 @@
   (inferred-exists-another-drone ?r)
 );; end Predicates ;;;;;;;;;;;;;;;;;;;;
 
+(:functions
+  (battery_level ?r - robot)
+)
+
 ;; Derived predicates ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (:derived (inferred-robot_at ?r - robot ?ro - room)
   (and

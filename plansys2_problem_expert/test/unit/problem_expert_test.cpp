@@ -124,8 +124,8 @@ TEST(problem_expert, add_functions)
     problem_expert.getProblem(),
     std::string("( define ( problem problem_1 )\n( :domain simple )\n") +
     std::string("( :objects\n\tbedroom - room\n\tkitchen - room_with_teleporter\n)\n") +
-    std::string("( :init\n\t( = ( room_distance bedroom kitchen ) 1.2300000000 )\n") +
-    std::string("\t( = ( room_distance kitchen bedroom ) 2.3400000000 )\n)\n") +
+    std::string("( :init\n\t( = ( room_distance kitchen bedroom ) 2.3400000000 )\n") +
+    std::string("\t( = ( room_distance bedroom kitchen ) 1.2300000000 )\n)\n") +
     std::string("( :goal\n\t( and\n\t))\n)\n"));
 
   function_2.value = 3.45;
@@ -136,8 +136,8 @@ TEST(problem_expert, add_functions)
     problem_expert.getProblem(),
     std::string("( define ( problem problem_1 )\n( :domain simple )\n") +
     std::string("( :objects\n\tbedroom - room\n\tkitchen - room_with_teleporter\n)\n") +
-    std::string("( :init\n\t( = ( room_distance bedroom kitchen ) 1.2300000000 )\n") +
-    std::string("\t( = ( room_distance kitchen bedroom ) 3.4500000000 )\n)\n") +
+    std::string("( :init\n\t( = ( room_distance kitchen bedroom ) 3.4500000000 )\n") +
+    std::string("\t( = ( room_distance bedroom kitchen ) 1.2300000000 )\n)\n") +
     std::string("( :goal\n\t( and\n\t))\n)\n"));
 
   plansys2_msgs::msg::Node function_3;
@@ -342,7 +342,7 @@ TEST(problem_expert, addget_functions)
   ASSERT_TRUE(problem_expert.addInstance(parser::pddl::fromStringParam("wp1", "waypoint")));
   ASSERT_TRUE(problem_expert.addInstance(parser::pddl::fromStringParam("wp2", "waypoint")));
 
-  std::vector<plansys2::Function> functions = problem_expert.getFunctions();
+  std::unordered_set<plansys2::Function> functions = problem_expert.getFunctions();
   ASSERT_TRUE(functions.empty());
 
   ASSERT_TRUE(problem_expert.addFunction(function_1));
@@ -704,31 +704,33 @@ TEST(problem_expert, exist_predicate)
     (std::istreambuf_iterator<char>(problem_ifs)), std::istreambuf_iterator<char>());
   ASSERT_TRUE(problem_expert.addProblem(problem_str));
 
+  problem_expert.updateInferredPredicates();
   ASSERT_TRUE(
     problem_expert.existPredicate(parser::pddl::fromStringPredicate("(robot_at leia kitchen)")));
   ASSERT_TRUE(
-    problem_expert.existPredicate(
+    problem_expert.existInferredPredicate(
       parser::pddl::fromStringPredicate("(inferred-robot_at leia kitchen)")));
   ASSERT_TRUE(
     problem_expert.existPredicate(parser::pddl::fromStringPredicate("(person_at jack bedroom)")));
   ASSERT_TRUE(
-    problem_expert.existPredicate(
+    problem_expert.existInferredPredicate(
       parser::pddl::fromStringPredicate("(inferred-person_at jack bedroom)")));
   ASSERT_FALSE(
-    problem_expert.existPredicate(
+    problem_expert.existInferredPredicate(
       parser::pddl::fromStringPredicate("(inferred-person_at jack kitchen)")));
   ASSERT_FALSE(
-    problem_expert.existPredicate(
+    problem_expert.existInferredPredicate(
       parser::pddl::fromStringPredicate("(inferred-robot_at leia bedroom)")));
 
   problem_expert.removePredicate(parser::pddl::fromStringPredicate("(robot_at leia kitchen)"));
   problem_expert.removePredicate(parser::pddl::fromStringPredicate("(person_at jack bedroom)"));
+  problem_expert.updateInferredPredicates();
 
   ASSERT_FALSE(
-    problem_expert.existPredicate(
+    problem_expert.existInferredPredicate(
       parser::pddl::fromStringPredicate("(inferred-person_at jack bedroom)")));
   ASSERT_FALSE(
-    problem_expert.existPredicate(
+    problem_expert.existInferredPredicate(
       parser::pddl::fromStringPredicate("(inferred-robot_at leia kitchen)")));
   ASSERT_FALSE(
     problem_expert.existPredicate(parser::pddl::fromStringPredicate("(person_at jack bedroom)")));
@@ -751,7 +753,7 @@ TEST(problem_expert, get_predicate_with_derived)
     (std::istreambuf_iterator<char>(problem_ifs)), std::istreambuf_iterator<char>());
   ASSERT_TRUE(problem_expert.addProblem(problem_str));
 
-  auto predicates = problem_expert.getPredicates();
+  auto predicates = problem_expert.getInferredPredicates();
 
   ASSERT_TRUE(
     predicates.find(parser::pddl::fromStringPredicate("(inferred-robot_at leia kitchen)")) !=
@@ -837,7 +839,7 @@ TEST(problem_expert, get_predicate_with_derived)
   ASSERT_TRUE(
     problem_expert.removePredicate(parser::pddl::fromStringPredicate("(person_at jack bedroom)")));
 
-  predicates = problem_expert.getPredicates();
+  predicates = problem_expert.getInferredPredicates();
 
   ASSERT_FALSE(
     predicates.find(parser::pddl::fromStringPredicate("(inferred-person_at jack bedroom)")) !=
