@@ -59,28 +59,26 @@ plansys2_msgs::msg::Node::SharedPtr Ground::getTree(
   node->name = name;
   for (unsigned i = 0; i < params.size(); ++i) {
     plansys2_msgs::msg::Param param;
-    if (i < replace.size() && params[i] < replace.size()) {
-      if (params[i] >= 0) {
+    int param_index = params[i];
+    bool is_variable = (param_index >= 0);
+
+    if (is_variable) {
+      if (i < replace.size() && param_index < replace.size()) {
         // param has a variable value; replace by action-args
         param.name = replace[params[i]];
-      } else {  // param has a constant value; retrive from domain::type[t_i]::constants[c_i]
-        int type_idx = lifted->params[i];  // idx of the type of this param [ref: d.type]
-        int constant_idx =
-          (-1 * params[i]) - 1;  // idx of the constant value [ref: d.type.constant]
-        param.name = d.types[type_idx]->constants[constant_idx];  // the actual constant value
+      } else if (!d.types[lifted->params[i]]->object(params[i]).first.empty()) {
+        param.name = d.types[lifted->params[i]]->object(params[i]).first;
+      } else {
+        param.name = "?" + std::to_string(params[i]);
       }
-    } else if ( // NOLINT
-      params[i] >= 0 && d.types[lifted->params[i]]->object(params[i]).first != std::string(""))
-    {
-      std::pair<std::string, int> c = d.types[lifted->params[i]]->object(params[i]);
-      param.name = d.types[lifted->params[i]]->object(params[i]).first;
-    } else if (params[i] < 0) {
-      int type_idx = lifted->params[i];         // idx of the type of this param [ref: d.type]
-      int constant_idx = (-1 * params[i]) - 1;  // idx of the constant value [ref: d.type.constant]
-      param.name = d.types[type_idx]->constants[constant_idx];  // the actual constant value
     } else {
-      param.name = "?" + std::to_string(params[i]);
+      // param has a constant value; retrive from domain::type[t_i]::constants[c_i]
+      int type_idx = lifted->params[i];  // idx of the type of this param [ref: d.type]
+      int constant_idx =
+        (-1 * params[i]) - 1;  // idx of the constant value [ref: d.type.constant]
+      param.name = d.types[type_idx]->constants[constant_idx];  // the actual constant value
     }
+
     param.type = d.types[lifted->params[i]]->name;
     node->parameters.push_back(param);
   }

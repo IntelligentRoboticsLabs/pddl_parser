@@ -1113,6 +1113,9 @@ std::vector<uint32_t> getSubtreeIds(const plansys2_msgs::msg::Tree & tree)
     case plansys2_msgs::msg::Node::AND: {
         return tree.nodes.front().children;
       }
+    case plansys2_msgs::msg::Node::EXISTS: {
+        return tree.nodes.front().children;
+      }
     default:
       std::cerr << "getSubtreeIds: Error parsing expresion [" << toString(tree) << "]" << std::endl;
   }
@@ -1311,7 +1314,7 @@ bool checkNodeEquality(
 bool checkParamEquality(
   const plansys2_msgs::msg::Param & first, const plansys2_msgs::msg::Param & second)
 {
-  if (first.name != second.name) {
+  if (first.name.front() != '?' && second.name.front() != '?' && first.name != second.name) {
     return false;
   }
 
@@ -1336,6 +1339,14 @@ bool empty(const plansys2_msgs::msg::Tree & tree)
   }
 
   return false;
+}
+
+bool checkParamTypeEquivalence(
+  const plansys2_msgs::msg::Param & first, const plansys2_msgs::msg::Param & second)
+{
+  return first.type == "" || first.type == "object" || first.type == second.type ||
+    std::find(
+      first.sub_types.begin(), first.sub_types.end(), second.type) != first.sub_types.end();
 }
 
 }  // namespace pddl

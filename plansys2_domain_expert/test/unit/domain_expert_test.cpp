@@ -283,12 +283,12 @@ TEST(domain_expert, get_derived_predicates)
 
   plansys2::DomainExpert domain_expert(domain_str);
 
-  std::vector<plansys2::Predicate> predicates = domain_expert.getDerivedPredicates();
+  std::vector<plansys2_msgs::msg::Derived> predicates = domain_expert.getDerivedPredicates();
   std::vector<std::string> predicates_types {"inferred-robot_at", "inferred-person_at"};
 
   ASSERT_EQ(predicates.size(), predicates_types.size());
   for (unsigned i = 0; i < predicates.size(); i++) {
-    ASSERT_EQ(predicates[i].name, predicates_types[i]);
+    ASSERT_EQ(predicates[i].predicate.name, predicates_types[i]);
   }
 }
 

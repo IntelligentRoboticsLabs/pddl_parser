@@ -18,6 +18,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "plansys2_problem_expert/ProblemExpertInterface.hpp"
 #include "plansys2_core/Types.hpp"
@@ -34,6 +35,7 @@
 #include "plansys2_msgs/srv/get_problem_goal.hpp"
 #include "plansys2_msgs/srv/get_problem_instance_details.hpp"
 #include "plansys2_msgs/srv/get_problem_instances.hpp"
+#include "plansys2_msgs/srv/get_problem_state.hpp"
 #include "plansys2_msgs/srv/get_node_details.hpp"
 #include "plansys2_msgs/srv/get_states.hpp"
 #include "plansys2_msgs/srv/is_problem_goal_satisfied.hpp"
@@ -50,23 +52,26 @@ class ProblemExpertClient : public ProblemExpertInterface
 public:
   ProblemExpertClient();
 
-  std::vector<plansys2::Instance> getInstances();
+  std::unordered_set<plansys2::Instance> getInstances();
   bool addInstance(const plansys2::Instance & instance);
   bool removeInstance(const plansys2::Instance & instance);
   std::optional<plansys2::Instance> getInstance(const std::string & name);
 
-  std::vector<plansys2::Predicate> getPredicates();
+  std::unordered_set<plansys2::Predicate> getInferredPredicates();
+  std::unordered_set<plansys2::Predicate> getPredicates();
   bool addPredicate(const plansys2::Predicate & predicate);
   bool removePredicate(const plansys2::Predicate & predicate);
   bool existPredicate(const plansys2::Predicate & predicate);
   std::optional<plansys2::Predicate> getPredicate(const std::string & predicate);
 
-  std::vector<plansys2::Function> getFunctions();
+  std::unordered_set<plansys2::Function> getFunctions();
   bool addFunction(const plansys2::Function & function);
   bool removeFunction(const plansys2::Function & function);
   bool existFunction(const plansys2::Function & function);
   bool updateFunction(const plansys2::Function & function);
   std::optional<plansys2::Function> getFunction(const std::string & function);
+
+  plansys2::State getState();
 
   plansys2::Goal getGoal();
   bool setGoal(const plansys2::Goal & goal);
@@ -93,6 +98,8 @@ private:
     add_problem_function_client_;
   rclcpp::Client<plansys2_msgs::srv::GetProblemGoal>::SharedPtr
     get_problem_goal_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetProblemState>::SharedPtr
+    get_problem_state_client_;
   rclcpp::Client<plansys2_msgs::srv::GetProblemInstanceDetails>::SharedPtr
     get_problem_instance_details_client_;
   rclcpp::Client<plansys2_msgs::srv::GetProblemInstances>::SharedPtr
@@ -101,6 +108,8 @@ private:
     get_problem_predicate_details_client_;
   rclcpp::Client<plansys2_msgs::srv::GetStates>::SharedPtr
     get_problem_predicates_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetStates>::SharedPtr
+    get_problem_inferred_predicates_client_;
   rclcpp::Client<plansys2_msgs::srv::GetNodeDetails>::SharedPtr
     get_problem_function_details_client_;
   rclcpp::Client<plansys2_msgs::srv::GetStates>::SharedPtr

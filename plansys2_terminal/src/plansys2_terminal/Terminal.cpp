@@ -443,11 +443,11 @@ Terminal::process_get_model(std::vector<std::string> & command, std::ostringstre
         os << "\t" << predicate.name << std::endl;
       }
     } else if (command[0] == "deriveds") {
-      auto predicates = domain_client_->getDerivedPredicates();
+      auto derived_predicates = domain_client_->getDerivedPredicates();
 
-      os << "Derived predicates: " << predicates.size() << std::endl;
-      for (const auto & predicate : predicates) {
-        os << "\t" << predicate.name << std::endl;
+      os << "Derived predicates: " << derived_predicates.size() << std::endl;
+      for (const auto & derived : derived_predicates) {
+        os << "\t" << derived.predicate.name << std::endl;
       }
     } else if (command[0] == "functions") {
       auto functions = domain_client_->getFunctions();

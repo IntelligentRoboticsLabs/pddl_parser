@@ -91,7 +91,7 @@ public:
   /**
    * \return The vector containing the derived predicates.
    */
-  virtual std::vector<plansys2::Predicate> getDerivedPredicates() = 0;
+  virtual std::vector<plansys2_msgs::msg::Derived> getDerivedPredicates() = 0;
 
   /// Get the details of a derived predicate existing in the domain.
   /**

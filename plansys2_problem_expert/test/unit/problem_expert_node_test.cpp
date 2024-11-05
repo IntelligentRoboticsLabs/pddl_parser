@@ -89,9 +89,9 @@ TEST(problem_expert_node, addget_instances)
 
   ASSERT_EQ(knowledge_msg_counter, 4u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 3u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "Paco");
+  ASSERT_EQ(last_knowledge_msg.instances[0], "kitchen");
   ASSERT_EQ(last_knowledge_msg.instances[1], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "kitchen");
+  ASSERT_EQ(last_knowledge_msg.instances[2], "Paco");
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 0);
   ASSERT_EQ(last_knowledge_msg.goal, "");
 
@@ -107,31 +107,26 @@ TEST(problem_expert_node, addget_instances)
 
   ASSERT_EQ(knowledge_msg_counter, 5u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 4u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "Paco");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[3], "r2d2");
+  ASSERT_EQ(last_knowledge_msg.instances[0], "r2d2");
+  ASSERT_EQ(last_knowledge_msg.instances[1], "kitchen");
+  ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
+  ASSERT_EQ(last_knowledge_msg.instances[3], "Paco");
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 0);
   ASSERT_EQ(last_knowledge_msg.goal, "");
 
-  ASSERT_EQ(problem_client->getInstances().size(), 4);
-  ASSERT_EQ(problem_client->getInstances()[0].name, "Paco");
-  ASSERT_EQ(problem_client->getInstances()[0].type, "person");
-  ASSERT_EQ(problem_client->getInstances()[1].name, "bedroom");
-  ASSERT_EQ(problem_client->getInstances()[1].type, "room");
-  ASSERT_EQ(problem_client->getInstances()[2].name, "kitchen");
-  ASSERT_EQ(problem_client->getInstances()[2].type, "room");
-  ASSERT_EQ(problem_client->getInstances()[3].name, "r2d2");
-  ASSERT_EQ(problem_client->getInstances()[3].type, "robot");
+  auto instances = problem_client->getInstances();
+  ASSERT_EQ(instances.size(), 4);
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("Paco", "person")) != instances.end());
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("bedroom", "room")) != instances.end());
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("kitchen", "room")) != instances.end());
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("r2d2", "robot")) != instances.end());
 
   ASSERT_TRUE(problem_client->removeInstance(plansys2::Instance("Paco", "person")));
-  ASSERT_EQ(problem_client->getInstances().size(), 3);
-  ASSERT_EQ(problem_client->getInstances()[0].name, "bedroom");
-  ASSERT_EQ(problem_client->getInstances()[0].type, "room");
-  ASSERT_EQ(problem_client->getInstances()[1].name, "kitchen");
-  ASSERT_EQ(problem_client->getInstances()[1].type, "room");
-  ASSERT_EQ(problem_client->getInstances()[2].name, "r2d2");
-  ASSERT_EQ(problem_client->getInstances()[2].type, "robot");
+  instances = problem_client->getInstances();
+  ASSERT_EQ(instances.size(), 3);
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("bedroom", "room")) != instances.end());
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("kitchen", "room")) != instances.end());
+  ASSERT_TRUE(instances.find(parser::pddl::fromStringParam("r2d2", "robot")) != instances.end());
 
   {
     rclcpp::Rate rate(10);
@@ -143,9 +138,9 @@ TEST(problem_expert_node, addget_instances)
 
   ASSERT_EQ(knowledge_msg_counter, 6u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 3u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "bedroom");
+  ASSERT_EQ(last_knowledge_msg.instances[0], "r2d2");
   ASSERT_EQ(last_knowledge_msg.instances[1], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "r2d2");
+  ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 0);
   ASSERT_EQ(last_knowledge_msg.goal, "");
 
@@ -175,12 +170,22 @@ TEST(problem_expert_node, addget_instances)
 
   ASSERT_EQ(knowledge_msg_counter, 8u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 3u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "r2d2");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "r2d2")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "kitchen")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "bedroom")
+    != last_knowledge_msg.instances.end());
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 2u);
-  ASSERT_EQ(last_knowledge_msg.predicates[0], "(robot_at r2d2 bedroom)");
-  ASSERT_EQ(last_knowledge_msg.predicates[1], "(robot_at r2d2 kitchen)");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_at r2d2 bedroom)")
+    != last_knowledge_msg.predicates.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_at r2d2 kitchen)")
+    != last_knowledge_msg.predicates.end());
   ASSERT_EQ(last_knowledge_msg.goal, "");
 
   ASSERT_TRUE(problem_client->setGoal(plansys2::Goal("(and (robot_at r2d2 kitchen))")));
@@ -194,12 +199,22 @@ TEST(problem_expert_node, addget_instances)
   }
 
   ASSERT_EQ(knowledge_msg_counter, 9u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "r2d2");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "r2d2")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "kitchen")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "bedroom")
+    != last_knowledge_msg.instances.end());
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 2u);
-  ASSERT_EQ(last_knowledge_msg.predicates[0], "(robot_at r2d2 bedroom)");
-  ASSERT_EQ(last_knowledge_msg.predicates[1], "(robot_at r2d2 kitchen)");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_at r2d2 bedroom)")
+    != last_knowledge_msg.predicates.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_at r2d2 kitchen)")
+    != last_knowledge_msg.predicates.end());
   ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_at r2d2 kitchen))");
 
   ASSERT_TRUE(problem_client->clearKnowledge());
@@ -629,11 +644,11 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
 
   ASSERT_EQ(knowledge_msg_counter, 5u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 5u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "leia");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "Jack");
+  ASSERT_EQ(last_knowledge_msg.instances[0], "m1");
+  ASSERT_EQ(last_knowledge_msg.instances[1], "kitchen");
   ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[3], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[4], "m1");
+  ASSERT_EQ(last_knowledge_msg.instances[3], "Jack");
+  ASSERT_EQ(last_knowledge_msg.instances[4], "leia");
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 0);
   ASSERT_EQ(last_knowledge_msg.goal, "");
 
@@ -658,14 +673,28 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
 
   ASSERT_EQ(knowledge_msg_counter, 8u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 5u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "leia");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "Jack");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[3], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[4], "m1");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "m1")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "kitchen")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "bedroom")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "Jack")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "leia")
+    != last_knowledge_msg.instances.end());
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 2u);
-  ASSERT_EQ(last_knowledge_msg.predicates[0], "(robot_at leia kitchen)");
-  ASSERT_EQ(last_knowledge_msg.predicates[1], "(person_at Jack bedroom)");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_at leia kitchen)")
+    != last_knowledge_msg.predicates.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(person_at Jack bedroom)")
+    != last_knowledge_msg.predicates.end());
   ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_talk leia m1 Jack))");
 
   ASSERT_TRUE(
@@ -675,15 +704,31 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
 
   ASSERT_EQ(knowledge_msg_counter, 9u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 5u);
-  ASSERT_EQ(last_knowledge_msg.instances[0], "leia");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "Jack");
-  ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
-  ASSERT_EQ(last_knowledge_msg.instances[3], "kitchen");
-  ASSERT_EQ(last_knowledge_msg.instances[4], "m1");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "m1")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "kitchen")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "bedroom")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "Jack")
+    != last_knowledge_msg.instances.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.instances.begin(), last_knowledge_msg.instances.end() , "leia")
+    != last_knowledge_msg.instances.end());
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 3u);
-  ASSERT_EQ(last_knowledge_msg.predicates[0], "(robot_at leia kitchen)");
-  ASSERT_EQ(last_knowledge_msg.predicates[1], "(person_at Jack bedroom)");
-  ASSERT_EQ(last_knowledge_msg.predicates[2], "(robot_talk leia m1 Jack)");
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_at leia kitchen)")
+    != last_knowledge_msg.predicates.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(robot_talk leia m1 Jack)")
+    != last_knowledge_msg.predicates.end());
+  ASSERT_TRUE(
+    std::find(last_knowledge_msg.predicates.begin(), last_knowledge_msg.predicates.end() , "(person_at Jack bedroom)")
+    != last_knowledge_msg.predicates.end());
   ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_talk leia m1 Jack))");
 
   finish = true;

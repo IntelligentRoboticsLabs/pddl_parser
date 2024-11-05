@@ -24,6 +24,7 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <unordered_set>
 #include <vector>
 
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
@@ -37,7 +38,8 @@ namespace plansys2
 
 struct StateVec
 {
-  std::vector<plansys2::Predicate> predicates;
+  std::unordered_set<plansys2::Instance> instances;
+  std::unordered_set<plansys2::Predicate> predicates;
   std::vector<plansys2::Function> functions;
 };
 
@@ -75,7 +77,7 @@ protected:
     const std::set<int> & happenings,
     const std::multimap<int, ActionStamped> & plan) const;
   plansys2_msgs::msg::Tree from_state(
-    const std::vector<plansys2::Predicate> & preds,
+    const std::unordered_set<plansys2::Predicate> & preds,
     const std::vector<plansys2::Function> & funcs) const;
 
   std::vector<Node::Ptr> get_nodes(

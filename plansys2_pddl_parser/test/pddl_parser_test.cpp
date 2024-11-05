@@ -105,3 +105,20 @@ TEST(PDDLParserTestCase, exists_get_tree)
   std::string str3 = parser::pddl::toString(tree3);
   ASSERT_EQ(str3, "(exists (?1 ?2) (and (robot_at ?0 ?1)(connected ?1 ?2)))");
 }
+
+TEST(PDDLParserTestCase, check_node_equality)
+{
+  auto predicate1 = parser::pddl::fromStringPredicate("(predicate a b)");
+  auto predicate2 = parser::pddl::fromStringPredicate("(predicate a b)");
+  auto predicate3 = parser::pddl::fromStringPredicate("(predicate ?x b)");
+  auto predicate4 = parser::pddl::fromStringPredicate("(predicate a ?y)");
+  auto predicate5 = parser::pddl::fromStringPredicate("(predicate a c)");
+  auto predicate6 = parser::pddl::fromStringPredicate("(predicate ?x ?y)");
+
+  ASSERT_TRUE(parser::pddl::checkNodeEquality(predicate1, predicate2));
+  ASSERT_TRUE(parser::pddl::checkNodeEquality(predicate1, predicate3));
+  ASSERT_TRUE(parser::pddl::checkNodeEquality(predicate1, predicate4));
+  ASSERT_FALSE(parser::pddl::checkNodeEquality(predicate1, predicate5));
+  ASSERT_TRUE(parser::pddl::checkNodeEquality(predicate1, predicate6));
+  ASSERT_TRUE(parser::pddl::checkNodeEquality(predicate6, predicate1));
+}

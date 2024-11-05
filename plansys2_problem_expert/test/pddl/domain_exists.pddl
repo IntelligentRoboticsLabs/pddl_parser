@@ -14,7 +14,7 @@
 
 (:constants
  rob1 rob2 - robot
- bedroom bathroom - room
+ bathroom - room
 )
 
 (:functions

@@ -23,6 +23,7 @@
 #include <map>
 #include <utility>
 #include <tuple>
+#include <unordered_set>
 
 #include "std_msgs/msg/empty.hpp"
 
@@ -49,8 +50,7 @@ struct ActionNode
   int node_num;
   int level_num;
 
-  std::vector<plansys2::Predicate> predicates;
-  std::vector<plansys2::Function> functions;
+  plansys2::State state;
 
   std::list<ActionNode::Ptr> in_arcs;
   std::list<ActionNode::Ptr> out_arcs;
@@ -98,17 +98,25 @@ protected:
   void get_state(
     const ActionNode::Ptr & node,
     std::list<ActionNode::Ptr> & used_nodes,
-    std::vector<plansys2::Predicate> & predicates,
-    std::vector<plansys2::Function> & functions) const;
+    plansys2::State & state) const;
+
+  std::vector<plansys2_msgs::msg::Tree> check_requirements(
+    const std::vector<plansys2_msgs::msg::Tree>& requirements,
+    std::shared_ptr<plansys2::ActionGraph>& graph,
+    std::shared_ptr<plansys2::ActionNode>& new_node
+  );
+  bool check_requirement(
+    const plansys2_msgs::msg::Tree& requirement,
+    std::shared_ptr<plansys2::ActionGraph>& graph,
+    std::shared_ptr<plansys2::ActionNode>& new_node
+  );
 
   bool is_action_executable(
     const ActionStamped & action,
-    std::vector<plansys2::Predicate> & predicates,
-    std::vector<plansys2::Function> & functions) const;
+    const plansys2::State & state) const;
   std::list<ActionNode::Ptr> get_roots(
     std::vector<plansys2::ActionStamped> & action_sequence,
-    std::vector<plansys2::Predicate> & predicates,
-    std::vector<plansys2::Function> & functions,
+    const plansys2::State & state,
     int & node_counter);
   ActionNode::Ptr get_node_satisfy(
     const plansys2_msgs::msg::Tree & requirement,
@@ -127,12 +135,10 @@ protected:
     std::list<ActionNode::Ptr> & parents);
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
-    std::vector<plansys2::Predicate> & predicates,
-    std::vector<plansys2::Function> & functions) const;
+    const plansys2::State & state) const;
   bool is_parallelizable(
     const plansys2::ActionStamped & action,
-    const std::vector<plansys2::Predicate> & predicates,
-    const std::vector<plansys2::Function> & functions,
+    const plansys2::State & state,
     const std::list<ActionNode::Ptr> & ret) const;
 
   std::string get_flow_tree(

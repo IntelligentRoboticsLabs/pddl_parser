@@ -22,6 +22,7 @@
 #include <vector>
 #include <set>
 #include <utility>
+#include <unordered_set>
 
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
@@ -30,10 +31,52 @@
 namespace plansys2
 {
 
+std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyPredicate(
+  const plansys2::Predicate & predicate,
+  const std::unordered_set<plansys2::Predicate> & predicates);
+
+std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyFunction(
+  const plansys2::Function & function,
+  const std::unordered_set<plansys2::Function> & functions);
+
+void mergeParamsValuesDicts(
+  const std::map<std::string, std::string> & dict1,
+  const std::map<std::string, std::string> & dict2,
+  std::map<std::string, std::string> & dict3);
+std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
+  const std::vector<std::map<std::string, std::string>> & vector1,
+  const std::vector<std::map<std::string, std::string>> & vector2);
+std::vector<std::map<std::string, std::string>> complementParamsValuesVector(
+  const std::vector<plansys2_msgs::msg::Param> & params,
+  const std::vector<std::map<std::string, std::string>> & param_dict_vector,
+  const std::unordered_set<plansys2::Instance> & instances);
+
+std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
+  const plansys2_msgs::msg::Node & node,
+  const bool & result,
+  const std::vector<std::map<std::string, std::string>> & param_dict_vector,
+  const std::unordered_set<plansys2::Instance> & instances
+);
+
+plansys2::State solveAllDerivedPredicates(
+  const plansys2::State & state
+);
+
+plansys2::State solveDerivedPredicates(
+  const plansys2::State & state
+);
+
+plansys2::State groundPredicate(
+  plansys2::State && state,
+  const plansys2::Predicate & predicate,
+  const std::vector<std::map<std::string, std::string>> & params_values_vector
+);
+
 /// Evaluate a PDDL expression represented as a tree.
 /**
  * \param[in] node The root node of the PDDL expression.
  * \param[in] problem_client The problem expert client.
+ * \param[in] instances Current instances state.
  * \param[in] predicates Current predicates state.
  * \param[in] functions Current functions state.
  * \param[in] apply Apply result to problem expert or state.
@@ -43,29 +86,18 @@ namespace plansys2
  *         result(0) true if success
  *         result(1) truth value of boolean expression
  *         result(2) value of numeric expression
+ *         result(3) vector with the set of possible  values for the expression parameters
  */
-std::tuple<bool, bool, double> evaluate(
+std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  std::vector<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  bool apply = false,
-  bool use_state = false,
+  const plansys2::State & state,
   uint8_t node_id = 0,
   bool negate = false);
 
-std::tuple<bool, bool, double> evaluate(
+std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  bool apply = false,
-  uint32_t node_id = 0);
-
-std::tuple<bool, bool, double> evaluate(
-  const plansys2_msgs::msg::Tree & tree,
-  std::vector<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  bool apply = false,
-  uint32_t node_id = 0);
+  uint32_t node_id = 0, bool negate = false);
 
 /// Check a PDDL expression represented as a tree.
 /**
@@ -78,13 +110,12 @@ std::tuple<bool, bool, double> evaluate(
 bool check(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0);
+  uint32_t node_id = 0, bool negate = false);
 
 bool check(
   const plansys2_msgs::msg::Tree & tree,
-  std::vector<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  uint32_t node_id = 0);
+  const plansys2::State & state,
+  uint32_t node_id = 0, bool negate = false);
 
 /// Apply a PDDL expression represented as a tree.
 /**
@@ -97,13 +128,21 @@ bool check(
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0);
+  uint32_t node_id = 0, bool negate = false);
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  std::vector<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  uint32_t node_id = 0);
+  plansys2::State & state,
+  uint32_t node_id = 0, bool negate = false);
+
+bool apply(
+  const plansys2_msgs::msg::Tree & tree,
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
+  plansys2::State &state,
+  bool use_state = false,
+  uint32_t node_id = 0,
+  bool negate = false
+);
 
 /// Parse the action expression and time (optional) from an input string.
 /**
@@ -163,17 +202,6 @@ std::string get_action_name(const std::string & input);
  *   "(<name> <param_1> ... <param_n>):<time>"
  */
 std::vector<std::string> get_action_params(const std::string & action_expr);
-
-plansys2_msgs::msg::Tree replace_children_param(
-  const plansys2_msgs::msg::Tree & tree,
-  const uint8_t & node_id,
-  const std::map<std::string, std::string> & replace);
-
-void  cart_product(
-  std::vector<std::vector<std::string>> & rvvi,
-  std::vector<std::string> & rvi,
-  std::vector<std::vector<std::string>>::const_iterator me,
-  std::vector<std::vector<std::string>>::const_iterator end);
 
 }  // namespace plansys2
 

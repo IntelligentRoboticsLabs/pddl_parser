@@ -260,6 +260,7 @@ STNBTBuilder::init_graph(const plansys2_msgs::msg::Plan & plan) const
   auto action_sequence = get_plan_actions(plan);
 
   // Add a node to represent the initial state
+  auto instances = problem_client_->getInstances();
   auto predicates = problem_client_->getPredicates();
   auto functions = problem_client_->getFunctions();
 
@@ -479,6 +480,7 @@ STNBTBuilder::get_states(
   std::map<int, StateVec> states;
 
   StateVec state_vec;
+  state_vec.instances = problem_client_->getInstances();
   state_vec.predicates = problem_client_->getPredicates();
   state_vec.functions = problem_client_->getFunctions();
   states.insert(std::make_pair(-1, state_vec));
@@ -488,10 +490,12 @@ STNBTBuilder::get_states(
     for (auto iter = it.first; iter != it.second; ++iter) {
       if (iter->second.type == ActionType::START) {
         apply(
-          iter->second.action.get_at_start_effects(), state_vec.predicates, state_vec.functions);
+          iter->second.action.get_at_start_effects(),
+          state_vec.instances, state_vec.predicates, state_vec.functions);
       } else if (iter->second.type == ActionType::END) {
         apply(
-          iter->second.action.get_at_end_effects(), state_vec.predicates, state_vec.functions);
+          iter->second.action.get_at_end_effects(),
+          state_vec.instances, state_vec.predicates, state_vec.functions);
       }
     }
     states.insert(std::make_pair(time, state_vec));
@@ -502,7 +506,7 @@ STNBTBuilder::get_states(
 
 plansys2_msgs::msg::Tree
 STNBTBuilder::from_state(
-  const std::vector<plansys2::Predicate> & preds,
+  const std::unordered_set<plansys2::Predicate> & preds,
   const std::vector<plansys2::Function> & funcs) const
 {
   plansys2_msgs::msg::Tree tree;
@@ -656,7 +660,7 @@ STNBTBuilder::get_satisfy(
     auto X_1 = X_it->second;
 
     for (const auto & r : R_a) {
-      if (!check(r, X_1.predicates, X_1.functions)) {
+      if (!check(r, X_1.instances, X_1.predicates, X_1.functions)) {
         auto it = plan.equal_range(t_2);
         for (auto iter = it.first; iter != it.second; ++iter) {
           if (iter->first == action.first) {
@@ -668,10 +672,10 @@ STNBTBuilder::get_satisfy(
           auto E_k = get_effects(iter->second);
 
           auto X_hat = X_1;
-          apply(E_k, X_hat.predicates, X_hat.functions);
+          apply(E_k, X_hat.instances, X_hat.predicates, X_hat.functions);
 
           // Check if action k satisfies action i
-          if (check(r, X_hat.predicates, X_hat.functions)) {
+          if (check(r, X_hat.instances, X_hat.predicates, X_hat.functions)) {
             ret.push_back(*iter);
           }
         }
@@ -680,11 +684,12 @@ STNBTBuilder::get_satisfy(
     t_2 = t_1;
   }
 
+  auto instances = problem_client_->getInstances();
   auto predicates = problem_client_->getPredicates();
   auto functions = problem_client_->getFunctions();
 
   for (const auto & r : R_a) {
-    if (check(r, predicates, functions)) {
+    if (check(r, instances, predicates, functions)) {
       ret.push_back(*plan.begin());
     }
   }
@@ -753,11 +758,11 @@ STNBTBuilder::get_threat(
         auto E_k = get_effects(iter->second);
 
         auto X_hat = X_1_k;
-        apply(E_a, X_hat.predicates, X_hat.functions);
+        apply(E_a, X_hat.instances, X_hat.predicates, X_hat.functions);
 
         // Check if the input action threatens action k
         if (action.second.type != ActionType::OVERALL &&
-          !check(R_k, X_hat.predicates, X_hat.functions))
+          !check(R_k, X_hat.instances, X_hat.predicates, X_hat.functions))
         {
           if (t_2 != t_in) {
             ret.push_back(*iter);
@@ -770,11 +775,11 @@ STNBTBuilder::get_threat(
         }
 
         auto X_bar = X_1_a;
-        apply(E_k, X_bar.predicates, X_bar.functions);
+        apply(E_k, X_bar.instances, X_bar.predicates, X_bar.functions);
 
         // Check if action k threatens the input action
         if (iter->second.type != ActionType::OVERALL &&
-          !check(R_a, X_bar.predicates, X_bar.functions))
+          !check(R_a, X_bar.instances, X_bar.predicates, X_bar.functions))
         {
           if (t_2 != t_in) {
             ret.push_back(*iter);
@@ -821,7 +826,7 @@ STNBTBuilder::can_apply(
   auto X = state;
   auto R = get_conditions(action.second);
 
-  if (check(R, X.predicates, X.functions)) {
+  if (check(R, X.instances, X.predicates, X.functions)) {
     return true;
   }
 
@@ -842,8 +847,8 @@ STNBTBuilder::can_apply(
             }
           }
           auto E = get_effects(iter->second);
-          apply(E, state.predicates, state.functions);
-          if (check(R, state.predicates, state.functions)) {
+          apply(E, state.instances, state.predicates, state.functions);
+          if (check(R, state.instances, state.predicates, state.functions)) {
             return true;
           }
         }
@@ -869,7 +874,7 @@ STNBTBuilder::get_diff(
         return parser::pddl::checkNodeEquality(p_1, p_2);
       });
     if (it == X_2.predicates.end()) {
-      ret.predicates.push_back(p_1);
+      ret.predicates.insert(p_1);
     }
   }
 
@@ -881,7 +886,7 @@ STNBTBuilder::get_diff(
         return parser::pddl::checkNodeEquality(p_1, p_2);
       });
     if (it == X_1.predicates.end()) {
-      ret.predicates.push_back(p_2);
+      ret.predicates.insert(p_2);
     }
   }
 
@@ -919,7 +924,7 @@ STNBTBuilder::get_intersection(
         return parser::pddl::checkNodeEquality(p_1, p_2);
       });
     if (it != X_2.predicates.end()) {
-      ret.predicates.push_back(p_1);
+      ret.predicates.insert(p_1);
     }
   }
 
