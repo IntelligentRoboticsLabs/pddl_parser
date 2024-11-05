@@ -1,0 +1,5 @@
+std_msgs/Empty request
+---
+bool success
+plansys2_msgs/State state
+string error_info
