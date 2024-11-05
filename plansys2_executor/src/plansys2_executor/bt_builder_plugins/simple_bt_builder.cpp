@@ -140,6 +140,7 @@ SimpleBTBuilder::get_node_contradict(
     if (current->action.action.is_durative_action()) {
       plansys2::apply(current->action.action.get_at_start_effects(), state);
     }
+    plansys2::apply(current->action.action.get_at_end_effects(), state);
 
     // Look for a contradiction
     if (!is_action_executable(node->action, state)) {
