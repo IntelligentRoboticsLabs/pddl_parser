@@ -40,6 +40,10 @@ ProblemExpert::ProblemExpert(std::shared_ptr<DomainExpert> & domain_expert)
   state_.setDerivedPredicates(domain_expert_->getDerivedPredicates());
 }
 
+void ProblemExpert::updateInferredPredicates() {
+  state_ = std::move(solveAllDerivedPredicates(state_));
+}
+
 plansys2::State ProblemExpert::getState()
 {
   return std::move(solveAllDerivedPredicates(state_));
@@ -108,16 +112,14 @@ std::unordered_set<plansys2::Predicate> ProblemExpert::getInferredPredicates()
 
 bool ProblemExpert::addPredicate(const plansys2::Predicate & predicate)
 {
-  if (!existPredicate(predicate)) {
-    if (isValidPredicate(predicate)) {
-      state_.addPredicate(predicate);
-      return true;
-    } else {
-      return false;
-    }
-  } else {
+  if (state_.hasPredicate(predicate))
+  {
     return true;
   }
+  if (isValidPredicate(predicate)) {
+    return state_.addPredicate(predicate);
+  }
+  return false;
 }
 
 bool ProblemExpert::removePredicate(const plansys2::Predicate & predicate)
@@ -125,7 +127,7 @@ bool ProblemExpert::removePredicate(const plansys2::Predicate & predicate)
   if (!isValidPredicate(predicate)) {  // if predicate is not valid, error
     return false;
   }
-  return state_.removePredicate(predicate) == 1;
+  return state_.removePredicate(predicate);
 }
 
 std::optional<plansys2::Predicate> ProblemExpert::getPredicate(const std::string & expr)
@@ -297,7 +299,7 @@ bool ProblemExpert::setGoal(const plansys2::Goal & goal)
 
 bool ProblemExpert::isGoalSatisfied(const plansys2::Goal & goal)
 {
-  return check(goal, state_.getInstances(), state_.getPredicates(), state_.getFunctions());
+  return check(goal, std::move(solveAllDerivedPredicates(state_)));
 }
 
 bool ProblemExpert::clearGoal()
@@ -334,23 +336,12 @@ bool ProblemExpert::existInstance(const std::string & name)
 
 bool ProblemExpert::existPredicate(const plansys2::Predicate & predicate)
 {
-  bool found = state_.hasPredicate(predicate);
-  if (!found) {
-    std::vector<std::string> parameters_names;
-    std::for_each(
-      predicate.parameters.begin(), predicate.parameters.end(), [&](auto p) {
-        parameters_names.push_back(p.name);
-      });
-    auto derived_predicates = domain_expert_->getDerivedPredicate(predicate.name, parameters_names);
-    for (auto derived : derived_predicates) {
-      if (check(derived.preconditions, state_.getInstances(), state_.getPredicates(), state_.getFunctions())) {
-        found = true;
-        break;
-      }
-    }
-  }
+  return state_.hasPredicate(predicate);
+}
 
-  return found;
+bool ProblemExpert::existInferredPredicate(const plansys2::Predicate & predicate)
+{
+  return state_.hasInferredPredicate(predicate);
 }
 
 bool ProblemExpert::existFunction(const plansys2::Function & function)

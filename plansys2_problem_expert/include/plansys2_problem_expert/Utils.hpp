@@ -37,7 +37,7 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyPredicate
 
 std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyFunction(
   const plansys2::Function & function,
-  const std::vector<plansys2::Function> & functions);
+  const std::unordered_set<plansys2::Function> & functions);
 
 void mergeParamsValuesDicts(
   const std::map<std::string, std::string> & dict1,
@@ -58,23 +58,16 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
   const std::unordered_set<plansys2::Instance> & instances
 );
 
-std::unordered_set<plansys2::Predicate> solveAllDerivedPredicates(
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates
+plansys2::State solveAllDerivedPredicates(
+  const plansys2::State & state
 );
 
-std::unordered_set<plansys2::Predicate> solveDerivedPredicates(
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  const std::vector<plansys2_msgs::msg::Derived> & derived_predicates
+plansys2::State solveDerivedPredicates(
+  const plansys2::State & state
 );
 
-void groundPredicate(
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & current_predicates,
+plansys2::State groundPredicate(
+  plansys2::State && state,
   const plansys2::Predicate & predicate,
   const std::vector<std::map<std::string, std::string>> & params_values_vector
 );
@@ -97,28 +90,14 @@ void groundPredicate(
  */
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  bool apply = false,
-  bool use_state = false,
+  const plansys2::State & state,
   uint8_t node_id = 0,
   bool negate = false);
 
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  bool apply = false,
-  uint32_t node_id = 0);
-
-std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
-  const plansys2_msgs::msg::Tree & tree,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  bool apply = false,
-  uint32_t node_id = 0);
+  uint32_t node_id = 0, bool negate = false);
 
 /// Check a PDDL expression represented as a tree.
 /**
@@ -131,14 +110,12 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
 bool check(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0);
+  uint32_t node_id = 0, bool negate = false);
 
 bool check(
   const plansys2_msgs::msg::Tree & tree,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  uint32_t node_id = 0);
+  const plansys2::State & state,
+  uint32_t node_id = 0, bool negate = false);
 
 /// Apply a PDDL expression represented as a tree.
 /**
@@ -151,14 +128,21 @@ bool check(
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0);
+  uint32_t node_id = 0, bool negate = false);
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  std::unordered_set<plansys2::Instance> & instances,
-  std::unordered_set<plansys2::Predicate> & predicates,
-  std::vector<plansys2::Function> & functions,
-  uint32_t node_id = 0);
+  plansys2::State & state,
+  uint32_t node_id = 0, bool negate = false);
+
+bool apply(
+  const plansys2_msgs::msg::Tree & tree,
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
+  plansys2::State &state,
+  bool use_state = false,
+  uint32_t node_id = 0,
+  bool negate = false
+);
 
 /// Parse the action expression and time (optional) from an input string.
 /**

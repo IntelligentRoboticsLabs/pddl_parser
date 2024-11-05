@@ -33,6 +33,7 @@
 #include "plansys2_msgs/srv/get_problem_goal.hpp"
 #include "plansys2_msgs/srv/get_problem_instance_details.hpp"
 #include "plansys2_msgs/srv/get_problem_instances.hpp"
+#include "plansys2_msgs/srv/get_problem_state.hpp"
 #include "plansys2_msgs/srv/get_node_details.hpp"
 #include "plansys2_msgs/srv/get_states.hpp"
 #include "plansys2_msgs/srv/is_problem_goal_satisfied.hpp"
@@ -91,6 +92,11 @@ public:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<plansys2_msgs::srv::GetProblemGoal::Request> request,
     const std::shared_ptr<plansys2_msgs::srv::GetProblemGoal::Response> response);
+
+  void get_problem_state_service_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<plansys2_msgs::srv::GetProblemState::Request> request,
+    const std::shared_ptr<plansys2_msgs::srv::GetProblemState::Response> response);
 
   void get_problem_instance_details_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -192,6 +198,8 @@ private:
     add_problem_function_service_;
   rclcpp::Service<plansys2_msgs::srv::GetProblemGoal>::SharedPtr
     get_problem_goal_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetProblemState>::SharedPtr
+    get_problem_state_service_;
   rclcpp::Service<plansys2_msgs::srv::GetProblemInstanceDetails>::SharedPtr
     get_problem_instance_details_service_;
   rclcpp::Service<plansys2_msgs::srv::GetProblemInstances>::SharedPtr

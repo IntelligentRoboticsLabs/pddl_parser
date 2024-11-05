@@ -48,6 +48,7 @@ public:
   bool addPredicate(const plansys2::Predicate & predicate);
   bool removePredicate(const plansys2::Predicate & predicate);
   bool existPredicate(const plansys2::Predicate & predicate);
+  bool existInferredPredicate(const plansys2::Predicate & predicate);
   std::optional<plansys2::Predicate> getPredicate(const std::string & expr);
 
   std::unordered_set<plansys2::Function> getFunctions();
@@ -74,6 +75,8 @@ public:
   bool isValidPredicate(const plansys2::Predicate & predicate);
   bool isValidFunction(const plansys2::Function & function);
   bool isValidGoal(const plansys2::Goal & goal);
+
+  void updateInferredPredicates();
 
 private:
   bool checkPredicateTreeTypes(

@@ -35,6 +35,7 @@
 #include "plansys2_msgs/srv/get_problem_goal.hpp"
 #include "plansys2_msgs/srv/get_problem_instance_details.hpp"
 #include "plansys2_msgs/srv/get_problem_instances.hpp"
+#include "plansys2_msgs/srv/get_problem_state.hpp"
 #include "plansys2_msgs/srv/get_node_details.hpp"
 #include "plansys2_msgs/srv/get_states.hpp"
 #include "plansys2_msgs/srv/is_problem_goal_satisfied.hpp"
@@ -97,6 +98,8 @@ private:
     add_problem_function_client_;
   rclcpp::Client<plansys2_msgs::srv::GetProblemGoal>::SharedPtr
     get_problem_goal_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetProblemState>::SharedPtr
+    get_problem_state_client_;
   rclcpp::Client<plansys2_msgs::srv::GetProblemInstanceDetails>::SharedPtr
     get_problem_instance_details_client_;
   rclcpp::Client<plansys2_msgs::srv::GetProblemInstances>::SharedPtr

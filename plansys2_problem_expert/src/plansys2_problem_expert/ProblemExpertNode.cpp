@@ -84,6 +84,12 @@ ProblemExpertNode::ProblemExpertNode()
       &ProblemExpertNode::get_problem_goal_service_callback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
+  get_problem_state_service_ = create_service<plansys2_msgs::srv::GetProblemState>(
+    "problem_expert/get_problem_state",
+    std::bind(
+      &ProblemExpertNode::get_problem_state_service_callback, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
+
   get_problem_instance_details_service_ =
     create_service<plansys2_msgs::srv::GetProblemInstanceDetails>(
     "problem_expert/get_problem_instance",
@@ -394,6 +400,21 @@ void ProblemExpertNode::get_problem_goal_service_callback(
   } else {
     response->success = true;
     response->tree = problem_expert_->getGoal();
+  }
+}
+
+void ProblemExpertNode::get_problem_state_service_callback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<plansys2_msgs::srv::GetProblemState::Request> request,
+  const std::shared_ptr<plansys2_msgs::srv::GetProblemState::Response> response)
+{
+  if (problem_expert_ == nullptr) {
+    response->success = false;
+    response->error_info = "Requesting service in non-active state";
+    RCLCPP_WARN(get_logger(), "Requesting service in non-active state");
+  } else {
+    response->success = true;
+    response->state = problem_expert_->getState().getAsMsg();
   }
 }
 
