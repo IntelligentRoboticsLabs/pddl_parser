@@ -20,6 +20,8 @@ jobs:
         run: sudo apt-get install libfl-dev
       - name: Fix pip
         run: pip3 install empy==3.3.4; pip3 install -U colcon-common-extensions; pip3 install pyopenssl --upgrade
+      - name: Fix import error
+        run: pip3 install packaging>=24 ordered-set>=3.1.1 more_itertools>=8.8 jaraco.text>=3.7 importlib_resources>=5.10.2 importlib_metadata>=6 tomli>=2.0.1 wheel>=0.43.0 platformdirs >= 2.6.2
       - name: Setup ROS 2
         uses: ros-tooling/setup-ros@0.2.1
         with:
