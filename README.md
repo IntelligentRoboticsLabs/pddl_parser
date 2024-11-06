@@ -3,6 +3,10 @@
 ![PlanSys2 Logo](/plansys2_docs/plansys2_logo.png)
 
 [![GitHub Action
+Status](https://github.com/IntelligentRoboticsLabs/ros2_planning_system/workflows/rolling/badge.svg)](https://github.com/IntelligentRoboticsLabs/ros2_planning_system)
+[![codecov](https://codecov.io/gh/IntelligentRoboticsLabs/ros2_planning_system/rolling/graph/badge.svg)](https://codecov.io/gh/IntelligentRoboticsLabs/ros2_planning_system)
+
+[![GitHub Action
 Status](https://github.com/IntelligentRoboticsLabs/ros2_planning_system/workflows/foxy-devel/badge.svg)](https://github.com/IntelligentRoboticsLabs/ros2_planning_system)
 [![codecov](https://codecov.io/gh/IntelligentRoboticsLabs/ros2_planning_system/foxy-devel/graph/badge.svg)](https://codecov.io/gh/IntelligentRoboticsLabs/ros2_planning_system)
 
