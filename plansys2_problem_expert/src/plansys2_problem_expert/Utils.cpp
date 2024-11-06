@@ -691,41 +691,41 @@ bool apply(
     return true;
   }
 
+  bool success = true;
   const auto & current_node = tree.nodes[node_id];
   switch (current_node.node_type) {
     case plansys2_msgs::msg::Node::AND: {
-        bool success = true;
-
         for (const auto & child_id : current_node.children) {
           bool child_success = apply(
             tree, problem_client, state, use_state, child_id, negate);
           success &= child_success;
         }
-        return success;
+        break;
       }
 
     case plansys2_msgs::msg::Node::NOT: {
-        return apply(
+        success = apply(
           tree, problem_client, state, use_state,
           current_node.children[0], !negate);
+        break;
       }
 
     case plansys2_msgs::msg::Node::PREDICATE: {
-        bool success = true;
         if (use_state) {
           success &= negate ? state.removePredicate(current_node) : state.addPredicate(current_node);
         } else {
           success &= negate ? problem_client->removePredicate(current_node) :
             problem_client->addPredicate(current_node);
         }
-        state = solveAllDerivedPredicates(state);
-        return success;
+        break;
       }
     default:
+      success = false;
       std::cerr << "Apply: Error parsing expresion [" << parser::pddl::toString(tree, node_id)
                 << "]" << std::endl;
   }
-  return false;
+  state = solveAllDerivedPredicates(state);
+  return success;
 }
 
 std::pair<std::string, int> parse_action(const std::string & input)
