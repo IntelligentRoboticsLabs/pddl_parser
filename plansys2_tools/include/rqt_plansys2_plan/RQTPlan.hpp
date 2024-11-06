@@ -30,7 +30,7 @@
 #include <memory>
 #include <string>
 
-#include "rqt_gui_cpp/plugin.hpp"
+#include "rqt_gui_cpp/plugin.h"
 
 #include "rqt_plansys2_plan/PlanTree.hpp"
 

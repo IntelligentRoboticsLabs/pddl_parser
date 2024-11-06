@@ -29,7 +29,7 @@
 #include <map>
 #include <memory>
 
-#include "rqt_gui_cpp/plugin.hpp"
+#include "rqt_gui_cpp/plugin.h"
 
 #include "rqt_plansys2_knowledge/KnowledgeTree.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
