@@ -15,7 +15,7 @@ target_compile_definitions(execution_tree_test
 target_link_libraries(execution_tree_test ${PROJECT_NAME})
 ament_target_dependencies(execution_tree_test ${dependencies})
 
-ament_add_gtest(simple_btbuilder_tests simple_btbuilder_tests.cpp)
+ament_add_gtest(simple_btbuilder_tests simple_btbuilder_tests.cpp TIMEOUT 1200)
 target_compile_definitions(simple_btbuilder_tests
   PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_link_libraries(simple_btbuilder_tests ${PROJECT_NAME} bt_builder_plugins)

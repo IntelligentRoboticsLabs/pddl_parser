@@ -22,6 +22,9 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <chrono>
+
+#include "rclcpp/rclcpp.hpp"
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "behaviortree_cpp/behavior_tree.h"
@@ -119,6 +122,29 @@ public:
     const plansys2::State & state) const
   {
     SimpleBTBuilder::remove_existing_requirements(requirements, state);
+  }
+};
+
+class TestPlannerNode : public rclcpp::Node
+{
+private:
+  rclcpp::Service<plansys2_msgs::srv::ValidateDomain>::SharedPtr
+    validate_domain_service_ = create_service<plansys2_msgs::srv::ValidateDomain>(
+      "planner/validate_domain",
+      std::bind(
+        &TestPlannerNode::validate_domain_service_callback,
+        this, std::placeholders::_1, std::placeholders::_2,
+        std::placeholders::_3));
+public:
+  TestPlannerNode()
+  : Node("test_planner_node") {}
+
+  void validate_domain_service_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<plansys2_msgs::srv::ValidateDomain::Request> request,
+    const std::shared_ptr<plansys2_msgs::srv::ValidateDomain::Response> response)
+  {
+    response->success = true;
   }
 };
 
@@ -886,6 +912,150 @@ TEST(simple_btbuilder_tests, test_plan_6)
   auto tabulated_graph = btbuilder->get_graph_tabular(action_graph);
 
   std::ifstream expected_graph_ifs(pkgpath + "/test_data/elevator_graph.csv");
+
+  std::string line, word, action;
+  std::string whitespace = " \n\r\t\f\v";
+  uint32_t root_num, node_num, level_num;
+  std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>> expected_graph;
+
+  while (std::getline(expected_graph_ifs, line)) {
+    std::stringstream ss(line);
+    unsigned i = 0;
+    while (std::getline(ss, word, ',')) {
+      if (i == 0) {
+        root_num = std::stoul(word);
+      }
+      if (i == 1) {
+        node_num = std::stoul(word);
+      }
+      if (i == 2) {
+        level_num = std::stoul(word);
+      }
+      if (i == 3) {
+        action = word;
+        size_t start = action.find_first_not_of(whitespace);
+        action = (start == std::string::npos) ? "" : action.substr(start);
+        size_t end = action.find_last_not_of(whitespace);
+        action = (end == std::string::npos) ? "" : action.substr(0, end + 1);
+      }
+      i++;
+    }
+    expected_graph.push_back(std::make_tuple(root_num, node_num, level_num, action));
+  }
+
+  ASSERT_EQ(tabulated_graph.size(), expected_graph.size());
+  for (size_t i = 0; i < tabulated_graph.size(); i++) {
+    ASSERT_EQ(std::get<0>(tabulated_graph[i]), std::get<0>(expected_graph[i]));
+    ASSERT_EQ(std::get<1>(tabulated_graph[i]), std::get<1>(expected_graph[i]));
+    ASSERT_EQ(std::get<2>(tabulated_graph[i]), std::get<2>(expected_graph[i]));
+    ASSERT_EQ(std::get<3>(tabulated_graph[i]), std::get<3>(expected_graph[i]));
+  }
+
+  finish = true;
+  t.join();
+}
+
+TEST(simple_btbuilder_tests, test_plan_with_derived_existential)
+{
+  auto test_node = rclcpp::Node::make_shared("test_plan_1");
+  auto domain_node = std::make_shared<plansys2::DomainExpertNode>();
+  auto problem_node = std::make_shared<plansys2::ProblemExpertNode>();
+  auto planner_node = std::make_shared<TestPlannerNode>();
+
+  auto problem_client = std::make_shared<plansys2::ProblemExpertClient>();
+  auto domain_client = std::make_shared<plansys2::DomainExpertClient>();
+
+  auto btbuilder = std::make_shared<SimpleBTBuilderTest>();
+
+  std::string pkgpath = ament_index_cpp::get_package_share_directory("plansys2_executor");
+
+  domain_node->set_parameter({"model_file", pkgpath + "/pddl/suave_domain.pddl"});
+  domain_node->set_parameter({"validate_using_planner_node", true});
+  problem_node->set_parameter({"model_file", pkgpath + "/pddl/suave_domain.pddl"});
+  problem_node->set_parameter({"problem_file", pkgpath + "/pddl/suave_problem.pddl"});
+
+  rclcpp::executors::MultiThreadedExecutor exe(rclcpp::ExecutorOptions(), 8);
+
+  exe.add_node(domain_node->get_node_base_interface());
+  exe.add_node(problem_node->get_node_base_interface());
+  exe.add_node(planner_node->get_node_base_interface());
+
+  bool finish = false;
+  std::thread t([&]() {
+      while (!finish) {
+        exe.spin_some();
+      }
+    });
+
+  problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node->now();
+    while ((test_node->now() - start).seconds() < 0.5) {
+      rate.sleep();
+    }
+  }
+
+  domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+  problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node->now();
+    while ((test_node->now() - start).seconds() < 0.5) {
+      rate.sleep();
+    }
+  }
+
+  plansys2_msgs::msg::Plan plan;
+
+  plansys2_msgs::msg::PlanItem plan_item_0;
+  plansys2_msgs::msg::PlanItem plan_item_1;
+  plansys2_msgs::msg::PlanItem plan_item_2;
+  plansys2_msgs::msg::PlanItem plan_item_3;
+  plansys2_msgs::msg::PlanItem plan_item_4;
+  plansys2_msgs::msg::PlanItem plan_item_5;
+  plansys2_msgs::msg::PlanItem plan_item_6;
+  plan_item_0.action = "(start_robot bluerov)";
+  plan_item_0.time = 0;
+  plan_item_1.action = "(reconfigure f_maintain_motion fd_unground fd_recover_thrusters)";
+  plan_item_1.time = 0;
+  // plan_item_1.time = 1;
+  plan_item_2.action = "(reconfigure f_generate_search_path fd_unground fd_spiral_high)";
+  plan_item_2.time = 0;
+  // plan_item_2.time = 2;
+  plan_item_3.action = "(search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters)";
+  plan_item_3.time = 0;
+  // plan_item_3.time = 3;
+  plan_item_4.action = "(reconfigure f_follow_pipeline fd_unground fd_follow_pipeline)";
+  plan_item_4.time = 0;
+  // plan_item_4.time = 4;
+  plan_item_5.action = "(reconfigure f_generate_search_path fd_spiral_high fd_unground)";
+  plan_item_5.time = 0;
+  // plan_item_5.time = 5;
+  plan_item_6.action = "(inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters)";
+  // plan_item_6.time = 6;
+  plan_item_6.time = 0;
+
+  plan.items.push_back(plan_item_0);
+  plan.items.push_back(plan_item_1);
+  plan.items.push_back(plan_item_2);
+  plan.items.push_back(plan_item_3);
+  plan.items.push_back(plan_item_4);
+  plan.items.push_back(plan_item_5);
+  plan.items.push_back(plan_item_6);
+
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+  auto action_graph = btbuilder->get_graph(plan);
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+  std::cout << "\n get_graph time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]\n" << std::endl;
+  btbuilder->print_graph_csv(action_graph);
+
+  auto tabulated_graph = btbuilder->get_graph_tabular(action_graph);
+
+  std::ifstream expected_graph_ifs(pkgpath + "/test_data/suave_graph.csv");
 
   std::string line, word, action;
   std::string whitespace = " \n\r\t\f\v";

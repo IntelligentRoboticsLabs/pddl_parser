@@ -1,0 +1,21 @@
+0, 0, 0, start_robot bluerov, search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters
+0, 3, 1, search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters, reconfigure f_follow_pipeline fd_unground fd_follow_pipeline, reconfigure f_generate_search_path fd_spiral_high fd_unground, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+0, 4, 1, reconfigure f_follow_pipeline fd_unground fd_follow_pipeline, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+0, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+0, 5, 1, reconfigure f_generate_search_path fd_spiral_high fd_unground, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+0, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+0, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+1, 1, 0, reconfigure f_maintain_motion fd_unground fd_recover_thrusters, search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters
+1, 3, 1, search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters, reconfigure f_follow_pipeline fd_unground fd_follow_pipeline, reconfigure f_generate_search_path fd_spiral_high fd_unground, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+1, 4, 1, reconfigure f_follow_pipeline fd_unground fd_follow_pipeline, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+1, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+1, 5, 1, reconfigure f_generate_search_path fd_spiral_high fd_unground, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+1, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+1, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+2, 2, 0, reconfigure f_generate_search_path fd_unground fd_spiral_high, search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters
+2, 3, 1, search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters, reconfigure f_follow_pipeline fd_unground fd_follow_pipeline, reconfigure f_generate_search_path fd_spiral_high fd_unground, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+2, 4, 1, reconfigure f_follow_pipeline fd_unground fd_follow_pipeline, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+2, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+2, 5, 1, reconfigure f_generate_search_path fd_spiral_high fd_unground, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+2, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
+2, 6, 1, inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters
