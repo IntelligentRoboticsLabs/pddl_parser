@@ -667,25 +667,25 @@ bool check(
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id, bool negate)
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id, bool negate, bool derive)
 {
   plansys2::State state;
-  return apply(tree, problem_client, state, false, node_id, negate);
+  return apply(tree, problem_client, state, false, node_id, negate, derive);
 }
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree, plansys2::State & state,
-  uint32_t node_id, bool negate)
+  uint32_t node_id, bool negate, bool derive)
 {
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client;
-  return apply(tree, problem_client, state, true, node_id, negate);
+  return apply(tree, problem_client, state, true, node_id, negate, derive);
 }
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
   plansys2::State &state,
-  bool use_state, uint32_t node_id, bool negate)
+  bool use_state, uint32_t node_id, bool negate, bool derive)
 {
   if (tree.nodes.empty()) {
     return true;
@@ -724,7 +724,9 @@ bool apply(
       std::cerr << "Apply: Error parsing expresion [" << parser::pddl::toString(tree, node_id)
                 << "]" << std::endl;
   }
-  state = solveAllDerivedPredicates(state);
+  if (derive){
+    state = solveAllDerivedPredicates(state);
+  }
   return success;
 }
 

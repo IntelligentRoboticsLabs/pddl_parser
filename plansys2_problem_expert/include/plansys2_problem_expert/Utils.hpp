@@ -128,12 +128,12 @@ bool check(
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0, bool negate = false);
+  uint32_t node_id = 0, bool negate = false, bool derive=true);
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
   plansys2::State & state,
-  uint32_t node_id = 0, bool negate = false);
+  uint32_t node_id = 0, bool negate = false, bool derive=true);
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
@@ -141,7 +141,7 @@ bool apply(
   plansys2::State &state,
   bool use_state = false,
   uint32_t node_id = 0,
-  bool negate = false
+  bool negate = false, bool derive=true
 );
 
 /// Parse the action expression and time (optional) from an input string.
