@@ -197,6 +197,15 @@ public:
     derived_predicates_ = state.derived_predicates;
   }
 
+  bool operator==(const State &state) const
+  {
+    return this->instances_ == state.instances_ &&
+      this->functions_ == state.functions_ &&
+      this->predicates_ == state.predicates_ &&
+      this->inferred_predicates_ == state.inferred_predicates_ &&
+      this->derived_predicates_ == state.derived_predicates_;
+  }
+
   auto &getInstances() const { return instances_; }
   auto &getFunctions() const { return functions_; }
   auto &getPredicates() const { return predicates_; }
@@ -288,7 +297,41 @@ private:
   std::unordered_set<plansys2::Predicate> inferred_predicates_;
   std::vector<plansys2_msgs::msg::Derived> derived_predicates_;
 
+  friend struct std::hash<State>;
 };
 }  // namespace plansys2
+
+template <typename T>
+inline void hash_combine(std::size_t & seed, const T & value) {
+  seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+namespace std {
+  template <>
+  struct hash<plansys2::State> {
+    std::size_t operator()(const plansys2::State & state) const {
+      std::size_t seed = 0;
+
+      // Combine hashes of each unordered_set and vector in the State
+      for (const auto & instance : state.instances_) {
+        hash_combine(seed, instance);
+      }
+      for (const auto & function : state.functions_) {
+        hash_combine(seed, function);
+      }
+      for (const auto & predicate : state.predicates_) {
+        hash_combine(seed, predicate);
+      }
+      for (const auto & inferred_predicate : state.inferred_predicates_) {
+        hash_combine(seed, inferred_predicate);
+      }
+      for (const auto & derived_predicate : state.derived_predicates_) {
+        hash_combine(seed, static_cast<plansys2::Predicate>(derived_predicate.predicate));
+      }
+
+      return seed;
+    }
+  };
+}  // namespace std
 
 #endif  // PLANSYS2_CORE__TYPES_HPP_
