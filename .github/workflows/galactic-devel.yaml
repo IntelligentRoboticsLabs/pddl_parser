@@ -19,13 +19,13 @@ jobs:
       - name: Install popf deps
         run: sudo apt-get install libfl-dev
       - name: Fix pip
-        run: pip3 install empy==3.3.4; pip3 install -U colcon-common-extensions
+        run: python3 -m pip3 install pip3 --upgrade; pip3 install empy==3.3.4; pip3 install -U colcon-common-extensions; pip3 install pyopenssl --upgrade
       - name: Setup ROS 2
-        uses: ros-tooling/setup-ros@0.2.1
+        uses: ros-tooling/setup-ros@0.7.9
         with:
           required-ros-distributions: galactic
       - name: build and test
-        uses: ros-tooling/action-ros-ci@0.2.1
+        uses: ros-tooling/action-ros-ci@0.3.13
         with:
           package-name: plansys2_bringup plansys2_bt_actions plansys2_domain_expert plansys2_executor plansys2_lifecycle_manager plansys2_msgs plansys2_pddl_parser plansys2_planner plansys2_popf_plan_solver plansys2_problem_expert plansys2_terminal plansys2_tests plansys2_tools
           target-ros2-distro: galactic
@@ -35,7 +35,7 @@ jobs:
                 "parallel-workers" : 1
               }
             }
-          vcs-repo-file-url: https://raw.githubusercontent.com/IntelligentRoboticsLabs/ros2_planning_system/master/dependency_repos.repos
+          vcs-repo-file-url: https://raw.githubusercontent.com/IntelligentRoboticsLabs/ros2_planning_system/galactic-devel/dependency_repos.repos
           colcon-mixin-name: coverage-gcc
           colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
       - name: Codecov
