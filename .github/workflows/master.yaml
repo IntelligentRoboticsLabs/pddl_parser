@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Install popf deps
         run: sudo apt-get install libfl-dev
+      - name: Fix pip
+        run: pip3 install empy==3.3.4; pip3 install -U colcon-common-extensions
       - name: Setup ROS 2
         uses: ros-tooling/setup-ros@0.2.1
         with:
