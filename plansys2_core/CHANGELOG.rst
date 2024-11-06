@@ -2,6 +2,9 @@
 Changelog for package plansys2_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.12 (2024-10-16)
 -------------------
 * Integrated feedback, and fixes to have tests to pass

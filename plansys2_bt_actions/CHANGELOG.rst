@@ -2,6 +2,11 @@
 Changelog for package plansys2_bt_actions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Change to EventsExecutor
+* Contributors: Francisco Martín Rico
+
 2.0.12 (2024-10-16)
 -------------------
 * Remove cmake warning

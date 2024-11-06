@@ -2,6 +2,11 @@
 Changelog for package plansys2_tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Change to EventsExecutor
+* Contributors: Francisco Martín Rico
+
 2.0.12 (2024-10-16)
 -------------------
 * Bump Behaviortree.CPP v3 to v4
