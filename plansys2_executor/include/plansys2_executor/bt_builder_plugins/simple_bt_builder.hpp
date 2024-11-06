@@ -38,6 +38,25 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
+namespace std {
+  template <typename T1, typename T2>
+  struct hash<std::pair<T1, T2>> {
+    std::size_t operator()(const std::pair<T1, T2> & p) const {
+      std::size_t seed = 0;
+      hash_combine(seed, p.first);
+      hash_combine(seed, p.second);
+      return seed;
+    }
+
+  private:
+    // Hash combine function
+    template <typename T>
+    inline void hash_combine(std::size_t & seed, const T & value) const {
+      seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+  };
+} // namespace std
+
 namespace plansys2
 {
 
@@ -90,6 +109,8 @@ protected:
   std::string bt_;
   std::string bt_action_;
 
+  std::unordered_map<std::pair<std::string, plansys2::State>, plansys2::State> action_state_cache;
+
   ActionGraph::Ptr get_graph(const plansys2_msgs::msg::Plan & current_plan);
 
   std::vector<ActionStamped> get_plan_actions(const plansys2_msgs::msg::Plan & plan);
@@ -98,7 +119,7 @@ protected:
   void get_state(
     const ActionNode::Ptr & node,
     std::list<ActionNode::Ptr> & used_nodes,
-    plansys2::State & state) const;
+    plansys2::State & state);
 
   std::vector<plansys2_msgs::msg::Tree> check_requirements(
     const std::vector<plansys2_msgs::msg::Tree>& requirements,
@@ -113,7 +134,7 @@ protected:
 
   bool is_action_executable(
     const ActionStamped & action,
-    const plansys2::State & state) const;
+    const plansys2::State & state);
   std::list<ActionNode::Ptr> get_roots(
     std::vector<plansys2::ActionStamped> & action_sequence,
     const plansys2::State & state,
@@ -135,11 +156,14 @@ protected:
     std::list<ActionNode::Ptr> & parents);
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
-    const plansys2::State & state) const;
+    const plansys2::State & state);
   bool is_parallelizable(
     const plansys2::ActionStamped & action,
     const plansys2::State & state,
-    const std::list<ActionNode::Ptr> & ret) const;
+    const std::list<ActionNode::Ptr> & ret);
+  void apply_action_to_state(
+    const plansys2::ActionStamped & action,
+    plansys2::State & state);
 
   std::string get_flow_tree(
     ActionNode::Ptr node,
@@ -178,7 +202,6 @@ protected:
 };
 
 }  // namespace plansys2
-
 
 #include "pluginlib/class_list_macros.hpp"
 

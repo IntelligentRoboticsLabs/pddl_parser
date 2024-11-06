@@ -67,7 +67,7 @@ WAIT_PREV_ACTIONS
 bool
 SimpleBTBuilder::is_action_executable(
   const ActionStamped & action,
-  const plansys2::State & state) const
+  const plansys2::State & state)
 {
   if (action.action.is_action()) {
     return plansys2::check(action.action.get_overall_requirements(), state);
@@ -97,10 +97,7 @@ SimpleBTBuilder::get_node_satisfy(
   bool satisfied_before = plansys2::check(requirement, state);
 
   // Apply the effects
-  if (node->action.action.is_durative_action()) {
-    plansys2::apply(node->action.action.get_at_start_effects(), state);
-  }
-  plansys2::apply(node->action.action.get_at_end_effects(), state);
+  apply_action_to_state(node->action, state);
 
   // Is the requirement satisfied after applying the effects?
   bool satisfied_after = plansys2::check(requirement, state);
@@ -137,10 +134,7 @@ SimpleBTBuilder::get_node_contradict(
   // Are all of the requirements satisfied?
   if (is_action_executable(current->action, state)) {
     // Apply the effects
-    if (current->action.action.is_durative_action()) {
-      plansys2::apply(current->action.action.get_at_start_effects(), state);
-    }
-    plansys2::apply(current->action.action.get_at_end_effects(), state);
+    apply_action_to_state(current->action, state);
 
     // Look for a contradiction
     if (!is_action_executable(node->action, state)) {
@@ -154,17 +148,33 @@ SimpleBTBuilder::get_node_contradict(
   }
 }
 
+void SimpleBTBuilder::apply_action_to_state(
+  const plansys2::ActionStamped & action,
+  plansys2::State & state)
+{
+  auto action_key = std::make_pair(action.action.get_action_string(), state);
+  auto it = action_state_cache.find(action_key);
+  if (it == action_state_cache.end()) {
+    if (action.action.is_durative_action()) {
+      plansys2::apply(action.action.get_at_start_effects(), state, 0, false, false);
+    }
+    plansys2::apply(action.action.get_at_end_effects(), state);
+    action_state_cache.emplace(std::move(action_key), state);
+  } else {
+    state = it->second;
+  }
+}
+
 bool
 SimpleBTBuilder::is_parallelizable(
   const plansys2::ActionStamped & action,
   const plansys2::State & state,
-  const std::list<ActionNode::Ptr> & nodes) const
+  const std::list<ActionNode::Ptr> & nodes)
 {
   // Apply the "at start" effects of the new action.
   auto temp_state = state;
-  if (action.action.is_durative_action()) {
-    plansys2::apply(action.action.get_at_start_effects(), temp_state);
-  }
+
+  apply_action_to_state(action, temp_state);
 
   // Check the requirements of the actions in the input set.
   for (const auto & other : nodes) {
@@ -178,9 +188,7 @@ SimpleBTBuilder::is_parallelizable(
     // Apply the "at start" effects of the action.
     temp_state = state;
 
-    if (other->action.action.is_durative_action()) {
-      plansys2::apply(other->action.action.get_at_start_effects(), temp_state);
-    }
+    apply_action_to_state(other->action, temp_state);
 
     // Check the requirements of the new action.
     if (!is_action_executable(action, temp_state)) {
@@ -255,7 +263,7 @@ SimpleBTBuilder::get_roots(
 void
 SimpleBTBuilder::remove_existing_requirements(
   std::vector<plansys2_msgs::msg::Tree> & requirements,
-  const plansys2::State & state) const
+  const plansys2::State & state)
 {
   auto it = requirements.begin();
   while (it != requirements.end()) {
@@ -306,16 +314,13 @@ void
 SimpleBTBuilder::get_state(
   const ActionNode::Ptr & node,
   std::list<ActionNode::Ptr> & used_nodes,
-  plansys2::State & state) const
+  plansys2::State & state)
 {
   // Traverse graph to the root
   for (auto & in : node->in_arcs) {
     if (std::find(used_nodes.begin(), used_nodes.end(), in) == used_nodes.end()) {
       get_state(in, used_nodes, state);
-      if (in->action.action.is_durative_action()) {
-        plansys2::apply(in->action.action.get_at_start_effects(), state);
-      }
-      plansys2::apply(in->action.action.get_at_end_effects(), state);
+      apply_action_to_state(in->action, state);
       used_nodes.push_back(in);
     }
   }

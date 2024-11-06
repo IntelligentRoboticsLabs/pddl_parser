@@ -69,7 +69,7 @@ public:
 
   bool is_action_executable(
     const plansys2::ActionStamped & action,
-    const plansys2::State & state) const
+    const plansys2::State & state)
   {
     return SimpleBTBuilder::is_action_executable(action, state);
   }
@@ -119,7 +119,7 @@ public:
 
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
-    const plansys2::State & state) const
+    const plansys2::State & state)
   {
     SimpleBTBuilder::remove_existing_requirements(requirements, state);
   }
