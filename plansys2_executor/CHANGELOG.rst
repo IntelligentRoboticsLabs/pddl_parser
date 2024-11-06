@@ -2,8 +2,8 @@
 Changelog for package plansys2_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.13 (2024-11-06)
+-------------------
 * Change to EventsExecutor
 * Contributors: Francisco Martín Rico
 
