@@ -19,7 +19,7 @@ jobs:
       - name: Install popf deps
         run: sudo apt-get install libfl-dev
       - name: Fix pip
-        run: python3 -m pip3 install pip3 --upgrade; pip3 install empy==3.3.4; pip3 install -U colcon-common-extensions; pip3 install pyopenssl --upgrade
+        run: pip3 install empy==3.3.4; pip3 install -U colcon-common-extensions; pip3 install pyopenssl --upgrade
       - name: Setup ROS 2
         uses: ros-tooling/setup-ros@0.7.9
         with:
