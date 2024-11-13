@@ -16,6 +16,7 @@
 #define PLANSYS2_CORE__TYPES_HPP_
 
 #include <string>
+#include <variant>
 #include <vector>
 #include <unordered_set>
 
@@ -86,6 +87,21 @@ public:
   }
 };
 
+class Derived : public plansys2_msgs::msg::Derived
+{
+public:
+  Derived()
+  : plansys2_msgs::msg::Derived() {}
+  Derived(const plansys2_msgs::msg::Derived & derived)  // NOLINT(runtime/explicit)
+  : plansys2_msgs::msg::Derived(derived) {}
+
+  bool operator==(const Derived & d) const
+  {
+    return parser::pddl::checkNodeEquality(this->predicate, d.predicate) &&
+      parser::pddl::checkTreeEquality(this->preconditions, d.preconditions);
+  }
+};
+
 class Function : public plansys2_msgs::msg::Node
 {
 public:
@@ -117,6 +133,35 @@ public:
 
 namespace std
 {
+
+template <typename T>
+inline void hash_combine(std::size_t & seed, const T & value) {
+  seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+inline std::size_t hash_node(const plansys2_msgs::msg::Node & node) {
+  std::size_t seed = 0;
+
+  hash_combine(seed, node.name);
+  hash_combine(seed, node.node_type);
+  hash_combine(seed, node.children.size());
+  hash_combine(seed, node.parameters.size());
+
+  for (const auto & param : node.parameters) {
+    hash_combine(seed, param.name);
+  }
+  return seed;
+}
+
+template<>
+struct hash<plansys2_msgs::msg::Node>
+{
+  std::size_t operator()(const plansys2_msgs::msg::Node & node) const noexcept
+  {
+    return hash_node(node);
+  }
+};
+
 template<>
 struct hash<plansys2::Instance>
 {
@@ -129,209 +174,37 @@ struct hash<plansys2::Instance>
 template<>
 struct hash<plansys2::Predicate>
 {
-  std::size_t operator()(const plansys2::Function & func) const noexcept
+  std::size_t operator()(const plansys2::Predicate & pred) const noexcept
   {
-    std::size_t h1 = std::hash<std::string>{}(func.name);
-    std::size_t h2 = 0;
+    return hash_node(pred);
+  }
+};
 
-    for (const auto & param : func.parameters) {
-      h2 ^= std::hash<std::string>{}(param.name) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
+template<>
+struct hash<plansys2::Derived>
+{
+  std::size_t operator()(const plansys2::Derived & derived) const noexcept
+  {
+    std::size_t seed = 0;
+    hash_combine(seed, derived.predicate);
+
+    for (auto node : derived.preconditions.nodes)
+    {
+      hash_combine(seed, node);
     }
 
-    return h1 ^ h2;
+    return seed;
   }
 };
 
 template<>
 struct hash<plansys2::Function>
 {
-  std::size_t operator()(const plansys2::Predicate & pred) const noexcept
+  std::size_t operator()(const plansys2::Function & func) const noexcept
   {
-    std::size_t h1 = std::hash<std::string>{}(pred.name);
-    std::size_t h2 = 0;
-
-    for (const auto & param : pred.parameters) {
-      h2 ^= std::hash<std::string>{}(param.name) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
-    }
-
-    return h1 ^ h2;
+    return hash_node(func);
   }
 };
-}  // namespace std
-
-namespace plansys2
-{
-class State
-{
-public:
-  State() {}
-
-  State(const std::unordered_set<plansys2::Instance>& instances,
-    std::unordered_set<plansys2::Function>& functions,
-    const std::unordered_set<plansys2::Predicate>& predicates
-  ) : instances_(instances), functions_(functions), predicates_(predicates) {}
-
-  State(const std::unordered_set<plansys2::Instance>& instances,
-    const std::unordered_set<plansys2::Function>& functions,
-    const std::unordered_set<plansys2::Predicate>& predicates,
-    const std::unordered_set<plansys2::Predicate>& inferred_predicates
-  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(inferred_predicates) {}
-
-  State(const std::unordered_set<plansys2::Instance>& instances,
-    const std::unordered_set<plansys2::Function>& functions,
-    const std::unordered_set<plansys2::Predicate>& predicates,
-    const std::unordered_set<plansys2::Predicate>& inferred_predicates,
-    const std::vector<plansys2_msgs::msg::Derived>& derived_predicates
-  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(inferred_predicates), derived_predicates_(derived_predicates) {}
-
-  State(const plansys2_msgs::msg::State &state)
-  {
-    instances_ = plansys2::convertVectorToUnorderedSet<plansys2::Instance, plansys2_msgs::msg::Param>(
-      state.instances);
-    functions_ = plansys2::convertVectorToUnorderedSet<plansys2::Function, plansys2_msgs::msg::Node>(
-      state.functions);
-    predicates_ = plansys2::convertVectorToUnorderedSet<plansys2::Predicate, plansys2_msgs::msg::Node>(
-      state.predicates);
-    inferred_predicates_ = plansys2::convertVectorToUnorderedSet<plansys2::Predicate, plansys2_msgs::msg::Node>(
-      state.inferred_predicates);
-    derived_predicates_ = state.derived_predicates;
-  }
-
-  bool operator==(const State &state) const
-  {
-    return this->instances_ == state.instances_ &&
-      this->functions_ == state.functions_ &&
-      this->predicates_ == state.predicates_ &&
-      this->inferred_predicates_ == state.inferred_predicates_ &&
-      this->derived_predicates_ == state.derived_predicates_;
-  }
-
-  auto &getInstances() const { return instances_; }
-  auto &getFunctions() const { return functions_; }
-  auto &getPredicates() const { return predicates_; }
-  auto &getInferredPredicates() const { return inferred_predicates_.empty() ? predicates_ : inferred_predicates_; }
-  auto &getDerivedPredicates() const { return derived_predicates_; }
-
-  auto getInstancesSize() const { return instances_.size(); }
-  auto getFunctionsSize() const { return functions_.size(); }
-  auto getPredicatesSize() const { return predicates_.size(); }
-  auto getInferredPredicatesSize() const { return inferred_predicates_.size(); }
-  auto getDerivedPredicatesSize() const { return derived_predicates_.size(); }
-
-  bool addInstance(const plansys2::Instance& instance) { return instances_.insert(instance).second;}
-  bool addInstance(plansys2::Instance&& instance) { return instances_.insert(std::move(instance)).second;}
-
-  bool addPredicate(const plansys2::Predicate& predicate) { return predicates_.insert(predicate).second;}
-  bool addPredicate(plansys2::Predicate&& predicate) { return predicates_.insert(std::move(predicate)).second;}
-
-  bool addInferredPredicate(const plansys2::Predicate& predicate) { return inferred_predicates_.insert(predicate).second;}
-  bool addInferredPredicate(plansys2::Predicate&& predicate) { return inferred_predicates_.insert(std::move(predicate)).second;}
-
-  bool addFunction(const plansys2::Function& function) { return functions_.insert(function).second;}
-  bool addFunction(plansys2::Function&& function) { return functions_.insert(std::move(function)).second;}
-
-  void removeInstance(const std::unordered_set<plansys2::Instance>::const_iterator it) {instances_.erase(it);}
-  bool removeInstance(plansys2::Instance instance) {return instances_.erase(instance) == 1;}
-
-  auto removePredicate(const std::unordered_set<plansys2::Predicate>::const_iterator it) {return predicates_.erase(it);}
-  bool removePredicate(const plansys2::Predicate& predicate) {return predicates_.erase(predicate) == 1;}
-  bool removePredicate(plansys2::Predicate&& predicate) {return predicates_.erase(std::move(predicate)) == 1;}
-
-  auto removeFunction(const std::unordered_set<plansys2::Function>::const_iterator it) {return functions_.erase(it);}
-  bool removeFunction(const plansys2::Function& function) {return functions_.erase(function) == 1;}
-  bool removeFunction(plansys2::Function&& function) {return functions_.erase(std::move(function)) == 1;}
-
-  bool hasInstance(const plansys2::Instance& instance) {return instances_.find(instance) != instances_.end();}
-  bool hasInstance(plansys2::Instance&& instance) {return instances_.find(std::move(instance)) != instances_.end();}
-
-  bool hasPredicate(const plansys2::Predicate& predicate) {return predicates_.find(predicate) != predicates_.end();}
-  bool hasPredicate(plansys2::Predicate&& predicate) {return predicates_.find(std::move(predicate)) != predicates_.end();}
-
-  bool hasInferredPredicate(const plansys2::Predicate& predicate) {return inferred_predicates_.find(predicate) != inferred_predicates_.end();}
-  bool hasInferredPredicate(plansys2::Predicate&& predicate) {return inferred_predicates_.find(std::move(predicate)) != inferred_predicates_.end();}
-
-  bool hasFunction(const plansys2::Function& function) {return functions_.find(function) != functions_.end();}
-  bool hasFunction(plansys2::Function&& function) {return functions_.find(std::move(function)) != functions_.end();}
-
-  auto getInstance(const plansys2::Instance& instance) const {return instances_.find(instance);}
-  auto getInstance(plansys2::Instance&& instance) const {return instances_.find(std::move(instance));}
-
-  auto getPredicate(const plansys2::Predicate& predicate) const {return predicates_.find(predicate);}
-  auto getPredicate(plansys2::Predicate&& predicate) const {return predicates_.find(std::move(predicate));}
-
-  auto getFunction(const plansys2::Function& function) const {return functions_.find(function);}
-  auto getFunction(plansys2::Function&& function) const {return functions_.find(std::move(function));}
-
-  void setInferredPredicates(const std::unordered_set<plansys2::Predicate> & inferred_predicates) {inferred_predicates_ = std::move(inferred_predicates);}
-  void setInferredPredicates(std::unordered_set<plansys2::Predicate> && inferred_predicates) {inferred_predicates_ = std::move(inferred_predicates);}
-  void setDerivedPredicates(const std::vector<plansys2_msgs::msg::Derived> derived_predicates) {derived_predicates_ = derived_predicates;}
-
-  bool hasDerivedPredicates() {return !derived_predicates_.empty();}
-
-  void reserveInferredPredicates(size_t size) {inferred_predicates_.reserve(size);}
-
-  void clearPredicates() {predicates_.clear(); inferred_predicates_.clear();}
-  void clearState() { instances_.clear(); functions_.clear(); predicates_.clear(); inferred_predicates_.clear(); derived_predicates_.clear();}
-
-  void resetInferredPredicates() {inferred_predicates_ = predicates_;}
-
-  plansys2_msgs::msg::State getAsMsg()
-  {
-    plansys2_msgs::msg::State state;
-    state.instances = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Param, plansys2::Instance>(
-        instances_);
-    state.functions = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Node, plansys2::Function>(
-        functions_);
-    state.predicates = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Node, plansys2::Predicate>(
-        predicates_);
-    state.inferred_predicates = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Node, plansys2::Predicate>(
-        inferred_predicates_);
-    state.derived_predicates = derived_predicates_;
-    return state;
-  }
-
-private:
-  std::unordered_set<plansys2::Instance> instances_;
-  std::unordered_set<plansys2::Function> functions_;
-  std::unordered_set<plansys2::Predicate> predicates_;
-  std::unordered_set<plansys2::Predicate> inferred_predicates_;
-  std::vector<plansys2_msgs::msg::Derived> derived_predicates_;
-
-  friend struct std::hash<State>;
-};
-}  // namespace plansys2
-
-template <typename T>
-inline void hash_combine(std::size_t & seed, const T & value) {
-  seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
-
-namespace std {
-  template <>
-  struct hash<plansys2::State> {
-    std::size_t operator()(const plansys2::State & state) const {
-      std::size_t seed = 0;
-
-      // Combine hashes of each unordered_set and vector in the State
-      for (const auto & instance : state.instances_) {
-        hash_combine(seed, instance);
-      }
-      for (const auto & function : state.functions_) {
-        hash_combine(seed, function);
-      }
-      for (const auto & predicate : state.predicates_) {
-        hash_combine(seed, predicate);
-      }
-      for (const auto & inferred_predicate : state.inferred_predicates_) {
-        hash_combine(seed, inferred_predicate);
-      }
-      for (const auto & derived_predicate : state.derived_predicates_) {
-        hash_combine(seed, static_cast<plansys2::Predicate>(derived_predicate.predicate));
-      }
-
-      return seed;
-    }
-  };
 }  // namespace std
 
 #endif  // PLANSYS2_CORE__TYPES_HPP_
