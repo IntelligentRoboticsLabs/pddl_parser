@@ -20,6 +20,8 @@
 #include <vector>
 #include <memory>
 
+#include "plansys2_core/State.hpp"
+
 #include "plansys2_msgs/msg/action.hpp"
 #include "plansys2_msgs/msg/derived.hpp"
 #include "plansys2_msgs/msg/durative_action.hpp"
@@ -104,6 +106,8 @@ public:
    * \return The vector containing the derived predicates.
    */
   std::vector<plansys2_msgs::msg::Derived> getDerivedPredicates();
+
+  plansys2::DerivedGraph getDerivedPredicatesGraph();
 
   /// Get the details of a derived predicate existing in the domain.
   /**

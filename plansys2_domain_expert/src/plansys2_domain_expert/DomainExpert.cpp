@@ -172,6 +172,7 @@ plansys2_msgs::msg::Derived DomainExpert::getDerivedFromDomain(
 {
   plansys2_msgs::msg::Derived derived;
   derived.predicate.name = domain_->derived[i]->name;
+  derived.predicate.node_type = plansys2_msgs::msg::Node::PREDICATE;
 
   // Parameters
   for (unsigned j = 0; j < domain_->derived[i]->params.size(); j++) {
@@ -199,6 +200,12 @@ DomainExpert::getDerivedPredicates()
     ret.push_back(getDerivedFromDomain(i));
   }
   return ret;
+}
+
+plansys2::DerivedGraph
+DomainExpert::getDerivedPredicatesGraph()
+{
+  return plansys2::DerivedGraph(getDerivedPredicates());
 }
 
 std::vector<plansys2_msgs::msg::Derived>

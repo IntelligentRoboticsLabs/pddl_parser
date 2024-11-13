@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "plansys2_core/Types.hpp"
+#include "plansys2_core/Graph.hpp"
 #include "plansys2_domain_expert/DomainExpertInterface.hpp"
 
 #include "plansys2_msgs/msg/action.hpp"
@@ -108,6 +109,8 @@ public:
    * \return The vector containing the derived predicates.
    */
   std::vector<plansys2_msgs::msg::Derived> getDerivedPredicates();
+
+  plansys2::DerivedGraph getDerivedPredicatesGraph();
 
   /// Get the details of a derived predicate existing in the domain.
   /**
