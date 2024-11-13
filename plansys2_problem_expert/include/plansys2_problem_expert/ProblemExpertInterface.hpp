@@ -24,6 +24,7 @@
 #include "plansys2_msgs/msg/tree.hpp"
 
 #include "plansys2_core/Types.hpp"
+#include "plansys2_core/State.hpp"
 
 namespace plansys2
 {

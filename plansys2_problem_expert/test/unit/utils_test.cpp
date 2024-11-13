@@ -1340,7 +1340,7 @@ TEST(utils, apply_with_derived)
   ASSERT_TRUE(state.getFunctions().size() > 0);
   ASSERT_TRUE(state.getPredicates().size() > 0);
   ASSERT_TRUE(state.getInferredPredicates().size() > 0);
-  ASSERT_TRUE(state.getDerivedPredicates().size() > 0);
+  ASSERT_TRUE(state.getDerivedPredicates().getEdgeNumber() > 0);
 
   ASSERT_TRUE(state.getInferredPredicates().find(parser::pddl::fromStringPredicate("(robot_at leia kitchen)")) != state.getInferredPredicates().end());
   ASSERT_TRUE(state.getInferredPredicates().find(parser::pddl::fromStringPredicate("(inferred-robot_at leia kitchen)")) != state.getInferredPredicates().end());

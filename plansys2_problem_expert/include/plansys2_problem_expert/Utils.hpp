@@ -58,16 +58,12 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
   const std::unordered_set<plansys2::Instance> & instances
 );
 
-plansys2::State solveAllDerivedPredicates(
-  const plansys2::State & state
+void solveAllDerivedPredicates(
+  plansys2::State & state
 );
 
-plansys2::State solveDerivedPredicates(
-  const plansys2::State & state
-);
-
-plansys2::State groundPredicate(
-  plansys2::State && state,
+void groundPredicate(
+  plansys2::State & new_state,
   const plansys2::Predicate & predicate,
   const std::vector<std::map<std::string, std::string>> & params_values_vector
 );

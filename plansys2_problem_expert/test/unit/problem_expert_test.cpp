@@ -488,7 +488,7 @@ TEST(problem_expert, get_problem)
     std::string("( :objects\n\tpaco - person\n\tr2d2 - robot\n") +
     std::string("\tkitchen bedroom - room\n)\n") +
     std::string("( :init\n\t( person_at paco kitchen )\n") +
-    std::string("\t( robot_at r2d2 kitchen )\n") + std::string("\t( person_at paco bedroom )\n") +
+    std::string("\t( person_at paco bedroom )\n") + std::string("\t( robot_at r2d2 kitchen )\n") +
     std::string("\t( robot_at r2d2 bedroom )\n)\n") +
     std::string("( :goal\n\t( and\n\t\t( robot_at r2d2 bedroom )\n\t\t") +
     std::string("( person_at paco kitchen )\n\t))\n)\n"));

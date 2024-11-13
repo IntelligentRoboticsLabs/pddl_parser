@@ -234,48 +234,34 @@ std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
   return std::move(vector3);
 }
 
-plansys2::State solveAllDerivedPredicates(
-  const plansys2::State & state
+void solveAllDerivedPredicates(
+  plansys2::State & state
 )
 {
-  plansys2::State current_state = state;
-  current_state.resetInferredPredicates();
+  state.resetInferredPredicates();
 
-  plansys2::State new_state = std::move(solveDerivedPredicates(current_state));
-  while (current_state.getInferredPredicates() != new_state.getInferredPredicates()) {
-    std::swap(current_state, new_state);
-    new_state = std::move(solveDerivedPredicates(current_state));
-  }
-  return std::move(current_state);
-}
-
-plansys2::State solveDerivedPredicates(
-  const plansys2::State & state)
-{
-  plansys2::State new_state = state;
-  for (const auto& derived : new_state.getDerivedPredicates()) {
+  for (const auto& derived : state.getDerivedPredicatesDepthFirst()) {
     auto [_, evaluate_value, __, params_values] = evaluate(
-      derived.preconditions, new_state, derived.preconditions.nodes[0].node_id);
+      derived.preconditions, state, derived.preconditions.nodes[0].node_id);
 
     if (evaluate_value && !params_values.empty()) {
-      new_state = groundPredicate(std::move(new_state), derived.predicate, params_values);
+      groundPredicate(state, derived.predicate, params_values);
     }
   }
-  return std::move(new_state);
 }
 
-plansys2::State groundPredicate(
-  plansys2::State && state,
+void groundPredicate(
+  plansys2::State & state,
   const plansys2::Predicate & predicate,
   const std::vector<std::map<std::string, std::string>> & params_values_vector
 )
 {
-  plansys2::State new_state = std::move(state);
   size_t num_params = predicate.parameters.size();
   size_t params_values_size = params_values_vector.size();
 
-  new_state.reserveInferredPredicates(new_state.getInferredPredicatesSize() + params_values_size);
-  auto instances = new_state.getInstances();
+  state.reserveInferredPredicates(state.getInferredPredicatesSize() + params_values_size);
+  auto instances = state.getInstances();
+
 #pragma omp parallel for schedule(dynamic)
     for (size_t j = 0; j < params_values_size; ++j) {
       const auto & params_values = params_values_vector[j];
@@ -308,10 +294,9 @@ plansys2::State groundPredicate(
 
       if (add_predicate) {
         #pragma omp critical
-        new_state.addInferredPredicate(std::move(new_predicate));
+        state.addInferredPredicate(std::move(new_predicate));
       }
     }
-  return std::move(new_state);
 }
 
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
@@ -725,7 +710,7 @@ bool apply(
                 << "]" << std::endl;
   }
   if (derive){
-    state = solveAllDerivedPredicates(state);
+    solveAllDerivedPredicates(state);
   }
   return success;
 }

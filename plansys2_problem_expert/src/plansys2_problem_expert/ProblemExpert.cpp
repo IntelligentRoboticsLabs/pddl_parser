@@ -37,16 +37,17 @@ namespace plansys2
 ProblemExpert::ProblemExpert(std::shared_ptr<DomainExpert> & domain_expert)
 : domain_expert_(domain_expert)
 {
-  state_.setDerivedPredicates(domain_expert_->getDerivedPredicates());
+  state_.setDerivedPredicates(domain_expert_->getDerivedPredicatesGraph());
 }
 
 void ProblemExpert::updateInferredPredicates() {
-  state_ = std::move(solveAllDerivedPredicates(state_));
+  solveAllDerivedPredicates(state_);
 }
 
 plansys2::State ProblemExpert::getState()
 {
-  return std::move(solveAllDerivedPredicates(state_));
+  updateInferredPredicates();
+  return state_;
 }
 
 bool ProblemExpert::addInstance(const plansys2::Instance & instance)
@@ -107,7 +108,8 @@ std::unordered_set<plansys2::Predicate> ProblemExpert::getPredicates()
 
 std::unordered_set<plansys2::Predicate> ProblemExpert::getInferredPredicates()
 {
-  return std::move(solveAllDerivedPredicates(state_).getInferredPredicates());
+  updateInferredPredicates();
+  return state_.getInferredPredicates();
 }
 
 bool ProblemExpert::addPredicate(const plansys2::Predicate & predicate)
@@ -299,7 +301,8 @@ bool ProblemExpert::setGoal(const plansys2::Goal & goal)
 
 bool ProblemExpert::isGoalSatisfied(const plansys2::Goal & goal)
 {
-  return check(goal, std::move(solveAllDerivedPredicates(state_)));
+  updateInferredPredicates();
+  return check(goal, state_);
 }
 
 bool ProblemExpert::clearGoal()
