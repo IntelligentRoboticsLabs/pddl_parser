@@ -31,7 +31,8 @@
   <depend>behaviortree_cpp</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
-  
+  <depend>eigen3_cmake_module</depend>
+
   <exec_depend>popf</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>

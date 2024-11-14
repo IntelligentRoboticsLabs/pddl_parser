@@ -3,8 +3,6 @@ project(plansys2_executor)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(eigen3_cmake_module REQUIRED)
-find_package(Eigen3 REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -22,6 +20,9 @@ find_package(pluginlib REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
+
+find_package(Eigen3 REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
