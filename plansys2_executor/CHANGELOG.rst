@@ -2,6 +2,11 @@
 Changelog for package plansys2_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add Eigen depends in package.xml
+* Contributors: Francisco Martín Rico
+
 2.0.13 (2024-11-06)
 -------------------
 * Change to EventsExecutor
