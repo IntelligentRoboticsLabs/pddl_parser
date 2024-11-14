@@ -2,8 +2,8 @@
 Changelog for package plansys2_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.14 (2024-11-14)
+-------------------
 * Add Eigen depends in package.xml
 * Contributors: Francisco Martín Rico
 
