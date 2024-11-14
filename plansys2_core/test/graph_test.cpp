@@ -208,6 +208,123 @@ TEST(graph_test, graph_derived_constructor)
   ASSERT_EQ(all_nodes[3].predicate.name, "inferredA");
   ASSERT_EQ(all_nodes[4].predicate.name, "inferredAB");
   ASSERT_EQ(all_nodes[5].predicate.name, "inferredAA");
+
+  auto nodes_root_predAB = graph.getDerivedPredicatesDepthFirst({predA, predB});
+  ASSERT_EQ(nodes_root_predAB.size(), 6);
+  ASSERT_EQ(nodes_root_predAB[0].predicate.name, "inferredB");
+  ASSERT_EQ(nodes_root_predAB[1].predicate.name, "inferredBB");
+  ASSERT_EQ(nodes_root_predAB[2].predicate.name, "inferredAA");
+  ASSERT_EQ(nodes_root_predAB[3].predicate.name, "inferredA");
+  ASSERT_EQ(nodes_root_predAB[4].predicate.name, "inferredAB");
+  ASSERT_EQ(nodes_root_predAB[5].predicate.name, "inferredAA");
+
+  auto nodes_root_predA = graph.getDerivedPredicatesDepthFirst({predA});
+  ASSERT_EQ(nodes_root_predA.size(), 3);
+  ASSERT_EQ(nodes_root_predA[0].predicate.name, "inferredAA");
+  ASSERT_EQ(nodes_root_predA[1].predicate.name, "inferredA");
+  ASSERT_EQ(nodes_root_predA[2].predicate.name, "inferredAA");
+
+  auto nodes_root_predB = graph.getDerivedPredicatesDepthFirst({predB});
+  ASSERT_EQ(nodes_root_predB.size(), 2);
+  ASSERT_EQ(nodes_root_predB[0].predicate.name, "inferredB");
+  ASSERT_EQ(nodes_root_predB[1].predicate.name, "inferredBB");
+}
+
+TEST(graph_test, graph_derived_action)
+{
+  plansys2::Predicate predA = parser::pddl::fromStringPredicate("(predicateA ?a)");
+  plansys2::Predicate predB = parser::pddl::fromStringPredicate("(predicateB ?b)");
+
+  std::vector<plansys2_msgs::msg::Derived> derived_predicates;
+  plansys2_msgs::msg::Derived inferredA;
+  inferredA.predicate = parser::pddl::fromStringPredicate("(inferredA ?a)");
+  inferredA.predicate.parameters[0].type = "typea";
+  inferredA.preconditions = parser::pddl::fromString("(and (predicateA ?a))");
+  derived_predicates.push_back(inferredA);
+
+  plansys2_msgs::msg::Derived inferredB;
+  inferredB.predicate = parser::pddl::fromStringPredicate("(inferredB ?b)");
+  inferredB.preconditions = parser::pddl::fromString("(and (predicateB ?b))");
+  derived_predicates.push_back(inferredB);
+
+  plansys2_msgs::msg::Derived inferredAA;
+  inferredAA.predicate = parser::pddl::fromStringPredicate("(inferredAA ?aa)");
+  inferredAA.preconditions = parser::pddl::fromString("(and (inferredA ?aa))");
+  derived_predicates.push_back(inferredAA);
+
+  plansys2_msgs::msg::Derived inferredAA2;
+  inferredAA2.predicate = parser::pddl::fromStringPredicate("(inferredAA ?a)");
+  inferredAA2.preconditions = parser::pddl::fromString("(and (predicateA ?a))");
+  derived_predicates.push_back(inferredAA2);
+
+  plansys2_msgs::msg::Derived inferredBB;
+  inferredBB.predicate = parser::pddl::fromStringPredicate("(inferredBB ?b)");
+  inferredBB.preconditions = parser::pddl::fromString("(and (inferredB ?b))");
+  derived_predicates.push_back(inferredBB);
+
+  plansys2_msgs::msg::Derived inferredAB;
+  inferredAB.predicate = parser::pddl::fromStringPredicate("(inferredAB ?a ?b)");
+  inferredAB.preconditions = parser::pddl::fromString("(and (inferredA ?a)(inferredB ?b))");
+  derived_predicates.push_back(inferredAB);
+
+  plansys2::DerivedGraph graph(derived_predicates);
+
+  plansys2_msgs::msg::Action actionA;
+  actionA.name = "actionA";
+  actionA.parameters.push_back(parser::pddl::fromStringParam("a"));
+
+  plansys2_msgs::msg::Tree actionA_preconditions;
+  parser::pddl::fromString(
+    actionA_preconditions,
+    "(and (inferredAA a))");
+  actionA.preconditions = actionA_preconditions;
+
+  plansys2_msgs::msg::Action actionB;
+  actionB.name = "actionB";
+  actionB.parameters.push_back(parser::pddl::fromStringParam("b"));
+
+  plansys2_msgs::msg::Tree actionB_preconditions;
+  parser::pddl::fromString(
+    actionB_preconditions,
+    "(and (inferredBB b))");
+  actionB.preconditions = actionB_preconditions;
+
+  plansys2_msgs::msg::Action actionAB;
+  actionAB.name = "actionAB";
+  actionAB.parameters.push_back(parser::pddl::fromStringParam("a"));
+  actionAB.parameters.push_back(parser::pddl::fromStringParam("b"));
+
+  plansys2_msgs::msg::Tree actionAB_preconditions;
+  parser::pddl::fromString(
+    actionAB_preconditions,
+    "(and (inferredAB a b))");
+  actionAB.preconditions = actionAB_preconditions;
+
+  graph.appendAction(actionA);
+  graph.appendAction(actionB);
+  graph.appendAction(actionAB);
+
+  std::vector<std::string> all_nodes;
+  auto func_all = [&all_nodes](const plansys2::NodeVariant& node) {
+    all_nodes.push_back(node.getNodeName());
+  };
+  graph.depthFirstTraverseAll(
+    func_all,
+    true
+  );
+
+  ASSERT_EQ(all_nodes.size(), 11);
+  ASSERT_EQ(all_nodes[0], "predicateB");
+  ASSERT_EQ(all_nodes[1], "inferredB");
+  ASSERT_EQ(all_nodes[2], "inferredBB");
+  ASSERT_EQ(all_nodes[3], "actionB");
+  ASSERT_EQ(all_nodes[4], "predicateA");
+  ASSERT_EQ(all_nodes[5], "inferredAA");
+  ASSERT_EQ(all_nodes[6], "inferredA");
+  ASSERT_EQ(all_nodes[7], "inferredAB");
+  ASSERT_EQ(all_nodes[8], "actionAB");
+  ASSERT_EQ(all_nodes[9], "inferredAA");
+  ASSERT_EQ(all_nodes[10], "actionA");
 }
 
 int main(int argc, char ** argv)

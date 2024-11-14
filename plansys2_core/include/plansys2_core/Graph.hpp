@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "plansys2_core/Types.hpp"
+#include "plansys2_core/Action.hpp"
 #include "plansys2_msgs/msg/derived.hpp"
 #include "plansys2_msgs/msg/node.hpp"
 
@@ -26,7 +27,7 @@ namespace plansys2
 
 class NodeVariant {
 public:
-  using NodeType = std::variant<plansys2::Predicate, plansys2::Function, plansys2::Derived>;
+  using NodeType = std::variant<plansys2::Predicate, plansys2::Function, plansys2::Derived, plansys2::Action, plansys2::DurativeAction>;
 
   template <typename NodeT>
   NodeVariant(NodeT node) : node_(std::make_shared<NodeType>(node)) {}
@@ -36,7 +37,7 @@ public:
   }
 
   bool operator==(const NodeVariant& other) const {
-      return *node_ == *other.node_;
+    return *node_ == *other.node_;
   }
 
   const NodeType& getNode() const { return *node_; }
@@ -52,6 +53,10 @@ public:
       node_name = std::get<plansys2::Function>(*node_).name;
     } else if (std::holds_alternative<plansys2::Derived>(*node_)) {
       node_name = std::get<plansys2::Derived>(*node_).predicate.name;
+    } else if (std::holds_alternative<plansys2::Action>(*node_)) {
+      node_name = std::get<plansys2::Action>(*node_).name;
+    } else if (std::holds_alternative<plansys2::DurativeAction>(*node_)) {
+      node_name = std::get<plansys2::DurativeAction>(*node_).name;
     }
     return node_name;
   }
@@ -69,6 +74,16 @@ public:
   bool isDerived() const
   {
     return std::holds_alternative<plansys2::Derived>(*node_);
+  }
+
+  plansys2::Predicate &getPredicate() const
+  {
+    return std::get<plansys2::Predicate>(*node_);
+  }
+
+  plansys2::Function &getFunction() const
+  {
+    return std::get<plansys2::Function>(*node_);
   }
 
   auto &getDerivedPreconditions() const
@@ -96,6 +111,18 @@ public:
 private:
     std::shared_ptr<NodeType> node_;
 };
+
+inline bool operator==(const NodeVariant& lhs, const plansys2_msgs::msg::Node& rhs) {
+  if (lhs.isPredicate())
+  {
+    return lhs.getPredicate() == static_cast<plansys2::Predicate>(rhs);
+  } else if (lhs.isFunction())
+  {
+    return lhs.getFunction() == static_cast<plansys2::Function>(rhs);
+  }
+  return false;
+};
+
 }  // namespace plansys2
 
 namespace std {
@@ -170,12 +197,19 @@ public:
   template <typename Func>
   void depthFirstTraverseAll(
     Func&& func,
-    bool check_dependencies = true) const
+    bool check_dependencies = true,
+    std::vector<plansys2_msgs::msg::Node> root_nodes_only = {}
+  ) const
   {
     std::unordered_set<NodeVariant> visited;
     for (const auto& [key, _] : adj_list_)
     {
-      depthFirstTraverse(key, visited, std::forward<Func>(func), check_dependencies);
+      if (root_nodes_only.empty() ||
+        std::find_if(root_nodes_only.begin(), root_nodes_only.end(),
+          [&key](auto& r){return key == r;}) != root_nodes_only.end())
+      {
+        depthFirstTraverse(key, visited, std::forward<Func>(func), check_dependencies);
+      }
     }
   }
 
@@ -209,37 +243,14 @@ public:
   {
     for (const auto& derived : derived_predicates)
     {
-      for (const auto& node : derived.preconditions.nodes)
-      {
-        switch (node.node_type) {
-          case plansys2_msgs::msg::Node::PREDICATE:
-          {
-            bool is_derived_predicate = false;
-            for (const auto& d: derived_predicates) {
-              if (parser::pddl::checkNodeEquality(node, d.predicate)){
-                addEdge(d, derived);
-                is_derived_predicate = true;
-              }
-            }
-            if (!is_derived_predicate) {
-              addEdge(static_cast<const plansys2::Predicate&>(node), derived);
-            }
-            break;
-          }
-          case plansys2_msgs::msg::Node::FUNCTION:
-            addEdge(
-              static_cast<const plansys2::Function&>(node), derived);
-            break;
-          default:
-            break;
-        }
-      }
+      addEdgeFromPreconditions(derived, derived.preconditions);
     }
   }
 
   auto &getDerivedPredicates() const { return derived_predicates_; }
 
-  std::vector<plansys2::Derived> getDerivedPredicatesDepthFirst() const
+  std::vector<plansys2::Derived> getDerivedPredicatesDepthFirst(
+    std::vector<plansys2_msgs::msg::Node> root_nodes_only = {}) const
   {
     std::vector<plansys2::Derived> all_nodes;
     depthFirstTraverseAll(
@@ -248,9 +259,50 @@ public:
           all_nodes.push_back(node.getDerivedNode());
         }
       },
-      true
+      true,
+      root_nodes_only
     );
     return all_nodes;
+  }
+
+  void addEdgeFromPreconditions(const NodeVariant& node, const plansys2_msgs::msg::Tree& tree)
+  {
+    for (const auto& tree_node : tree.nodes){
+      switch (tree_node.node_type) {
+        case plansys2_msgs::msg::Node::PREDICATE:
+        {
+          bool is_derived_predicate = false;
+          for (const auto& d: derived_predicates_) {
+            if (parser::pddl::checkNodeEquality(tree_node, d.predicate)){
+              addEdge(d, node);
+              is_derived_predicate = true;
+            }
+          }
+          if (!is_derived_predicate) {
+            addEdge(static_cast<const plansys2::Predicate&>(tree_node), node);
+          }
+          break;
+        }
+        case plansys2_msgs::msg::Node::FUNCTION:
+          addEdge(
+            static_cast<const plansys2::Function&>(tree_node), node);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  void appendAction(const plansys2::Action& action)
+  {
+    addEdgeFromPreconditions(action, action.preconditions);
+  }
+
+  void appendDurativeAction(const plansys2::DurativeAction& action)
+  {
+    addEdgeFromPreconditions(action, action.at_start_requirements);
+    addEdgeFromPreconditions(action, action.over_all_requirements);
+    addEdgeFromPreconditions(action, action.at_end_requirements);
   }
 
 private:
