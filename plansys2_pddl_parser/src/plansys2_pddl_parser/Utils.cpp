@@ -1321,6 +1321,51 @@ bool checkParamEquality(
   return true;
 }
 
+bool checkActionEquality(
+  const plansys2_msgs::msg::Action & first, const plansys2_msgs::msg::Action & second)
+{
+  if (first.name != second.name) {
+    return false;
+  }
+
+  if (first.parameters.size() != second.parameters.size()) {
+    return false;
+  }
+
+  for (unsigned i = 0; i < first.parameters.size(); i++) {
+    if (!checkParamEquality(first.parameters[i], second.parameters[i])) {
+      return false;
+    }
+  }
+
+  return parser::pddl::checkTreeEquality(first.preconditions, second.preconditions) &&
+    parser::pddl::checkTreeEquality(first.effects, second.effects);
+}
+
+bool checkDurativeActionEquality(
+  const plansys2_msgs::msg::DurativeAction & first, const plansys2_msgs::msg::DurativeAction & second)
+{
+  if (first.name != second.name) {
+    return false;
+  }
+
+  if (first.parameters.size() != second.parameters.size()) {
+    return false;
+  }
+
+  for (unsigned i = 0; i < first.parameters.size(); i++) {
+    if (!checkParamEquality(first.parameters[i], second.parameters[i])) {
+      return false;
+    }
+  }
+
+  return parser::pddl::checkTreeEquality(first.at_start_requirements, second.at_start_requirements) &&
+    parser::pddl::checkTreeEquality(first.over_all_requirements, second.over_all_requirements) &&
+    parser::pddl::checkTreeEquality(first.at_end_requirements, second.at_end_requirements) &&
+    parser::pddl::checkTreeEquality(first.at_start_effects, second.at_start_effects) &&
+    parser::pddl::checkTreeEquality(first.at_end_effects, second.at_end_effects);
+}
+
 bool empty(const plansys2_msgs::msg::Tree & tree)
 {
   if (tree.nodes.empty()) {

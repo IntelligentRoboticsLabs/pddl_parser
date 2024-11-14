@@ -169,6 +169,12 @@ bool checkTreeEquality(
 bool checkNodeEquality(
   const plansys2_msgs::msg::Node & first, const plansys2_msgs::msg::Node & second);
 
+bool checkActionEquality(
+  const plansys2_msgs::msg::Action & first, const plansys2_msgs::msg::Action & second);
+
+bool checkDurativeActionEquality(
+  const plansys2_msgs::msg::DurativeAction & first, const plansys2_msgs::msg::DurativeAction & second);
+
 // bool checkNodeEqualityFreeParams(
 //   const plansys2_msgs::msg::Node & first, const plansys2_msgs::msg::Node & second, std::vector<int> free_params);
 

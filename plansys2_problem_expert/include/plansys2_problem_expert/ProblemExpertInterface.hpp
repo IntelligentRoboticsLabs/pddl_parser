@@ -25,6 +25,7 @@
 
 #include "plansys2_core/Types.hpp"
 #include "plansys2_core/State.hpp"
+#include "plansys2_core/Graph.hpp"
 
 namespace plansys2
 {
