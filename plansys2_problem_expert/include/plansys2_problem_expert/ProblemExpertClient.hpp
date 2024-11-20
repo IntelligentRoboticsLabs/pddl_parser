@@ -21,7 +21,6 @@
 #include <unordered_set>
 
 #include "plansys2_problem_expert/ProblemExpertInterface.hpp"
-#include "plansys2_core/Types.hpp"
 
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/param.hpp"

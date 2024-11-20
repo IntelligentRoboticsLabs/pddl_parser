@@ -15,6 +15,11 @@
 #ifndef PLANSYS2_CORE__STATE_HPP_
 #define PLANSYS2_CORE__STATE_HPP_
 
+#include "plansys2_msgs/msg/derived.hpp"
+#include "plansys2_msgs/msg/node.hpp"
+#include "plansys2_msgs/msg/param.hpp"
+#include "plansys2_msgs/msg/state.hpp"
+
 #include "plansys2_core/Types.hpp"
 #include "plansys2_core/Graph.hpp"
 
@@ -29,20 +34,30 @@ public:
   State(const std::unordered_set<plansys2::Instance>& instances,
     std::unordered_set<plansys2::Function>& functions,
     const std::unordered_set<plansys2::Predicate>& predicates
-  ) : instances_(instances), functions_(functions), predicates_(predicates) {}
+  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(predicates) {}
 
   State(const std::unordered_set<plansys2::Instance>& instances,
     const std::unordered_set<plansys2::Function>& functions,
     const std::unordered_set<plansys2::Predicate>& predicates,
     const std::unordered_set<plansys2::Predicate>& inferred_predicates
-  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(inferred_predicates) {}
+  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(inferred_predicates) {
+    for (const auto& p: inferred_predicates_) {
+      inferred_predicates_map_[p.name].insert(p);
+    }
+    inferred_predicates_.insert(predicates_.begin(), predicates_.end());
+  }
 
   State(const std::unordered_set<plansys2::Instance>& instances,
     const std::unordered_set<plansys2::Function>& functions,
     const std::unordered_set<plansys2::Predicate>& predicates,
     const std::unordered_set<plansys2::Predicate>& inferred_predicates,
     const plansys2::DerivedGraph& derived_predicates
-  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(inferred_predicates), derived_predicates_(derived_predicates) {}
+  ) : instances_(instances), functions_(functions), predicates_(predicates), inferred_predicates_(inferred_predicates), derived_predicates_(derived_predicates) {
+    for (const auto& p: inferred_predicates_) {
+      inferred_predicates_map_[p.name].insert(p);
+    }
+    inferred_predicates_.insert(predicates_.begin(), predicates_.end());
+  }
 
   State(const plansys2_msgs::msg::State &state)
   {
@@ -69,9 +84,16 @@ public:
   auto &getInstances() const { return instances_; }
   auto &getFunctions() const { return functions_; }
   auto &getPredicates() const { return predicates_; }
-  auto &getInferredPredicates() const { return inferred_predicates_.empty() ? predicates_ : inferred_predicates_; }
+  auto &getInferredPredicates() const {
+    return inferred_predicates_.empty() ? predicates_ : inferred_predicates_;
+  }
+
   auto &getDerivedPredicates() const { return derived_predicates_; }
-  auto getDerivedPredicatesDepthFirst() const { return derived_predicates_.getDerivedPredicatesDepthFirst(); }
+  auto getDerivedPredicatesDepthFirst() const {
+    std::vector<plansys2_msgs::msg::Node> root_nodes;
+    return derived_predicates_.getDerivedPredicatesDepthFirst();
+  }
+  auto getDerivedPredicatesDepthFirst(const std::vector<plansys2_msgs::msg::Node>& root_nodes) const { return derived_predicates_.getDerivedPredicatesDepthFirst(root_nodes); }
 
   auto getInstancesSize() const { return instances_.size(); }
   auto getFunctionsSize() const { return functions_.size(); }
@@ -79,15 +101,42 @@ public:
   auto getInferredPredicatesSize() const { return inferred_predicates_.size(); }
   auto getDerivedPredicatesSize() const { return derived_predicates_.getEdgeNumber(); }
 
+  size_t getNumberInferredFromDerived(const plansys2::Derived& derived) const {
+    auto it = inferred_predicates_map_.find(derived.predicate.name);
+    if (it == inferred_predicates_map_.end()){
+      return 0;
+    }
+    return it->second.size();
+  }
+
   bool addInstance(const plansys2::Instance& instance) { return instances_.insert(instance).second;}
   bool addInstance(plansys2::Instance&& instance) { return instances_.insert(std::move(instance)).second;}
 
-  bool addPredicate(const plansys2::Predicate& predicate) { return predicates_.insert(predicate).second;}
-  bool addPredicate(plansys2::Predicate&& predicate) { return predicates_.insert(std::move(predicate)).second;}
+  bool addPredicate(const plansys2::Predicate& predicate) {
+    return predicates_.insert(predicate).second && inferred_predicates_.insert(predicate).second;
+  }
+  bool addPredicate(plansys2::Predicate&& predicate) {
+    return predicates_.insert(predicate).second && inferred_predicates_.insert(predicate).second;
+  }
 
-  bool addInferredPredicate(const plansys2::Predicate& predicate) { return inferred_predicates_.emplace(predicate).second;}
-  bool addInferredPredicate(plansys2::Predicate&& predicate) { return inferred_predicates_.emplace(std::move(predicate)).second;}
-  void addInferredPredicates(std::unordered_set<plansys2::Predicate>&& predicates) { inferred_predicates_.insert(predicates.begin(), predicates.end());}
+  bool addInferredPredicate(const plansys2::Predicate& predicate) {
+    auto res = inferred_predicates_.emplace(predicate);
+    if (res.second)
+    {
+      inferred_predicates_map_[predicate.name].insert(predicate);
+    }
+    return res.second;
+  }
+
+  bool addInferredPredicate(plansys2::Predicate&& predicate) {
+    auto moved_predicate = std::move(predicate);
+    auto res = inferred_predicates_.emplace(moved_predicate);
+    if (res.second)
+    {
+      inferred_predicates_map_[moved_predicate.name].insert(moved_predicate);
+    }
+    return res.second;
+  }
 
   bool addFunction(const plansys2::Function& function) { return functions_.insert(function).second;}
   bool addFunction(plansys2::Function&& function) { return functions_.insert(std::move(function)).second;}
@@ -95,9 +144,14 @@ public:
   void removeInstance(const std::unordered_set<plansys2::Instance>::const_iterator it) {instances_.erase(it);}
   bool removeInstance(plansys2::Instance instance) {return instances_.erase(instance) == 1;}
 
-  auto removePredicate(const std::unordered_set<plansys2::Predicate>::const_iterator it) {return predicates_.erase(it);}
-  bool removePredicate(const plansys2::Predicate& predicate) {return predicates_.erase(predicate) == 1;}
-  bool removePredicate(plansys2::Predicate&& predicate) {return predicates_.erase(std::move(predicate)) == 1;}
+  auto removePredicate(const std::unordered_set<plansys2::Predicate>::const_iterator it) {
+    inferred_predicates_.erase(*it);
+    return predicates_.erase(it);
+  }
+  bool removePredicate(const plansys2::Predicate& predicate) {
+    return predicates_.erase(predicate) == 1 && inferred_predicates_.erase(predicate) == 1;
+  }
+  bool removePredicate(plansys2::Predicate&& predicate) {return predicates_.erase(predicate) == 1 && inferred_predicates_.erase(predicate) == 1;}
 
   auto removeFunction(const std::unordered_set<plansys2::Function>::const_iterator it) {return functions_.erase(it);}
   bool removeFunction(const plansys2::Function& function) {return functions_.erase(function) == 1;}
@@ -124,18 +178,57 @@ public:
   auto getFunction(const plansys2::Function& function) const {return functions_.find(function);}
   auto getFunction(plansys2::Function&& function) const {return functions_.find(std::move(function));}
 
-  void setInferredPredicates(const std::unordered_set<plansys2::Predicate> & inferred_predicates) {inferred_predicates_ = std::move(inferred_predicates);}
-  void setInferredPredicates(std::unordered_set<plansys2::Predicate> && inferred_predicates) {inferred_predicates_ = std::move(inferred_predicates);}
   void setDerivedPredicates(const plansys2::DerivedGraph derived_predicates) {derived_predicates_ = derived_predicates;}
 
   bool hasDerivedPredicates() {return derived_predicates_.getEdgeNumber() == 0;}
 
   void reserveInferredPredicates(size_t size) {inferred_predicates_.reserve(size);}
 
-  void clearPredicates() {predicates_.clear(); inferred_predicates_.clear();}
-  void clearState() { instances_.clear(); functions_.clear(); predicates_.clear(); inferred_predicates_.clear(); derived_predicates_.clear();}
+  void clearPredicates() {
+    predicates_.clear();
+    inferred_predicates_.clear();
+    inferred_predicates_map_.clear();
+  }
+  void clearState() {
+    instances_.clear();
+    functions_.clear();
+    predicates_.clear();
+    inferred_predicates_.clear();
+    derived_predicates_.clear();
+    inferred_predicates_map_.clear();
+  }
 
-  void resetInferredPredicates() {inferred_predicates_ = predicates_;}
+  void resetInferredPredicates() {
+    inferred_predicates_ = predicates_;
+    inferred_predicates_map_.clear();
+  }
+  void initInferredPredicates() {
+    inferred_predicates_ = predicates_;
+    inferred_predicates_map_.clear();
+  }
+
+  void ungroundSingleDerivedPredicate(const plansys2::Derived& derived) {
+    auto it_map = inferred_predicates_map_.find(derived.predicate.name);
+    if (it_map == inferred_predicates_map_.end()){
+      return;
+    }
+    for (const auto& predicate: it_map->second) {
+      inferred_predicates_.erase(predicate);
+    }
+    it_map->second.clear();
+  }
+
+  void ungroundDerivedPredicate(const plansys2::Derived& derived) {
+    derived_predicates_.depthFirstTraverse(
+      derived,
+      [&](const plansys2::NodeVariant& node) {
+        std::cout<<"derived node "<<node.getNodeName()<<std::endl;
+        if (node.isDerived()) {
+          ungroundSingleDerivedPredicate(node.getDerivedNode());
+        }
+      }
+    );
+  }
 
   plansys2_msgs::msg::State getAsMsg()
   {
@@ -148,7 +241,8 @@ public:
         predicates_);
     state.inferred_predicates = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Node, plansys2::Predicate>(
         inferred_predicates_);
-    state.derived_predicates = derived_predicates_.getDerivedPredicates();
+    state.derived_predicates = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Derived, plansys2::Derived>(
+        derived_predicates_.getDerivedPredicates());
     return state;
   }
 
@@ -157,6 +251,9 @@ private:
   std::unordered_set<plansys2::Function> functions_;
   std::unordered_set<plansys2::Predicate> predicates_;
   std::unordered_set<plansys2::Predicate> inferred_predicates_;
+  std::unordered_map<
+    std::string,
+    std::unordered_set<plansys2::Predicate>> inferred_predicates_map_;
   plansys2::DerivedGraph derived_predicates_;
 
   friend struct std::hash<State>;

@@ -1357,6 +1357,90 @@ TEST(utils, apply_with_derived)
   ASSERT_TRUE(state.getInferredPredicates().find(parser::pddl::fromStringPredicate("(inferred-robot_at leia bedroom)")) != state.getInferredPredicates().end());
 }
 
+TEST(utils, apply_with_derived_2)
+{
+  std::string pkgpath = ament_index_cpp::get_package_share_directory("plansys2_problem_expert");
+  std::ifstream domain_ifs(pkgpath + "/pddl/suave_domain.pddl");
+  std::string domain_str(
+    (std::istreambuf_iterator<char>(domain_ifs)), std::istreambuf_iterator<char>());
+
+  auto domain_expert = std::make_shared<plansys2::DomainExpert>(domain_str);
+  plansys2::ProblemExpert problem_expert(domain_expert);
+
+  std::ifstream problem_ifs(pkgpath + "/pddl/suave_problem.pddl");
+  std::string problem_str(
+    (std::istreambuf_iterator<char>(problem_ifs)), std::istreambuf_iterator<char>());
+  ASSERT_TRUE(problem_expert.addProblem(problem_str));
+
+  auto state = problem_expert.getState();
+  ASSERT_TRUE(state.getInstances().size() > 0);
+  ASSERT_TRUE(state.getPredicates().size() > 0);
+  ASSERT_TRUE(state.getInferredPredicates().size() > 0);
+  ASSERT_TRUE(state.getDerivedPredicates().getEdgeNumber() > 0);
+
+  plansys2_msgs::msg::Tree start_robot_effect;
+  parser::pddl::fromString(start_robot_effect, "(and (robot_started bluerov))");
+
+  plansys2::apply(start_robot_effect, state);
+
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_started bluerov)")));
+  ASSERT_TRUE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(robot_started bluerov)")));
+
+  auto action_reconfig_maintain = domain_expert->getAction(
+    "reconfigure", {"f_maintain_motion", "fd_unground", "fd_recover_thrusters"});
+  ASSERT_TRUE(plansys2::check(action_reconfig_maintain->preconditions, state));
+
+  plansys2::apply(action_reconfig_maintain->effects, state);
+  ASSERT_FALSE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_maintain_motion fd_unground)")));
+  ASSERT_FALSE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_maintain_motion fd_unground)")));
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_maintain_motion fd_recover_thrusters)")));
+  ASSERT_TRUE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_maintain_motion fd_recover_thrusters)")));
+
+  auto action_reconfig_generate = domain_expert->getAction(
+    "reconfigure", {"f_generate_search_path", "fd_unground", "fd_spiral_high"});
+  ASSERT_TRUE(plansys2::check(action_reconfig_generate->preconditions, state));
+
+  plansys2::apply(action_reconfig_generate->effects, state);
+  ASSERT_FALSE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_unground)")));
+  ASSERT_FALSE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_unground)")));
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_spiral_high)")));
+  ASSERT_TRUE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_spiral_high)")));
+
+  auto action_search_pipeline = domain_expert->getAction(
+    "search_pipeline", {"a_search_pipeline", "pipeline", "bluerov", "fd_spiral_high", "fd_recover_thrusters"});
+  ASSERT_TRUE(plansys2::check(action_search_pipeline->preconditions, state));
+
+  plansys2::apply(action_search_pipeline->effects, state);
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(pipeline_found pipeline)")));
+
+  auto action_reconfig_follow = domain_expert->getAction(
+    "reconfigure", {"f_follow_pipeline", "fd_unground", "fd_follow_pipeline"});
+  ASSERT_TRUE(plansys2::check(action_reconfig_follow->preconditions, state));
+
+  plansys2::apply(action_reconfig_follow->effects, state);
+  ASSERT_FALSE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_follow_pipeline fd_unground)")));
+  ASSERT_FALSE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_follow_pipeline fd_unground)")));
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_follow_pipeline fd_follow_pipeline)")));
+  ASSERT_TRUE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_follow_pipeline fd_follow_pipeline)")));
+
+  auto action_reconfig_generate_2 = domain_expert->getAction(
+    "reconfigure", {"f_generate_search_path", "fd_spiral_high", "fd_unground"});
+  ASSERT_TRUE(plansys2::check(action_reconfig_generate_2->preconditions, state));
+
+  plansys2::apply(action_reconfig_generate_2->effects, state);
+  ASSERT_FALSE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_spiral_high)")));
+  ASSERT_FALSE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_spiral_high)")));
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_unground)")));
+  ASSERT_TRUE(state.hasInferredPredicate(parser::pddl::fromStringPredicate("(system_in_mode f_generate_search_path fd_unground)")));
+
+  auto action_inspect_pipeline = domain_expert->getAction(
+    "inspect_pipeline", {"a_inspect_pipeline", "pipeline", "bluerov", "fd_follow_pipeline", "fd_recover_thrusters"});
+  ASSERT_TRUE(plansys2::check(action_inspect_pipeline->preconditions, state));
+
+  plansys2::apply(action_inspect_pipeline->effects, state);
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(pipeline_inspected pipeline)")));
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);

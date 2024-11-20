@@ -25,7 +25,6 @@
 #include <string>
 #include <vector>
 
-#include "plansys2_core/Types.hpp"
 #include "plansys2_core/Utils.hpp"
 #include "plansys2_pddl_parser/Domain.hpp"
 #include "plansys2_pddl_parser/Instance.hpp"
@@ -41,7 +40,7 @@ ProblemExpert::ProblemExpert(std::shared_ptr<DomainExpert> & domain_expert)
 }
 
 void ProblemExpert::updateInferredPredicates() {
-  solveAllDerivedPredicates(state_);
+  solveDerivedPredicates(state_);
 }
 
 plansys2::State ProblemExpert::getState()

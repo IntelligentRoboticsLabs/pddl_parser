@@ -58,7 +58,12 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
   const std::unordered_set<plansys2::Instance> & instances
 );
 
-void solveAllDerivedPredicates(
+void solveDerivedPredicates(
+  plansys2::State & state,
+  const std::vector<plansys2_msgs::msg::Node>& root_nodes
+);
+
+void solveDerivedPredicates(
   plansys2::State & state
 );
 
@@ -133,8 +138,15 @@ bool apply(
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
+  plansys2::State & state,
+  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
+  uint32_t node_id = 0, bool negate = false, bool derive=true);
+
+bool apply(
+  const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
   plansys2::State &state,
+  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
   bool use_state = false,
   uint32_t node_id = 0,
   bool negate = false, bool derive=true

@@ -234,13 +234,28 @@ std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
   return std::move(vector3);
 }
 
-void solveAllDerivedPredicates(
-  plansys2::State & state
+void solveDerivedPredicates(plansys2::State & state)
+{
+  std::vector<plansys2_msgs::msg::Node> root_nodes;
+  solveDerivedPredicates(state, root_nodes);
+}
+
+void solveDerivedPredicates(
+  plansys2::State & state,
+  const std::vector<plansys2_msgs::msg::Node>& root_nodes
 )
 {
-  state.resetInferredPredicates();
+  if (root_nodes.empty()){
+    state.resetInferredPredicates();
+  }
+  std::unordered_set<std::string> derived_ungrounded_cache;
 
-  for (const auto& derived : state.getDerivedPredicatesDepthFirst()) {
+  for (const auto& derived : state.getDerivedPredicatesDepthFirst(root_nodes)) {
+    if (!root_nodes.empty() && derived_ungrounded_cache.find(derived.predicate.name) == derived_ungrounded_cache.end())
+    {
+      state.ungroundDerivedPredicate(derived);
+      derived_ungrounded_cache.insert(derived.predicate.name);
+    }
     auto [_, evaluate_value, __, params_values] = evaluate(
       derived.preconditions, state, derived.preconditions.nodes[0].node_id);
 
@@ -655,7 +670,8 @@ bool apply(
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id, bool negate, bool derive)
 {
   plansys2::State state;
-  return apply(tree, problem_client, state, false, node_id, negate, derive);
+  std::vector<plansys2_msgs::msg::Node> nodes_modified;
+  return apply(tree, problem_client, state, nodes_modified, false, node_id, negate, derive);
 }
 
 bool apply(
@@ -663,13 +679,24 @@ bool apply(
   uint32_t node_id, bool negate, bool derive)
 {
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client;
-  return apply(tree, problem_client, state, true, node_id, negate, derive);
+  std::vector<plansys2_msgs::msg::Node> nodes_modified;
+  return apply(tree, problem_client, state, nodes_modified, true, node_id, negate, derive);
+}
+
+bool apply(
+  const plansys2_msgs::msg::Tree & tree, plansys2::State & state,
+  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
+  uint32_t node_id, bool negate, bool derive)
+{
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client;
+  return apply(tree, problem_client, state, nodes_modified, true, node_id, negate, derive);
 }
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
   plansys2::State &state,
+  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
   bool use_state, uint32_t node_id, bool negate, bool derive)
 {
   if (tree.nodes.empty()) {
@@ -682,7 +709,7 @@ bool apply(
     case plansys2_msgs::msg::Node::AND: {
         for (const auto & child_id : current_node.children) {
           bool child_success = apply(
-            tree, problem_client, state, use_state, child_id, negate);
+            tree, problem_client, state, nodes_modified, use_state, child_id, negate, false);
           success &= child_success;
         }
         break;
@@ -690,8 +717,8 @@ bool apply(
 
     case plansys2_msgs::msg::Node::NOT: {
         success = apply(
-          tree, problem_client, state, use_state,
-          current_node.children[0], !negate);
+          tree, problem_client, state, nodes_modified, use_state,
+          current_node.children[0], !negate, false);
         break;
       }
 
@@ -702,6 +729,7 @@ bool apply(
           success &= negate ? problem_client->removePredicate(current_node) :
             problem_client->addPredicate(current_node);
         }
+        nodes_modified.push_back(current_node);
         break;
       }
     default:
@@ -710,7 +738,7 @@ bool apply(
                 << "]" << std::endl;
   }
   if (derive){
-    solveAllDerivedPredicates(state);
+    solveDerivedPredicates(state, nodes_modified);
   }
   return success;
 }
