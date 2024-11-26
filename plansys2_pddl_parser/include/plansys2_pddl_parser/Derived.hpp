@@ -44,7 +44,9 @@ public:
   {
     stream << "Derived ";
     ParamCond::print(stream);
-    if (cond) {cond->print(stream);}
+    if (cond) {
+      cond->print(stream);
+    }
   }
 
   void PDDLPrint(
@@ -60,7 +62,10 @@ public:
   void addParams(int m, unsigned n)
   {
     for (unsigned i = 0; i < params.size(); ++i) {
-      if (params[i] >= m) {params[i] += n;}}
+      if (params[i] >= m) {
+        params[i] += n;
+      }
+    }
   }
 
   Condition * copy(Domain & d) {return new Derived(this, d);}

@@ -17,31 +17,29 @@
 
 #include <memory>
 
-#include "plansys2_problem_expert/ProblemExpert.hpp"
-
-#include "std_msgs/msg/string.hpp"
-#include "std_msgs/msg/empty.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
 #include "plansys2_msgs/msg/knowledge.hpp"
-#include "plansys2_msgs/srv/affect_node.hpp"
-#include "plansys2_msgs/srv/affect_param.hpp"
 #include "plansys2_msgs/srv/add_problem.hpp"
 #include "plansys2_msgs/srv/add_problem_goal.hpp"
+#include "plansys2_msgs/srv/affect_node.hpp"
+#include "plansys2_msgs/srv/affect_param.hpp"
+#include "plansys2_msgs/srv/clear_problem_knowledge.hpp"
 #include "plansys2_msgs/srv/exist_node.hpp"
+#include "plansys2_msgs/srv/get_node_details.hpp"
 #include "plansys2_msgs/srv/get_problem.hpp"
 #include "plansys2_msgs/srv/get_problem_goal.hpp"
 #include "plansys2_msgs/srv/get_problem_instance_details.hpp"
 #include "plansys2_msgs/srv/get_problem_instances.hpp"
 #include "plansys2_msgs/srv/get_problem_state.hpp"
-#include "plansys2_msgs/srv/get_node_details.hpp"
 #include "plansys2_msgs/srv/get_states.hpp"
 #include "plansys2_msgs/srv/is_problem_goal_satisfied.hpp"
 #include "plansys2_msgs/srv/remove_problem_goal.hpp"
-#include "plansys2_msgs/srv/clear_problem_knowledge.hpp"
-
+#include "plansys2_problem_expert/ProblemExpert.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "std_msgs/msg/empty.hpp"
+#include "std_msgs/msg/string.hpp"
 
 namespace plansys2
 {
@@ -51,8 +49,7 @@ class ProblemExpertNode : public rclcpp_lifecycle::LifecycleNode
 public:
   ProblemExpertNode();
 
-  using CallbackReturnT =
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+  using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
   CallbackReturnT on_configure(const rclcpp_lifecycle::State & state);
   CallbackReturnT on_activate(const rclcpp_lifecycle::State & state);
@@ -186,54 +183,37 @@ public:
 private:
   std::shared_ptr<ProblemExpert> problem_expert_;
 
-  rclcpp::Service<plansys2_msgs::srv::AddProblem>::SharedPtr
-    add_problem_service_;
-  rclcpp::Service<plansys2_msgs::srv::AddProblemGoal>::SharedPtr
-    add_problem_goal_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectParam>::SharedPtr
-    add_problem_instance_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr
-    add_problem_predicate_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr
-    add_problem_function_service_;
-  rclcpp::Service<plansys2_msgs::srv::GetProblemGoal>::SharedPtr
-    get_problem_goal_service_;
-  rclcpp::Service<plansys2_msgs::srv::GetProblemState>::SharedPtr
-    get_problem_state_service_;
+  rclcpp::Service<plansys2_msgs::srv::AddProblem>::SharedPtr add_problem_service_;
+  rclcpp::Service<plansys2_msgs::srv::AddProblemGoal>::SharedPtr add_problem_goal_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectParam>::SharedPtr add_problem_instance_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr add_problem_predicate_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr add_problem_function_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetProblemGoal>::SharedPtr get_problem_goal_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetProblemState>::SharedPtr get_problem_state_service_;
   rclcpp::Service<plansys2_msgs::srv::GetProblemInstanceDetails>::SharedPtr
     get_problem_instance_details_service_;
   rclcpp::Service<plansys2_msgs::srv::GetProblemInstances>::SharedPtr
     get_problem_instances_service_;
   rclcpp::Service<plansys2_msgs::srv::GetNodeDetails>::SharedPtr
     get_problem_predicate_details_service_;
-  rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr
-    get_problem_predicates_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr get_problem_predicates_service_;
   rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr
     get_problem_inferred_predicates_service_;
   rclcpp::Service<plansys2_msgs::srv::GetNodeDetails>::SharedPtr
     get_problem_function_details_service_;
-  rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr
-    get_problem_functions_service_;
-  rclcpp::Service<plansys2_msgs::srv::GetProblem>::SharedPtr
-    get_problem_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetStates>::SharedPtr get_problem_functions_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetProblem>::SharedPtr get_problem_service_;
   rclcpp::Service<plansys2_msgs::srv::IsProblemGoalSatisfied>::SharedPtr
     is_problem_goal_satisfied_service_;
-  rclcpp::Service<plansys2_msgs::srv::RemoveProblemGoal>::SharedPtr
-    remove_problem_goal_service_;
+  rclcpp::Service<plansys2_msgs::srv::RemoveProblemGoal>::SharedPtr remove_problem_goal_service_;
   rclcpp::Service<plansys2_msgs::srv::ClearProblemKnowledge>::SharedPtr
     clear_problem_knowledge_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectParam>::SharedPtr
-    remove_problem_instance_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr
-    remove_problem_predicate_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr
-    remove_problem_function_service_;
-  rclcpp::Service<plansys2_msgs::srv::ExistNode>::SharedPtr
-    exist_problem_predicate_service_;
-  rclcpp::Service<plansys2_msgs::srv::ExistNode>::SharedPtr
-    exist_problem_function_service_;
-  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr
-    update_problem_function_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectParam>::SharedPtr remove_problem_instance_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr remove_problem_predicate_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr remove_problem_function_service_;
+  rclcpp::Service<plansys2_msgs::srv::ExistNode>::SharedPtr exist_problem_predicate_service_;
+  rclcpp::Service<plansys2_msgs::srv::ExistNode>::SharedPtr exist_problem_function_service_;
+  rclcpp::Service<plansys2_msgs::srv::AffectNode>::SharedPtr update_problem_function_service_;
 
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Empty>::SharedPtr update_pub_;
   rclcpp_lifecycle::LifecyclePublisher<plansys2_msgs::msg::Knowledge>::SharedPtr knowledge_pub_;

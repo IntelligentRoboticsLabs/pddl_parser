@@ -161,7 +161,9 @@ void TemporalAction::parse(Stringreader & f, TokenStruct<std::string> & ts, Doma
     f.assert_token(":");
     s = f.getToken();
   }
-  if (s != "effect") {f.tokenExit(s);}
+  if (s != "effect") {
+    f.tokenExit(s);
+  }
 
   f.next();
   f.assert_token("(");

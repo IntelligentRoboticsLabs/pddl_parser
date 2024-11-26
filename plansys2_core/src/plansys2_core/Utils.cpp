@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
-#include <sstream>
-#include <vector>
-
 #include "plansys2_core/Utils.hpp"
+
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace plansys2
 {
@@ -41,9 +41,7 @@ std::vector<std::string> tokenize(const std::string & string, const std::string 
 }
 
 std::string substr_without_empty_lines(
-  std::string string,
-  std::size_t init_pos,
-  std::size_t end_pos)
+  std::string string, std::size_t init_pos, std::size_t end_pos)
 {
   std::stringstream stream_in(string.substr(init_pos, end_pos - init_pos));
   std::stringstream stream_out;

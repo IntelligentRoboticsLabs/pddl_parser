@@ -88,7 +88,9 @@ void Action::parseConditions(Stringreader & f, TokenStruct<std::string> & ts, Do
     f.assert_token(":");
     s = f.getToken();
   }
-  if (s != "effect") {f.tokenExit(s);}
+  if (s != "effect") {
+    f.tokenExit(s);
+  }
 
   f.next();
   f.assert_token("(");
@@ -125,10 +127,14 @@ GroundVec Action::deleteEffects() {return getGroundsFromCondition(eff, true);}
 CondVec Action::getSubconditionsFromCondition(Condition * c)
 {
   And * a = dynamic_cast<And *>(c);
-  if (a) {return a->conds;}
+  if (a) {
+    return a->conds;
+  }
 
   CondVec subconds;
-  if (c) {subconds.push_back(c);}
+  if (c) {
+    subconds.push_back(c);
+  }
   return subconds;
 }
 
@@ -140,20 +146,28 @@ GroundVec Action::getGroundsFromCondition(Condition * c, bool neg)
     if (neg) {
       Not * n = dynamic_cast<Not *>(a->conds[i]);
       Ground * g = dynamic_cast<Ground *>(n->cond);
-      if (n && g) {grounds.push_back(g);}
+      if (n && g) {
+        grounds.push_back(g);
+      }
     } else {
       Ground * g = dynamic_cast<Ground *>(a->conds[i]);
-      if (g) {grounds.push_back(g);}
+      if (g) {
+        grounds.push_back(g);
+      }
     }
   }
 
   if (neg) {
     Not * n = dynamic_cast<Not *>(c);
     Ground * g = dynamic_cast<Ground *>(n->cond);
-    if (n && g) {grounds.push_back(g);}
+    if (n && g) {
+      grounds.push_back(g);
+    }
   } else {
     Ground * g = dynamic_cast<Ground *>(c);
-    if (g) {grounds.push_back(g);}
+    if (g) {
+      grounds.push_back(g);
+    }
   }
 
   return grounds;

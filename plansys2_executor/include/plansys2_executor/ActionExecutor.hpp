@@ -15,10 +15,11 @@
 #ifndef PLANSYS2_EXECUTOR__ACTIONEXECUTOR_HPP_
 #define PLANSYS2_EXECUTOR__ACTIONEXECUTOR_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
+#include "behaviortree_cpp/behavior_tree.h"
 #include "plansys2_core/Action.hpp"
 #include "plansys2_msgs/msg/action.hpp"
 #include "plansys2_msgs/msg/action_execution.hpp"
@@ -26,8 +27,6 @@
 #include "plansys2_msgs/msg/durative_action.hpp"
 #include "plansys2_msgs/msg/param.hpp"
 #include "plansys2_pddl_parser/Utils.hpp"
-#include "behaviortree_cpp/behavior_tree.h"
-
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -37,20 +36,11 @@ namespace plansys2
 class ActionExecutor
 {
 public:
-  enum Status
-  {
-    IDLE,
-    DEALING,
-    RUNNING,
-    SUCCESS,
-    FAILURE,
-    CANCELLED
-  };
+  enum Status { IDLE, DEALING, RUNNING, SUCCESS, FAILURE, CANCELLED };
 
   using Ptr = std::shared_ptr<ActionExecutor>;
   static Ptr make_shared(
-    const std::string & action,
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    const std::string & action, rclcpp_lifecycle::LifecycleNode::SharedPtr node)
   {
     return std::make_shared<ActionExecutor>(action, node);
   }

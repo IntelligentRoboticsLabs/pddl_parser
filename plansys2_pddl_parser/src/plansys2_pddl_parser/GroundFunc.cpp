@@ -66,7 +66,9 @@ void GroundFunc<double>::parse(Stringreader & f, TokenStruct<std::string> & ts, 
   f.next();
   std::string s = f.getToken();
   std::istringstream i(s);
-  if (!(i >> value)) {f.tokenExit(s);}
+  if (!(i >> value)) {
+    f.tokenExit(s);
+  }
 
   f.next();
   f.assert_token(")");
@@ -79,13 +81,13 @@ void GroundFunc<int>::parse(Stringreader & f, TokenStruct<std::string> & ts, Dom
 
   f.next();
   std::string s = f.getToken();
-  std::pair<bool, unsigned> p = d.types[
-    (reinterpret_cast<Function *>(lifted))->returnType]->parseObject(s);
+  std::pair<bool, unsigned> p =
+    d.types[(reinterpret_cast<Function *>(lifted))->returnType]->parseObject(s);
   if (p.first) {
     value = p.second;
   } else {
-    std::pair<bool, int> q = d.types[
-      (reinterpret_cast<Function *>(lifted))->returnType]->parseConstant(s);
+    std::pair<bool, int> q =
+      d.types[(reinterpret_cast<Function *>(lifted))->returnType]->parseConstant(s);
     if (q.first) {
       value = q.second;
     } else {

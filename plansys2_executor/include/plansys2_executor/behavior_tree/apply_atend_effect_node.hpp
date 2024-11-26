@@ -16,16 +16,14 @@
 #define PLANSYS2_EXECUTOR__BEHAVIOR_TREE__APPLY_ATEND_EFFECT_NODE_HPP_
 
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "behaviortree_cpp/action_node.h"
-
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
 #include "plansys2_executor/ActionExecutor.hpp"
-#include "plansys2_problem_expert/Utils.hpp"
-
 #include "plansys2_executor/behavior_tree/execute_action_node.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys2_problem_expert/Utils.hpp"
 
 namespace plansys2
 {
@@ -33,9 +31,7 @@ namespace plansys2
 class ApplyAtEndEffect : public BT::ActionNodeBase
 {
 public:
-  ApplyAtEndEffect(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf);
+  ApplyAtEndEffect(const std::string & xml_tag_name, const BT::NodeConfig & conf);
 
   void halt() {}
   BT::NodeStatus tick() override;

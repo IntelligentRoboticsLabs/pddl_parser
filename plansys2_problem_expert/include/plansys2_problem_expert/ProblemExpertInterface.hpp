@@ -16,16 +16,15 @@
 #define PLANSYS2_PROBLEM_EXPERT__PROBLEMEXPERTINTERFACE_HPP_
 
 #include <string>
-#include <vector>
 #include <unordered_set>
+#include <vector>
 
+#include "plansys2_core/Graph.hpp"
+#include "plansys2_core/State.hpp"
+#include "plansys2_core/Types.hpp"
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/param.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
-
-#include "plansys2_core/Types.hpp"
-#include "plansys2_core/State.hpp"
-#include "plansys2_core/Graph.hpp"
 
 namespace plansys2
 {

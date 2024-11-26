@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
+#include "plansys2_executor/behavior_tree/wait_atstart_req_node.hpp"
+
 #include <map>
 #include <memory>
+#include <string>
 #include <tuple>
 
-#include "plansys2_executor/behavior_tree/wait_atstart_req_node.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
 
 namespace plansys2
 {
 
-WaitAtStartReq::WaitAtStartReq(
-  const std::string & xml_tag_name,
-  const BT::NodeConfig & conf)
+WaitAtStartReq::WaitAtStartReq(const std::string & xml_tag_name, const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
 {
   action_map_ =
@@ -33,12 +32,10 @@ WaitAtStartReq::WaitAtStartReq(
     "action_map");
 
   problem_client_ =
-    config().blackboard->get<std::shared_ptr<plansys2::ProblemExpertClient>>(
-    "problem_client");
+    config().blackboard->get<std::shared_ptr<plansys2::ProblemExpertClient>>("problem_client");
 }
 
-BT::NodeStatus
-WaitAtStartReq::tick()
+BT::NodeStatus WaitAtStartReq::tick()
 {
   std::string action;
   getInput("action", action);
@@ -53,9 +50,8 @@ WaitAtStartReq::tick()
     (*action_map_)[action].execution_error_info = "Error checking at start reqs";
 
     RCLCPP_ERROR_STREAM(
-      node->get_logger(),
-      "[" << action << "]" << (*action_map_)[action].execution_error_info << ": " <<
-        parser::pddl::toString(reqs_as));
+      node->get_logger(), "[" << action << "]" << (*action_map_)[action].execution_error_info
+                              << ": " << parser::pddl::toString(reqs_as));
 
     return BT::NodeStatus::RUNNING;
   }
@@ -65,9 +61,8 @@ WaitAtStartReq::tick()
     (*action_map_)[action].execution_error_info = "Error checking over all reqs";
 
     RCLCPP_ERROR_STREAM(
-      node->get_logger(),
-      "[" << action << "]" << (*action_map_)[action].execution_error_info << ": " <<
-        parser::pddl::toString(reqs_oa));
+      node->get_logger(), "[" << action << "]" << (*action_map_)[action].execution_error_info
+                              << ": " << parser::pddl::toString(reqs_oa));
 
     return BT::NodeStatus::RUNNING;
   }

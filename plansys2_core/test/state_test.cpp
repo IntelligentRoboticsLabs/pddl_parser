@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gtest/gtest.h"
-
-#include "plansys2_core/Graph.hpp"
 #include "plansys2_core/State.hpp"
+
+#include "gtest/gtest.h"
+#include "plansys2_core/Graph.hpp"
 
 TEST(state_test, state)
 {
@@ -65,30 +65,43 @@ TEST(state_test, state)
   instances.insert(instanceAB);
 
   plansys2::Predicate predA_instanceA = parser::pddl::fromStringPredicate("(predicateA instanceA)");
-  plansys2::Predicate predA_instanceAB = parser::pddl::fromStringPredicate("(predicateA instanceAB)");
+  plansys2::Predicate predA_instanceAB =
+    parser::pddl::fromStringPredicate("(predicateA instanceAB)");
   plansys2::Predicate predB_instanceB = parser::pddl::fromStringPredicate("(predicateB instanceB)");
-  plansys2::Predicate predB_instanceAB = parser::pddl::fromStringPredicate("(predicateB instanceAB)");
+  plansys2::Predicate predB_instanceAB =
+    parser::pddl::fromStringPredicate("(predicateB instanceAB)");
   std::unordered_set<plansys2::Predicate> predicates;
   predicates.insert(predA_instanceA);
   predicates.insert(predA_instanceAB);
   predicates.insert(predB_instanceB);
   predicates.insert(predB_instanceAB);
 
-  plansys2::Predicate inferredA_instanceA = parser::pddl::fromStringPredicate("(inferredA instanceA)");
-  plansys2::Predicate inferredAA_instanceA = parser::pddl::fromStringPredicate("(inferredAA instanceA)");
-  plansys2::Predicate inferredAA2_instanceA = parser::pddl::fromStringPredicate("(inferredAA instanceA)");
+  plansys2::Predicate inferredA_instanceA =
+    parser::pddl::fromStringPredicate("(inferredA instanceA)");
+  plansys2::Predicate inferredAA_instanceA =
+    parser::pddl::fromStringPredicate("(inferredAA instanceA)");
+  plansys2::Predicate inferredAA2_instanceA =
+    parser::pddl::fromStringPredicate("(inferredAA instanceA)");
 
-  plansys2::Predicate inferredA_instanceAB = parser::pddl::fromStringPredicate("(inferredA instanceAB)");
-  plansys2::Predicate inferredAA_instanceAB = parser::pddl::fromStringPredicate("(inferredAA instanceAB)");
-  plansys2::Predicate inferredAA2_instanceAB = parser::pddl::fromStringPredicate("(inferredAA instanceAB)");
+  plansys2::Predicate inferredA_instanceAB =
+    parser::pddl::fromStringPredicate("(inferredA instanceAB)");
+  plansys2::Predicate inferredAA_instanceAB =
+    parser::pddl::fromStringPredicate("(inferredAA instanceAB)");
+  plansys2::Predicate inferredAA2_instanceAB =
+    parser::pddl::fromStringPredicate("(inferredAA instanceAB)");
 
-  plansys2::Predicate inferredB_instanceB = parser::pddl::fromStringPredicate("(inferredB instanceB)");
-  plansys2::Predicate inferredBB_instanceB = parser::pddl::fromStringPredicate("(inferredBB instanceB)");
+  plansys2::Predicate inferredB_instanceB =
+    parser::pddl::fromStringPredicate("(inferredB instanceB)");
+  plansys2::Predicate inferredBB_instanceB =
+    parser::pddl::fromStringPredicate("(inferredBB instanceB)");
 
-  plansys2::Predicate inferredB_instanceAB = parser::pddl::fromStringPredicate("(inferredB instanceAB)");
-  plansys2::Predicate inferredBB_instanceAB = parser::pddl::fromStringPredicate("(inferredBB instanceAB)");
+  plansys2::Predicate inferredB_instanceAB =
+    parser::pddl::fromStringPredicate("(inferredB instanceAB)");
+  plansys2::Predicate inferredBB_instanceAB =
+    parser::pddl::fromStringPredicate("(inferredBB instanceAB)");
 
-  plansys2::Predicate inferredAB_instanceAB = parser::pddl::fromStringPredicate("(inferredAB instanceAB)");
+  plansys2::Predicate inferredAB_instanceAB =
+    parser::pddl::fromStringPredicate("(inferredAB instanceAB)");
 
   std::unordered_set<plansys2::Function> functions;
   plansys2::State state(instances, functions, predicates);

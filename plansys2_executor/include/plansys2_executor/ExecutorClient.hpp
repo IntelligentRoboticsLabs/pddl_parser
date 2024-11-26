@@ -15,17 +15,16 @@
 #ifndef PLANSYS2_EXECUTOR__EXECUTORCLIENT_HPP_
 #define PLANSYS2_EXECUTOR__EXECUTORCLIENT_HPP_
 
+#include <memory>
 #include <optional>
 #include <string>
-#include <memory>
 #include <vector>
 
 #include "plansys2_msgs/action/execute_plan.hpp"
-#include "plansys2_msgs/srv/get_ordered_sub_goals.hpp"
-#include "plansys2_msgs/srv/get_plan.hpp"
 #include "plansys2_msgs/msg/plan.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
-
+#include "plansys2_msgs/srv/get_ordered_sub_goals.hpp"
+#include "plansys2_msgs/srv/get_plan.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -54,8 +53,7 @@ private:
   rclcpp::Node::SharedPtr node_;
 
   rclcpp_action::Client<ExecutePlan>::SharedPtr action_client_;
-  rclcpp::Client<plansys2_msgs::srv::GetOrderedSubGoals>::SharedPtr
-    get_ordered_sub_goals_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetOrderedSubGoals>::SharedPtr get_ordered_sub_goals_client_;
   rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr get_plan_client_;
 
   ExecutePlan::Feedback feedback_;

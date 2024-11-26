@@ -18,7 +18,6 @@
 #include "gtest/gtest.h"
 #include "plansys2_core/Utils.hpp"
 
-
 TEST(domain_expert, functions)
 {
   std::string st1("this is a message");

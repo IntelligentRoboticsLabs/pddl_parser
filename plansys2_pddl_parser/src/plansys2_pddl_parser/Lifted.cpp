@@ -29,7 +29,9 @@ void Lifted::PDDLPrint(
     } else {
       s << " ?" << d.types[params[i]]->getName() << i;
     }
-    if (d.typed) {s << " - " << d.types[params[i]]->name;}
+    if (d.typed) {
+      s << " - " << d.types[params[i]]->name;
+    }
   }
   s << " )";
 }

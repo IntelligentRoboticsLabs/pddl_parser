@@ -15,11 +15,16 @@
 #ifndef PLANSYS2_CORE__GRAPH_HPP_
 #define PLANSYS2_CORE__GRAPH_HPP_
 
-#include <iostream>
 #include <deque>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
-#include "plansys2_core/Types.hpp"
 #include "plansys2_core/Action.hpp"
+#include "plansys2_core/Types.hpp"
 #include "plansys2_msgs/msg/derived.hpp"
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
@@ -27,22 +32,27 @@
 namespace plansys2
 {
 
-class NodeVariant {
+class NodeVariant
+{
 public:
-  using NodeType = std::variant<plansys2::Predicate, plansys2::Function, plansys2::Derived, plansys2::ActionVariant>;
+  using NodeType = std::variant<
+    plansys2::Predicate, plansys2::Function, plansys2::Derived, plansys2::ActionVariant>;
 
-  template <typename NodeT>
-  NodeVariant(NodeT node) : node_(std::make_shared<NodeType>(node)) {}
-
-  size_t hash() const {
-    return std::visit([](auto&& arg) { return std::hash<std::decay_t<decltype(arg)>>{}(arg); }, *node_);
+  template<typename NodeT>
+  NodeVariant(NodeT node)  // NOLINT(runtime/explicit)
+  : node_(std::make_shared<NodeType>(node))
+  {
   }
 
-  bool operator==(const NodeVariant& other) const {
-    return *node_ == *other.node_;
+  size_t hash() const
+  {
+    return std::visit(
+      [](auto && arg) {return std::hash<std::decay_t<decltype(arg)>>{}(arg);}, *node_);
   }
 
-  const NodeType& getNode() const { return *node_; }
+  bool operator==(const NodeVariant & other) const {return *node_ == *other.node_;}
+
+  const NodeType & getNode() const {return *node_;}
 
   plansys2::Derived getDerivedNode() const {return std::get<plansys2::Derived>(*node_);}
 
@@ -56,46 +66,28 @@ public:
     } else if (std::holds_alternative<plansys2::Derived>(*node_)) {
       node_name = std::get<plansys2::Derived>(*node_).predicate.name;
     } else if (std::holds_alternative<plansys2::ActionVariant>(*node_)) {
-      node_name =  std::get<plansys2::ActionVariant>(*node_).get_action_name();
+      node_name = std::get<plansys2::ActionVariant>(*node_).get_action_name();
     }
 
     return node_name;
   }
 
-  bool isPredicate() const
-  {
-    return std::holds_alternative<plansys2::Predicate>(*node_);
-  }
+  bool isPredicate() const {return std::holds_alternative<plansys2::Predicate>(*node_);}
 
-  bool isFunction() const
-  {
-    return std::holds_alternative<plansys2::Function>(*node_);
-  }
+  bool isFunction() const {return std::holds_alternative<plansys2::Function>(*node_);}
 
-  bool isDerived() const
-  {
-    return std::holds_alternative<plansys2::Derived>(*node_);
-  }
+  bool isDerived() const {return std::holds_alternative<plansys2::Derived>(*node_);}
 
-  plansys2::Predicate &getPredicate() const
-  {
-    return std::get<plansys2::Predicate>(*node_);
-  }
+  plansys2::Predicate & getPredicate() const {return std::get<plansys2::Predicate>(*node_);}
 
-  plansys2::Function &getFunction() const
-  {
-    return std::get<plansys2::Function>(*node_);
-  }
+  plansys2::Function & getFunction() const {return std::get<plansys2::Function>(*node_);}
 
-  auto &getDerivedPreconditions() const
+  auto & getDerivedPreconditions() const
   {
     return std::get<plansys2::Derived>(*node_).preconditions;
   }
 
-  auto &getDerivedPredicate() const
-  {
-    return std::get<plansys2::Derived>(*node_).predicate;
-  }
+  auto & getDerivedPredicate() const {return std::get<plansys2::Derived>(*node_).predicate;}
 
   std::string getNodeType() const
   {
@@ -112,64 +104,60 @@ public:
   }
 
 private:
-    std::shared_ptr<NodeType> node_;
+  std::shared_ptr<NodeType> node_;
 };
 
-inline bool operator==(const NodeVariant& lhs, const plansys2_msgs::msg::Node& rhs) {
-  if (lhs.isPredicate())
-  {
+inline bool operator==(const NodeVariant & lhs, const plansys2_msgs::msg::Node & rhs)
+{
+  if (lhs.isPredicate()) {
     return lhs.getPredicate() == static_cast<plansys2::Predicate>(rhs);
-  } else if (lhs.isFunction())
-  {
+  } else if (lhs.isFunction()) {
     return lhs.getFunction() == static_cast<plansys2::Function>(rhs);
   }
   return false;
-};
+}
 
 }  // namespace plansys2
 
-namespace std {
+namespace std
+{
 template<>
-struct hash<plansys2::NodeVariant> {
-  std::size_t operator()(const plansys2::NodeVariant& nv) const noexcept {
-    return nv.hash();
-  }
+struct hash<plansys2::NodeVariant>
+{
+  std::size_t operator()(const plansys2::NodeVariant & nv) const noexcept {return nv.hash();}
 };
 }  // namespace std
 
 namespace plansys2
 {
-class Graph {
+class Graph
+{
 public:
   Graph()
   : edge_count_(0) {}
 
-  void addEdge(const NodeVariant& u, const NodeVariant& v)
+  void addEdge(const NodeVariant & u, const NodeVariant & v)
   {
     adj_list_[u].insert(v);
     in_nodes_[v].insert(u);
     ++edge_count_;
   }
 
-  const auto &getNodeOutEdges(const NodeVariant& node) {return adj_list_[node];}
-  const auto &getNodeInEdges(const NodeVariant& node) {return in_nodes_[node];}
+  const auto & getNodeOutEdges(const NodeVariant & node) {return adj_list_[node];}
+  const auto & getNodeInEdges(const NodeVariant & node) {return in_nodes_[node];}
 
-  template <typename Func>
+  template<typename Func>
   void depthFirstTraverse(
-    const NodeVariant& node,
-    std::unordered_set<NodeVariant>& visited,
-    Func&& func,
+    const NodeVariant & node, std::unordered_set<NodeVariant> & visited, Func && func,
     bool check_dependencies = false) const
   {
-    if (visited.find(node) != visited.end()){
+    if (visited.find(node) != visited.end()) {
       return;
     }
 
     auto it_in_nodes = in_nodes_.find(node);
-    if (check_dependencies && it_in_nodes != in_nodes_.end())
-    {
-      for (const auto& in_node : it_in_nodes->second)
-      {
+    if (check_dependencies && it_in_nodes != in_nodes_.end()) {
+      for (const auto & in_node : it_in_nodes->second) {
         if (visited.find(in_node) == visited.end()) {
           return;
         }
@@ -179,61 +167,54 @@ public:
     visited.insert(node);
 
     auto it = adj_list_.find(node);
-    if (it == adj_list_.end())
-    {
+    if (it == adj_list_.end()) {
       return;
     }
 
-    for (const auto& neighbor : it->second) {
+    for (const auto & neighbor : it->second) {
       if (visited.find(neighbor) == visited.end()) {
         depthFirstTraverse(neighbor, visited, std::forward<Func>(func), check_dependencies);
       }
     }
   }
 
-  template <typename Func>
+  template<typename Func>
   void depthFirstTraverse(
-    const NodeVariant& start,
-    Func&& func,
-    bool check_dependencies = false) const
+    const NodeVariant & start, Func && func, bool check_dependencies = false) const
   {
     std::unordered_set<NodeVariant> visited;
     depthFirstTraverse(start, visited, std::forward<Func>(func), check_dependencies);
   }
 
-  template <typename Func>
+  template<typename Func>
   void depthFirstTraverseAll(
-    Func&& func,
-    bool check_dependencies = true,
-    std::vector<plansys2_msgs::msg::Node> root_nodes_only = {}
-  ) const
+    Func && func, bool check_dependencies = true,
+    std::vector<plansys2_msgs::msg::Node> root_nodes_only = {}) const
   {
     std::unordered_set<NodeVariant> visited;
-    for (const auto& [key, _] : adj_list_)
-    {
-      if (root_nodes_only.empty() ||
-        std::find_if(root_nodes_only.begin(), root_nodes_only.end(),
-          [&key](auto& r){return key == r;}) != root_nodes_only.end())
+    for (const auto & [key, _] : adj_list_) {
+      if (
+        root_nodes_only.empty() ||
+        std::find_if(
+          root_nodes_only.begin(), root_nodes_only.end(), [&key](auto & r) {
+            return key == r;
+          }) != root_nodes_only.end())
       {
         depthFirstTraverse(key, visited, std::forward<Func>(func), check_dependencies);
       }
     }
   }
 
-  template <typename Func>
-  void backtrackTraverse(
-    const NodeVariant& start,
-    Func&& func) const
+  template<typename Func>
+  void backtrackTraverse(const NodeVariant & start, Func && func) const
   {
     std::unordered_set<NodeVariant> visited;
     backtrackTraverse(start, visited, std::forward<Func>(func));
   }
 
-  template <typename Func>
+  template<typename Func>
   void backtrackTraverse(
-    const NodeVariant& node,
-    std::unordered_set<NodeVariant>& visited,
-    Func&& func) const
+    const NodeVariant & node, std::unordered_set<NodeVariant> & visited, Func && func) const
   {
     // If already visited, skip this node to avoid infinite loops
     if (visited.find(node) != visited.end()) {
@@ -247,25 +228,22 @@ public:
     // Find predecessors (in-nodes)
     auto it_in_nodes = in_nodes_.find(node);
     if (it_in_nodes == in_nodes_.end()) {
-      return; // No predecessors to explore
+      return;  // No predecessors to explore
     }
 
     // Recursively visit all predecessors
-    for (const auto& predecessor : it_in_nodes->second) {
+    for (const auto & predecessor : it_in_nodes->second) {
       if (visited.find(predecessor) == visited.end()) {
         backtrackTraverse(predecessor, visited, std::forward<Func>(func));
       }
     }
   }
 
-  auto getEdgeNumber() const { return edge_count_; }
+  auto getEdgeNumber() const {return edge_count_;}
 
   void clear() {adj_list_.clear();}
 
-  bool operator==(const Graph &graph) const
-  {
-    return this->adj_list_ == graph.adj_list_;
-  }
+  bool operator==(const Graph & graph) const {return this->adj_list_ == graph.adj_list_;}
 
   using NodeEdgesMap = std::unordered_map<NodeVariant, std::unordered_set<NodeVariant>>;
 
@@ -278,48 +256,51 @@ private:
   friend struct std::hash<Graph>;
 };
 
-class DerivedGraph: public plansys2::Graph {
+class DerivedGraph : public plansys2::Graph
+{
 public:
   DerivedGraph()
   : Graph() {}
 
-  DerivedGraph(const std::vector<plansys2_msgs::msg::Derived> &derived_predicates);
+  DerivedGraph(const std::vector<plansys2_msgs::msg::Derived> & derived_predicates);  // NOLINT
 
-  DerivedGraph(const std::vector<plansys2::Derived> &derived_predicates);
+  DerivedGraph(const std::vector<plansys2::Derived> & derived_predicates);  // NOLINT
 
-  DerivedGraph(const std::unordered_set<plansys2::Derived> &derived_predicates);
+  DerivedGraph(const std::unordered_set<plansys2::Derived> & derived_predicates);  // NOLINT
 
-  auto &getDerivedPredicates() const { return derived_predicates_; }
+  auto & getDerivedPredicates() const {return derived_predicates_;}
 
   std::vector<plansys2::Derived> getDerivedPredicatesDepthFirst(
     std::vector<plansys2_msgs::msg::Node> root_nodes_only = {}) const;
 
   std::deque<plansys2::Derived> getDerivedPredicatesFromActions(
-    const std::vector<plansys2::ActionVariant>& actions) const;
+    const std::vector<plansys2::ActionVariant> & actions) const;
 
-  plansys2::DerivedGraph pruneGraphToActions(const std::vector<plansys2::ActionVariant>& actions);
+  plansys2::DerivedGraph pruneGraphToActions(const std::vector<plansys2::ActionVariant> & actions);
 
-  void appendActions(const std::vector<plansys2::ActionVariant>& actions);
-  void appendAction(const plansys2::ActionVariant& action);
+  void appendActions(const std::vector<plansys2::ActionVariant> & actions);
+  void appendAction(const plansys2::ActionVariant & action);
 
-  void addEdge(const NodeVariant& u, const NodeVariant& v);
-  void addEdgeFromPreconditions(const NodeVariant& node, const plansys2_msgs::msg::Tree& tree);
+  void addEdge(const NodeVariant & u, const NodeVariant & v);
+  void addEdgeFromPreconditions(const NodeVariant & node, const plansys2_msgs::msg::Tree & tree);
 
 private:
   std::unordered_set<plansys2::Derived> derived_predicates_;
-
 };
 
 }  // namespace plansys2
 
-namespace std {
+namespace std
+{
 template<>
-struct hash<plansys2::Graph> {
-  std::size_t operator()(const plansys2::Graph& graph) const noexcept {
+struct hash<plansys2::Graph>
+{
+  std::size_t operator()(const plansys2::Graph & graph) const noexcept
+  {
     std::size_t seed = 0;
-    for (const auto& [key, neighbors] : graph.adj_list_) {
+    for (const auto & [key, neighbors] : graph.adj_list_) {
       hash_combine(seed, key);
-      for (const auto& neighbor : neighbors) {
+      for (const auto & neighbor : neighbors) {
         hash_combine(seed, neighbor);
       }
     }
@@ -328,8 +309,10 @@ struct hash<plansys2::Graph> {
 };
 
 template<>
-struct hash<plansys2::DerivedGraph> {
-  std::size_t operator()(const plansys2::DerivedGraph& graph) const noexcept {
+struct hash<plansys2::DerivedGraph>
+{
+  std::size_t operator()(const plansys2::DerivedGraph & graph) const noexcept
+  {
     return std::hash<plansys2::Graph>{}(graph);
   }
 };

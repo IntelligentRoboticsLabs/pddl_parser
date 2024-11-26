@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <optional>
+#include "plansys2_executor/ExecutorClient.hpp"
+
 #include <algorithm>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-#include <memory>
 
-#include "plansys2_executor/ExecutorClient.hpp"
 #include "plansys2_msgs/msg/action_execution_info.hpp"
 
 namespace plansys2
@@ -35,8 +36,8 @@ ExecutorClient::ExecutorClient()
 
   createActionClient();
 
-  get_ordered_sub_goals_client_ = node_->create_client<plansys2_msgs::srv::GetOrderedSubGoals>(
-    "executor/get_ordered_sub_goals");
+  get_ordered_sub_goals_client_ =
+    node_->create_client<plansys2_msgs::srv::GetOrderedSubGoals>("executor/get_ordered_sub_goals");
   get_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>("executor/get_plan");
 }
 
@@ -46,13 +47,12 @@ ExecutorClient::ExecutorClient(const std::string & node_name)
 
   createActionClient();
 
-  get_ordered_sub_goals_client_ = node_->create_client<plansys2_msgs::srv::GetOrderedSubGoals>(
-    "executor/get_ordered_sub_goals");
+  get_ordered_sub_goals_client_ =
+    node_->create_client<plansys2_msgs::srv::GetOrderedSubGoals>("executor/get_ordered_sub_goals");
   get_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>("executor/get_plan");
 }
 
-void
-ExecutorClient::createActionClient()
+void ExecutorClient::createActionClient()
 {
   action_client_ = rclcpp_action::create_client<ExecutePlan>(node_, "execute_plan");
 
@@ -61,8 +61,7 @@ ExecutorClient::createActionClient()
   }
 }
 
-bool
-ExecutorClient::start_plan_execution(const plansys2_msgs::msg::Plan & plan)
+bool ExecutorClient::start_plan_execution(const plansys2_msgs::msg::Plan & plan)
 {
   if (!executing_plan_) {
     createActionClient();
@@ -79,8 +78,7 @@ ExecutorClient::start_plan_execution(const plansys2_msgs::msg::Plan & plan)
   return false;
 }
 
-bool
-ExecutorClient::execute_and_check_plan()
+bool ExecutorClient::execute_and_check_plan()
 {
   if (rclcpp::ok() && !goal_result_available_) {
     rclcpp::spin_some(node_);
@@ -93,8 +91,7 @@ ExecutorClient::execute_and_check_plan()
   switch (result_.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       if (result_.result == nullptr) {
-        RCLCPP_WARN(
-          node_->get_logger(), "Plan failed due to a nullptr in the result");
+        RCLCPP_WARN(node_->get_logger(), "Plan failed due to a nullptr in the result");
       } else if (result_.result->success) {
         RCLCPP_INFO(node_->get_logger(), "Plan Succeeded");
       } else {
@@ -104,39 +101,26 @@ ExecutorClient::execute_and_check_plan()
             case plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED:
               RCLCPP_WARN_STREAM(
                 node_->get_logger(),
-                "Action: " <<
-                  msg.action_full_name <<
-                  " succeeded with message_status: " <<
-                  msg.message_status);
+                "Action: " << msg.action_full_name
+                           << " succeeded with message_status: " << msg.message_status);
               break;
             case plansys2_msgs::msg::ActionExecutionInfo::FAILED:
               RCLCPP_ERROR_STREAM(
                 node_->get_logger(),
-                "Action: " <<
-                  msg.action_full_name <<
-                  " failed with message_status: " <<
-                  msg.message_status);
+                "Action: " << msg.action_full_name
+                           << " failed with message_status: " << msg.message_status);
               break;
             case plansys2_msgs::msg::ActionExecutionInfo::NOT_EXECUTED:
               RCLCPP_WARN_STREAM(
-                node_->get_logger(),
-                "Action: " <<
-                  msg.action_full_name <<
-                  " was not executed");
+                node_->get_logger(), "Action: " << msg.action_full_name << " was not executed");
               break;
             case plansys2_msgs::msg::ActionExecutionInfo::CANCELLED:
               RCLCPP_WARN_STREAM(
-                node_->get_logger(),
-                "Action: " <<
-                  msg.action_full_name <<
-                  " was cancelled");
+                node_->get_logger(), "Action: " << msg.action_full_name << " was cancelled");
               break;
             case plansys2_msgs::msg::ActionExecutionInfo::EXECUTING:
               RCLCPP_WARN_STREAM(
-                node_->get_logger(),
-                "Action: " <<
-                  msg.action_full_name <<
-                  " was executing");
+                node_->get_logger(), "Action: " << msg.action_full_name << " was executing");
           }
         }
       }
@@ -160,25 +144,21 @@ ExecutorClient::execute_and_check_plan()
   return false;  // Plan finished
 }
 
-
-bool
-ExecutorClient::on_new_goal_received(const plansys2_msgs::msg::Plan & plan)
+bool ExecutorClient::on_new_goal_received(const plansys2_msgs::msg::Plan & plan)
 {
   auto goal = ExecutePlan::Goal();
   goal.plan = plan;
 
   auto send_goal_options = rclcpp_action::Client<ExecutePlan>::SendGoalOptions();
 
-  send_goal_options.feedback_callback =
-    std::bind(&ExecutorClient::feedback_callback, this, _1, _2);
+  send_goal_options.feedback_callback = std::bind(&ExecutorClient::feedback_callback, this, _1, _2);
 
-  send_goal_options.result_callback =
-    std::bind(&ExecutorClient::result_callback, this, _1);
+  send_goal_options.result_callback = std::bind(&ExecutorClient::result_callback, this, _1);
 
   auto future_goal_handle = action_client_->async_send_goal(goal, send_goal_options);
 
-  if (rclcpp::spin_until_future_complete(
-      node_->get_node_base_interface(), future_goal_handle, 3s) !=
+  if (
+    rclcpp::spin_until_future_complete(node_->get_node_base_interface(), future_goal_handle, 3s) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "send_goal failed");
@@ -194,8 +174,7 @@ ExecutorClient::on_new_goal_received(const plansys2_msgs::msg::Plan & plan)
   return true;
 }
 
-bool
-ExecutorClient::should_cancel_goal()
+bool ExecutorClient::should_cancel_goal()
 {
   if (!executing_plan_) {
     return false;
@@ -208,18 +187,15 @@ ExecutorClient::should_cancel_goal()
          status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
 }
 
-void
-ExecutorClient::cancel_plan_execution()
+void ExecutorClient::cancel_plan_execution()
 {
   if (should_cancel_goal()) {
     auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-    if (rclcpp::spin_until_future_complete(
-        node_->get_node_base_interface(), future_cancel, 3s) !=
+    if (
+      rclcpp::spin_until_future_complete(node_->get_node_base_interface(), future_cancel, 3s) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
-      RCLCPP_ERROR(
-        node_->get_logger(),
-        "Failed to cancel action server for execute_plan");
+      RCLCPP_ERROR(node_->get_logger(), "Failed to cancel action server for execute_plan");
     }
   }
 
@@ -236,16 +212,16 @@ std::vector<plansys2_msgs::msg::Tree> ExecutorClient::getOrderedSubGoals()
       return ret;
     }
     RCLCPP_ERROR_STREAM(
-      node_->get_logger(),
-      get_ordered_sub_goals_client_->get_service_name() <<
-        " service  client: waiting for service to appear...");
+      node_->get_logger(), get_ordered_sub_goals_client_->get_service_name()
+        << " service  client: waiting for service to appear...");
   }
 
   auto request = std::make_shared<plansys2_msgs::srv::GetOrderedSubGoals::Request>();
 
   auto future_result = get_ordered_sub_goals_client_->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(1)) !=
+  if (
+    rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(1)) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     return ret;
@@ -257,9 +233,8 @@ std::vector<plansys2_msgs::msg::Tree> ExecutorClient::getOrderedSubGoals()
     ret = result.sub_goals;
   } else {
     RCLCPP_INFO_STREAM(
-      node_->get_logger(),
-      get_ordered_sub_goals_client_->get_service_name() << ": " <<
-        result.error_info);
+      node_->get_logger(), get_ordered_sub_goals_client_->get_service_name()
+        << ": " << result.error_info);
   }
 
   return ret;
@@ -272,16 +247,16 @@ std::optional<plansys2_msgs::msg::Plan> ExecutorClient::getPlan()
       return {};
     }
     RCLCPP_ERROR_STREAM(
-      node_->get_logger(),
-      get_plan_client_->get_service_name() <<
-        " service  client: waiting for service to appear...");
+      node_->get_logger(), get_plan_client_->get_service_name()
+        << " service  client: waiting for service to appear...");
   }
 
   auto request = std::make_shared<plansys2_msgs::srv::GetPlan::Request>();
 
   auto future_result = get_plan_client_->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(1)) !=
+  if (
+    rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(1)) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     return {};
@@ -293,31 +268,26 @@ std::optional<plansys2_msgs::msg::Plan> ExecutorClient::getPlan()
     return result.plan;
   } else {
     RCLCPP_ERROR_STREAM(
-      node_->get_logger(),
-      get_plan_client_->get_service_name() << ": " <<
-        result.error_info);
+      node_->get_logger(), get_plan_client_->get_service_name() << ": " << result.error_info);
     return {};
   }
 }
 
-void
-ExecutorClient::feedback_callback(
+void ExecutorClient::feedback_callback(
   GoalHandleExecutePlan::SharedPtr goal_handle,
   const std::shared_ptr<const ExecutePlan::Feedback> feedback)
 {
   feedback_ = *feedback;
 }
 
-void
-ExecutorClient::result_callback(const GoalHandleExecutePlan::WrappedResult & result)
+void ExecutorClient::result_callback(const GoalHandleExecutePlan::WrappedResult & result)
 {
   goal_result_available_ = true;
   result_ = result;
   feedback_ = ExecutePlan::Feedback();
 }
 
-std::optional<ExecutePlan::Result>
-ExecutorClient::getResult()
+std::optional<ExecutePlan::Result> ExecutorClient::getResult()
 {
   if (result_.result != nullptr) {
     return *result_.result;

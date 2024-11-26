@@ -60,8 +60,12 @@ std::ostream & insertAll(std::ostream & stream, const T & begin, const T & end)
 {
   T i = begin;
   stream << "[";
-  if (i != end) {stream << *(i++);}
-  while (i != end) {stream << "," << *(i++);}
+  if (i != end) {
+    stream << *(i++);
+  }
+  while (i != end) {
+    stream << "," << *(i++);
+  }
   return stream << "]";
 }
 

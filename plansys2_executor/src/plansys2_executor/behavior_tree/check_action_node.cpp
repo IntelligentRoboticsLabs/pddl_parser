@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sstream>
-#include <string>
+#include "plansys2_executor/behavior_tree/check_action_node.hpp"
+
 #include <map>
 #include <memory>
-
-#include "plansys2_executor/behavior_tree/check_action_node.hpp"
+#include <sstream>
+#include <string>
 
 namespace plansys2
 {
 
-CheckAction::CheckAction(
-  const std::string & xml_tag_name,
-  const BT::NodeConfig & conf)
+CheckAction::CheckAction(const std::string & xml_tag_name, const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
 {
   action_map_ =
@@ -34,8 +32,7 @@ CheckAction::CheckAction(
   node_ = config().blackboard->get<rclcpp_lifecycle::LifecycleNode::SharedPtr>("node");
 }
 
-BT::NodeStatus
-CheckAction::tick()
+BT::NodeStatus CheckAction::tick()
 {
   std::string xml_action;
   getInput("action", xml_action);
@@ -59,7 +56,8 @@ CheckAction::tick()
     return BT::NodeStatus::RUNNING;
   }
 
-  if ((parent_type == "START" && (*action_map_)[parent_id].at_start_effects_applied) ||
+  if (
+    (parent_type == "START" && (*action_map_)[parent_id].at_start_effects_applied) ||
     (parent_type == "END") && (*action_map_)[parent_id].at_end_effects_applied &&
     (*action_map_)[parent_id].action_executor->is_finished())
   {
@@ -100,8 +98,8 @@ CheckAction::tick()
   }
 }
 
-plansys2::bt_builder::Node::Ptr
-CheckAction::get_node(const std::string & node_id, const std::string & node_type)
+plansys2::bt_builder::Node::Ptr CheckAction::get_node(
+  const std::string & node_id, const std::string & node_type)
 {
   auto it = std::find_if(
     action_graph_->nodes.begin(), action_graph_->nodes.end(),

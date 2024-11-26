@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
+#include "plansys2_executor/behavior_tree/execute_action_node.hpp"
+
 #include <map>
 #include <memory>
-
-#include "plansys2_executor/behavior_tree/execute_action_node.hpp"
+#include <string>
 
 namespace plansys2
 {
 
-ExecuteAction::ExecuteAction(
-  const std::string & xml_tag_name,
-  const BT::NodeConfig & conf)
+ExecuteAction::ExecuteAction(const std::string & xml_tag_name, const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
 {
   action_map_ =
@@ -32,8 +30,7 @@ ExecuteAction::ExecuteAction(
   node_ = config().blackboard->get<rclcpp_lifecycle::LifecycleNode::SharedPtr>("node");
 }
 
-void
-ExecuteAction::halt()
+void ExecuteAction::halt()
 {
   std::string action;
   getInput("action", action);
@@ -46,8 +43,7 @@ ExecuteAction::halt()
   }
 }
 
-BT::NodeStatus
-ExecuteAction::tick()
+BT::NodeStatus ExecuteAction::tick()
 {
   std::string action;
   getInput("action", action);
@@ -67,8 +63,7 @@ ExecuteAction::tick()
     (*action_map_)[action].execution_error_info = "Error executing the action";
 
     RCLCPP_ERROR_STREAM(
-      node->get_logger(),
-      "[" << action << "]" << (*action_map_)[action].execution_error_info);
+      node->get_logger(), "[" << action << "]" << (*action_map_)[action].execution_error_info);
   }
 
   return retval;

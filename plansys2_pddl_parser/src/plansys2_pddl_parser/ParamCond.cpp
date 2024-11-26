@@ -27,7 +27,9 @@ void ParamCond::printParams(
     ss << "?" << d.types[params[i]]->getName() << ts.size();
     ts.insert(ss.str());
     s << " " << ss.str();
-    if (d.typed) {s << " - " << d.types[params[i]]->name;}
+    if (d.typed) {
+      s << " - " << d.types[params[i]]->name;
+    }
   }
   s << " )\n";
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "plansys2_executor/bt_builder_plugins/stn_bt_builder.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -25,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "plansys2_executor/bt_builder_plugins/stn_bt_builder.hpp"
 #include "plansys2_problem_expert/Utils.hpp"
 
 namespace plansys2
@@ -37,11 +38,8 @@ STNBTBuilder::STNBTBuilder()
   problem_client_ = std::make_shared<plansys2::ProblemExpertClient>();
 }
 
-void
-STNBTBuilder::initialize(
-  const std::string & bt_action_1,
-  const std::string & bt_action_2,
-  int precision)
+void STNBTBuilder::initialize(
+  const std::string & bt_action_1, const std::string & bt_action_2, int precision)
 {
   if (bt_action_1 != "") {
     bt_start_action_ = bt_action_1;
@@ -74,8 +72,7 @@ CHECK_PREV_ACTIONS
   action_time_precision_ = precision;
 }
 
-std::string
-STNBTBuilder::get_tree(const plansys2_msgs::msg::Plan & plan)
+std::string STNBTBuilder::get_tree(const plansys2_msgs::msg::Plan & plan)
 {
   stn_ = build_stn(plan);
 
@@ -87,10 +84,8 @@ STNBTBuilder::get_tree(const plansys2_msgs::msg::Plan & plan)
   return bt;
 }
 
-std::string
-STNBTBuilder::get_dotgraph(
-  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
-  bool enable_legend,
+std::string STNBTBuilder::get_dotgraph(
+  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map, bool enable_legend,
   bool enable_print_graph)
 {
   if (enable_print_graph) {
@@ -145,8 +140,7 @@ STNBTBuilder::get_dotgraph(
   return ss.str();
 }
 
-Graph::Ptr
-STNBTBuilder::build_stn(const plansys2_msgs::msg::Plan & plan) const
+Graph::Ptr STNBTBuilder::build_stn(const plansys2_msgs::msg::Plan & plan) const
 {
   auto stn = init_graph(plan);
   auto happenings = get_happenings(plan);
@@ -188,8 +182,7 @@ STNBTBuilder::build_stn(const plansys2_msgs::msg::Plan & plan) const
   return stn;
 }
 
-bool
-STNBTBuilder::propagate(const Graph::Ptr stn)
+bool STNBTBuilder::propagate(const Graph::Ptr stn)
 {
   // Compute the distance matrix.
   Eigen::MatrixXd dist = get_distance_matrix(stn);
@@ -223,9 +216,7 @@ STNBTBuilder::propagate(const Graph::Ptr stn)
       // Find the child input arc.
       auto it = std::find_if(
         child->input_arcs.begin(), child->input_arcs.end(),
-        [&](std::tuple<Node::Ptr, double, double> arc_in) {
-          return std::get<0>(arc_in) == node;
-        });
+        [&](std::tuple<Node::Ptr, double, double> arc_in) {return std::get<0>(arc_in) == node;});
 
       child->input_arcs.erase(*it);
       child->input_arcs.insert(std::make_tuple(node, lower, upper));
@@ -239,8 +230,7 @@ STNBTBuilder::propagate(const Graph::Ptr stn)
   return true;
 }
 
-std::string
-STNBTBuilder::build_bt(const Graph::Ptr stn) const
+std::string STNBTBuilder::build_bt(const Graph::Ptr stn) const
 {
   std::set<Node::Ptr> used;
   const auto & root = stn->nodes.front();
@@ -253,8 +243,7 @@ STNBTBuilder::build_bt(const Graph::Ptr stn) const
   return bt;
 }
 
-Graph::Ptr
-STNBTBuilder::init_graph(const plansys2_msgs::msg::Plan & plan) const
+Graph::Ptr STNBTBuilder::init_graph(const plansys2_msgs::msg::Plan & plan) const
 {
   auto graph = Graph::make_shared();
   auto action_sequence = get_plan_actions(plan);
@@ -304,8 +293,8 @@ STNBTBuilder::init_graph(const plansys2_msgs::msg::Plan & plan) const
   return graph;
 }
 
-std::vector<ActionStamped>
-STNBTBuilder::get_plan_actions(const plansys2_msgs::msg::Plan & plan) const
+std::vector<ActionStamped> STNBTBuilder::get_plan_actions(
+  const plansys2_msgs::msg::Plan & plan) const
 {
   std::vector<ActionStamped> ret;
 
@@ -318,11 +307,9 @@ STNBTBuilder::get_plan_actions(const plansys2_msgs::msg::Plan & plan) const
     auto actions = domain_client_->getActions();
     if (std::find(actions.begin(), actions.end(), get_action_name(item.action)) != actions.end()) {
       action_stamped.action =
-        domain_client_->getAction(
-        get_action_name(item.action), get_action_params(item.action));
+        domain_client_->getAction(get_action_name(item.action), get_action_params(item.action));
     } else {
-      action_stamped.action =
-        domain_client_->getDurativeAction(
+      action_stamped.action = domain_client_->getDurativeAction(
         get_action_name(item.action), get_action_params(item.action));
     }
 
@@ -332,8 +319,7 @@ STNBTBuilder::get_plan_actions(const plansys2_msgs::msg::Plan & plan) const
   return ret;
 }
 
-std::set<int>
-STNBTBuilder::get_happenings(const plansys2_msgs::msg::Plan & plan) const
+std::set<int> STNBTBuilder::get_happenings(const plansys2_msgs::msg::Plan & plan) const
 {
   std::set<int> happenings;
   happenings.insert(-1);
@@ -347,8 +333,8 @@ STNBTBuilder::get_happenings(const plansys2_msgs::msg::Plan & plan) const
   return happenings;
 }
 
-std::set<int>::iterator
-STNBTBuilder::get_happening(int time, const std::set<int> & happenings) const
+std::set<int>::iterator STNBTBuilder::get_happening(
+  int time, const std::set<int> & happenings) const
 {
   // This function returns an iterator pointing to either
   //   1. the first element that is equal to the key or
@@ -371,8 +357,7 @@ STNBTBuilder::get_happening(int time, const std::set<int> & happenings) const
   return it;
 }
 
-std::set<int>::iterator
-STNBTBuilder::get_previous(int time, const std::set<int> & happenings) const
+std::set<int>::iterator STNBTBuilder::get_previous(int time, const std::set<int> & happenings) const
 {
   auto it = get_happening(time, happenings);
 
@@ -385,8 +370,8 @@ STNBTBuilder::get_previous(int time, const std::set<int> & happenings) const
   return happenings.end();
 }
 
-std::multimap<int, ActionStamped>
-STNBTBuilder::get_simple_plan(const plansys2_msgs::msg::Plan & plan) const
+std::multimap<int, ActionStamped> STNBTBuilder::get_simple_plan(
+  const plansys2_msgs::msg::Plan & plan) const
 {
   std::multimap<int, ActionStamped> simple_plan;
   auto action_sequence = get_plan_actions(plan);
@@ -435,16 +420,14 @@ STNBTBuilder::get_simple_plan(const plansys2_msgs::msg::Plan & plan) const
     // Find the start action
     auto it = simple_plan.equal_range(time);
     auto start_action = std::find_if(
-      it.first, it.second,
-      [&](std::pair<int, ActionStamped> a) {
+      it.first, it.second, [&](std::pair<int, ActionStamped> a) {
         return (a.second.expression == action.expression) && (a.second.type == ActionType::START);
       });
 
     // Find the end action
     it = simple_plan.equal_range(time + duration);
     auto end_action = std::find_if(
-      it.first, it.second,
-      [&](std::pair<int, ActionStamped> a) {
+      it.first, it.second, [&](std::pair<int, ActionStamped> a) {
         return (a.second.expression == action.expression) && (a.second.type == ActionType::END);
       });
 
@@ -472,10 +455,8 @@ STNBTBuilder::get_simple_plan(const plansys2_msgs::msg::Plan & plan) const
   return simple_plan;
 }
 
-std::map<int, StateVec>
-STNBTBuilder::get_states(
-  const std::set<int> & happenings,
-  const std::multimap<int, ActionStamped> & plan) const
+std::map<int, StateVec> STNBTBuilder::get_states(
+  const std::set<int> & happenings, const std::multimap<int, ActionStamped> & plan) const
 {
   std::map<int, StateVec> states;
 
@@ -490,12 +471,12 @@ STNBTBuilder::get_states(
     for (auto iter = it.first; iter != it.second; ++iter) {
       if (iter->second.type == ActionType::START) {
         apply(
-          iter->second.action.get_at_start_effects(),
-          state_vec.instances, state_vec.predicates, state_vec.functions);
+          iter->second.action.get_at_start_effects(), state_vec.instances, state_vec.predicates,
+          state_vec.functions);
       } else if (iter->second.type == ActionType::END) {
         apply(
-          iter->second.action.get_at_end_effects(),
-          state_vec.instances, state_vec.predicates, state_vec.functions);
+          iter->second.action.get_at_end_effects(), state_vec.instances, state_vec.predicates,
+          state_vec.functions);
       }
     }
     states.insert(std::make_pair(time, state_vec));
@@ -504,8 +485,7 @@ STNBTBuilder::get_states(
   return states;
 }
 
-plansys2_msgs::msg::Tree
-STNBTBuilder::from_state(
+plansys2_msgs::msg::Tree STNBTBuilder::from_state(
   const std::unordered_set<plansys2::Predicate> & preds,
   const std::vector<plansys2::Function> & funcs) const
 {
@@ -533,10 +513,8 @@ STNBTBuilder::from_state(
   return tree;
 }
 
-std::vector<Node::Ptr>
-STNBTBuilder::get_nodes(
-  const ActionStamped & action,
-  const Graph::Ptr graph) const
+std::vector<Node::Ptr> STNBTBuilder::get_nodes(
+  const ActionStamped & action, const Graph::Ptr graph) const
 {
   std::vector<Node::Ptr> ret;
 
@@ -602,22 +580,16 @@ STNBTBuilder::get_nodes(
   return ret;
 }
 
-bool
-STNBTBuilder::is_match(
-  const Node::Ptr node,
-  const ActionStamped & action) const
+bool STNBTBuilder::is_match(const Node::Ptr node, const ActionStamped & action) const
 {
   auto t_1 = to_int_time(node->action.time, action_time_precision_ + 1);
   auto t_2 = to_int_time(action.time, action_time_precision_ + 1);
   return (t_1 == t_2) && (node->action.expression == action.expression);
 }
 
-std::vector<std::pair<int, ActionStamped>>
-STNBTBuilder::get_parents(
-  const std::pair<int, ActionStamped> & action,
-  const std::multimap<int, ActionStamped> & plan,
-  const std::set<int> & happenings,
-  const std::map<int, StateVec> & states) const
+std::vector<std::pair<int, ActionStamped>> STNBTBuilder::get_parents(
+  const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+  const std::set<int> & happenings, const std::map<int, StateVec> & states) const
 {
   auto parents = get_satisfy(action, plan, happenings, states);
   auto threats = get_threat(action, plan, happenings, states);
@@ -626,12 +598,9 @@ STNBTBuilder::get_parents(
   return parents;
 }
 
-std::vector<std::pair<int, ActionStamped>>
-STNBTBuilder::get_satisfy(
-  const std::pair<int, ActionStamped> & action,
-  const std::multimap<int, ActionStamped> & plan,
-  const std::set<int> & happenings,
-  const std::map<int, StateVec> & states) const
+std::vector<std::pair<int, ActionStamped>> STNBTBuilder::get_satisfy(
+  const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+  const std::set<int> & happenings, const std::map<int, StateVec> & states) const
 {
   std::vector<std::pair<int, ActionStamped>> ret;
 
@@ -697,12 +666,9 @@ STNBTBuilder::get_satisfy(
   return ret;
 }
 
-std::vector<std::pair<int, ActionStamped>>
-STNBTBuilder::get_threat(
-  const std::pair<int, ActionStamped> & action,
-  const std::multimap<int, ActionStamped> & plan,
-  const std::set<int> & happenings,
-  const std::map<int, StateVec> & states) const
+std::vector<std::pair<int, ActionStamped>> STNBTBuilder::get_threat(
+  const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+  const std::set<int> & happenings, const std::map<int, StateVec> & states) const
 {
   std::vector<std::pair<int, ActionStamped>> ret;
 
@@ -761,7 +727,8 @@ STNBTBuilder::get_threat(
         apply(E_a, X_hat.instances, X_hat.predicates, X_hat.functions);
 
         // Check if the input action threatens action k
-        if (action.second.type != ActionType::OVERALL &&
+        if (
+          action.second.type != ActionType::OVERALL &&
           !check(R_k, X_hat.instances, X_hat.predicates, X_hat.functions))
         {
           if (t_2 != t_in) {
@@ -778,7 +745,8 @@ STNBTBuilder::get_threat(
         apply(E_k, X_bar.instances, X_bar.predicates, X_bar.functions);
 
         // Check if action k threatens the input action
-        if (iter->second.type != ActionType::OVERALL &&
+        if (
+          iter->second.type != ActionType::OVERALL &&
           !check(R_a, X_bar.instances, X_bar.predicates, X_bar.functions))
         {
           if (t_2 != t_in) {
@@ -792,9 +760,7 @@ STNBTBuilder::get_threat(
         }
 
         // Check if the input action and action k modify the same effect
-        if (action.second.type != ActionType::OVERALL &&
-          iter->second.type != ActionType::OVERALL)
-        {
+        if (action.second.type != ActionType::OVERALL && iter->second.type != ActionType::OVERALL) {
           auto DX_hat = get_diff(X_1_k, X_hat);
           auto DX_bar = get_diff(X_1_a, X_bar);
           auto intersection = get_intersection(DX_hat, DX_bar);
@@ -816,12 +782,9 @@ STNBTBuilder::get_threat(
   return ret;
 }
 
-bool
-STNBTBuilder::can_apply(
-  const std::pair<int, ActionStamped> & action,
-  const std::multimap<int, ActionStamped> & plan,
-  const int & time,
-  StateVec & state) const
+bool STNBTBuilder::can_apply(
+  const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+  const int & time, StateVec & state) const
 {
   auto X = state;
   auto R = get_conditions(action.second);
@@ -859,10 +822,7 @@ STNBTBuilder::can_apply(
   return false;
 }
 
-StateVec
-STNBTBuilder::get_diff(
-  const StateVec & X_1,
-  const StateVec & X_2) const
+StateVec STNBTBuilder::get_diff(const StateVec & X_1, const StateVec & X_2) const
 {
   StateVec ret;
 
@@ -870,9 +830,7 @@ STNBTBuilder::get_diff(
   for (const auto & p_1 : X_1.predicates) {
     auto it = std::find_if(
       X_2.predicates.begin(), X_2.predicates.end(),
-      [&](plansys2::Predicate p_2) {
-        return parser::pddl::checkNodeEquality(p_1, p_2);
-      });
+      [&](plansys2::Predicate p_2) {return parser::pddl::checkNodeEquality(p_1, p_2);});
     if (it == X_2.predicates.end()) {
       ret.predicates.insert(p_1);
     }
@@ -882,9 +840,7 @@ STNBTBuilder::get_diff(
   for (const auto & p_2 : X_2.predicates) {
     auto it = std::find_if(
       X_1.predicates.begin(), X_1.predicates.end(),
-      [&](plansys2::Predicate p_1) {
-        return parser::pddl::checkNodeEquality(p_1, p_2);
-      });
+      [&](plansys2::Predicate p_1) {return parser::pddl::checkNodeEquality(p_1, p_2);});
     if (it == X_1.predicates.end()) {
       ret.predicates.insert(p_2);
     }
@@ -893,12 +849,12 @@ STNBTBuilder::get_diff(
   // Look for function changes
   for (const auto & f_1 : X_1.functions) {
     auto it = std::find_if(
-      X_2.functions.begin(), X_2.functions.end(),
-      [&](plansys2::Function f_2) {
+      X_2.functions.begin(), X_2.functions.end(), [&](plansys2::Function f_2) {
         return parser::pddl::checkNodeEquality(f_1, f_2);
       });
     if (it != X_2.functions.end()) {
-      if (std::abs(f_1.value - it->value) >
+      if (
+        std::abs(f_1.value - it->value) >
         1e-5 * std::max(std::abs(f_1.value), std::abs(it->value)))
       {
         ret.functions.push_back(f_1);
@@ -909,10 +865,7 @@ STNBTBuilder::get_diff(
   return ret;
 }
 
-StateVec
-STNBTBuilder::get_intersection(
-  const StateVec & X_1,
-  const StateVec & X_2) const
+StateVec STNBTBuilder::get_intersection(const StateVec & X_1, const StateVec & X_2) const
 {
   StateVec ret;
 
@@ -920,9 +873,7 @@ STNBTBuilder::get_intersection(
   for (const auto & p_1 : X_1.predicates) {
     auto it = std::find_if(
       X_2.predicates.begin(), X_2.predicates.end(),
-      [&](plansys2::Predicate p_2) {
-        return parser::pddl::checkNodeEquality(p_1, p_2);
-      });
+      [&](plansys2::Predicate p_2) {return parser::pddl::checkNodeEquality(p_1, p_2);});
     if (it != X_2.predicates.end()) {
       ret.predicates.insert(p_1);
     }
@@ -931,8 +882,7 @@ STNBTBuilder::get_intersection(
   // Look for functions in X_1 that are also in X_2
   for (const auto & f_1 : X_1.functions) {
     auto it = std::find_if(
-      X_2.functions.begin(), X_2.functions.end(),
-      [&](plansys2::Function f_2) {
+      X_2.functions.begin(), X_2.functions.end(), [&](plansys2::Function f_2) {
         return parser::pddl::checkNodeEquality(f_1, f_2);
       });
     if (it != X_2.functions.end()) {
@@ -943,8 +893,7 @@ STNBTBuilder::get_intersection(
   return ret;
 }
 
-plansys2_msgs::msg::Tree
-STNBTBuilder::get_conditions(const ActionStamped & action) const
+plansys2_msgs::msg::Tree STNBTBuilder::get_conditions(const ActionStamped & action) const
 {
   if (action.type == ActionType::START || action.type == ActionType::GOAL) {
     return action.action.get_at_start_requirements();
@@ -957,8 +906,7 @@ STNBTBuilder::get_conditions(const ActionStamped & action) const
   return plansys2_msgs::msg::Tree();
 }
 
-plansys2_msgs::msg::Tree
-STNBTBuilder::get_effects(const ActionStamped & action) const
+plansys2_msgs::msg::Tree STNBTBuilder::get_effects(const ActionStamped & action) const
 {
   if (action.type == ActionType::START) {
     return action.action.get_at_start_effects();
@@ -969,8 +917,7 @@ STNBTBuilder::get_effects(const ActionStamped & action) const
   return plansys2_msgs::msg::Tree();
 }
 
-void
-STNBTBuilder::prune_paths(Node::Ptr current, Node::Ptr previous) const
+void STNBTBuilder::prune_paths(Node::Ptr current, Node::Ptr previous) const
 {
   // Traverse the graph from the previous node to the root
   for (auto & in : previous->input_arcs) {
@@ -978,8 +925,8 @@ STNBTBuilder::prune_paths(Node::Ptr current, Node::Ptr previous) const
   }
 
   // Don't remove the link between the start and end node
-  if (previous->action.type != ActionType::INIT &&
-    current->action.type != ActionType::GOAL &&
+  if (
+    previous->action.type != ActionType::INIT && current->action.type != ActionType::GOAL &&
     previous->action.time == current->action.time &&
     previous->action.expression == current->action.expression)
   {
@@ -1003,9 +950,7 @@ STNBTBuilder::prune_paths(Node::Ptr current, Node::Ptr previous) const
       // Find the corresponding input link
       auto in = std::find_if(
         current->input_arcs.begin(), current->input_arcs.end(),
-        [&](std::tuple<Node::Ptr, double, double> arc) {
-          return std::get<0>(arc) == previous;
-        });
+        [&](std::tuple<Node::Ptr, double, double> arc) {return std::get<0>(arc) == previous;});
       // Remove the output and input links
       if (in != current->input_arcs.end()) {
         current->input_arcs.erase(in);
@@ -1019,8 +964,7 @@ STNBTBuilder::prune_paths(Node::Ptr current, Node::Ptr previous) const
   }
 }
 
-bool
-STNBTBuilder::check_paths(Node::Ptr current, Node::Ptr previous) const
+bool STNBTBuilder::check_paths(Node::Ptr current, Node::Ptr previous) const
 {
   // Traverse the graph from the current node to the root
   for (auto & in : current->input_arcs) {
@@ -1037,8 +981,7 @@ STNBTBuilder::check_paths(Node::Ptr current, Node::Ptr previous) const
   return false;
 }
 
-Eigen::MatrixXd
-STNBTBuilder::get_distance_matrix(const Graph::Ptr stn) const
+Eigen::MatrixXd STNBTBuilder::get_distance_matrix(const Graph::Ptr stn) const
 {
   // Initialize the distance matrix as infinity.
   Eigen::MatrixXd dist = std::numeric_limits<double>::infinity() *
@@ -1064,13 +1007,13 @@ STNBTBuilder::get_distance_matrix(const Graph::Ptr stn) const
   return dist;
 }
 
-void
-STNBTBuilder::floyd_warshall(Eigen::MatrixXd & dist) const
+void STNBTBuilder::floyd_warshall(Eigen::MatrixXd & dist) const
 {
   for (size_t k = 0; k < dist.rows(); k++) {
     for (size_t i = 0; i < dist.rows(); i++) {
       for (size_t j = 0; j < dist.rows(); j++) {
-        if (dist(i, k) == std::numeric_limits<double>::infinity() ||
+        if (
+          dist(i, k) == std::numeric_limits<double>::infinity() ||
           dist(k, j) == std::numeric_limits<double>::infinity())
         {
           continue;
@@ -1083,11 +1026,8 @@ STNBTBuilder::floyd_warshall(Eigen::MatrixXd & dist) const
   }
 }
 
-std::string
-STNBTBuilder::get_flow(
-  const Node::Ptr node,
-  const Node::Ptr prev_node,
-  std::set<Node::Ptr> & used,
+std::string STNBTBuilder::get_flow(
+  const Node::Ptr node, const Node::Ptr prev_node, std::set<Node::Ptr> & used,
   const int & level) const
 {
   int l = level;
@@ -1101,8 +1041,7 @@ STNBTBuilder::get_flow(
       parent_type = to_string(prev_node->action.type);
     }
 
-    return t(l) + "<WaitAction action=\"" +
-           action_id + " " + to_string(node->action.type) + " " +
+    return t(l) + "<WaitAction action=\"" + action_id + " " + to_string(node->action.type) + " " +
            parent_id + " " + parent_type + "\"/>\n";
   }
 
@@ -1110,7 +1049,8 @@ STNBTBuilder::get_flow(
   if (node->action.type == ActionType::END) {
     auto t_1 = to_int_time(node->action.time, action_time_precision_ + 1);
     auto t_2 = to_int_time(prev_node->action.time, action_time_precision_ + 1);
-    if (prev_node->action.type != ActionType::START || (t_1 != t_2) ||
+    if (
+      prev_node->action.type != ActionType::START || (t_1 != t_2) ||
       (node->action.expression != prev_node->action.expression))
     {
       is_special = true;
@@ -1131,9 +1071,7 @@ STNBTBuilder::get_flow(
     return {};
   } else if (node->output_arcs.size() == 1) {
     const auto child = std::get<0>(*node->output_arcs.begin());
-    if (node->action.type == ActionType::END &&
-      child->action.type == ActionType::GOAL)
-    {
+    if (node->action.type == ActionType::END && child->action.type == ActionType::GOAL) {
       return end_execution_block(node, l);
     }
   }
@@ -1149,7 +1087,8 @@ STNBTBuilder::get_flow(
   } else if (node->action.type == ActionType::END) {
     auto t_1 = to_int_time(node->action.time, action_time_precision_ + 1);
     auto t_2 = to_int_time(prev_node->action.time, action_time_precision_ + 1);
-    if (prev_node->action.type == ActionType::START && (t_1 == t_2) &&
+    if (
+      prev_node->action.type == ActionType::START && (t_1 == t_2) &&
       (node->action.expression == prev_node->action.expression))
     {
       flow = flow + end_execution_block(node, l + 1);
@@ -1161,9 +1100,8 @@ STNBTBuilder::get_flow(
         parent_type = to_string(prev_node->action.type);
       }
 
-      flow = flow + t(l + 1) + "<WaitAction action=\"" +
-        action_id + " " + to_string(node->action.type) + " " +
-        parent_id + " " + parent_type + "\"/>\n";
+      flow = flow + t(l + 1) + "<WaitAction action=\"" + action_id + " " +
+        to_string(node->action.type) + " " + parent_id + " " + parent_type + "\"/>\n";
     }
   }
 
@@ -1180,8 +1118,7 @@ STNBTBuilder::get_flow(
 
   int n = 0;
   if (num_output_arcs > 1) {
-    flow = flow + t(l + 1) +
-      "<Parallel success_count=\"" + std::to_string(num_output_arcs) +
+    flow = flow + t(l + 1) + "<Parallel success_count=\"" + std::to_string(num_output_arcs) +
       "\" failure_count=\"1\">\n";
     n = 1;
   }
@@ -1223,10 +1160,7 @@ STNBTBuilder::get_flow(
   return flow;
 }
 
-std::string
-STNBTBuilder::start_execution_block(
-  const Node::Ptr node,
-  const int & l) const
+std::string STNBTBuilder::start_execution_block(const Node::Ptr node, const int & l) const
 {
   std::string ret;
   std::string ret_aux = bt_start_action_;
@@ -1236,9 +1170,8 @@ STNBTBuilder::start_execution_block(
   std::string wait_actions;
   for (const auto & prev : node->input_arcs) {
     const auto & prev_node = std::get<0>(prev);
-    wait_actions = wait_actions + t(1) + "<WaitAction action=\"" +
-      action_id + " " + action_type + " " +
-      to_action_id(prev_node->action, action_time_precision_) + " " +
+    wait_actions = wait_actions + t(1) + "<WaitAction action=\"" + action_id + " " + action_type +
+      " " + to_action_id(prev_node->action, action_time_precision_) + " " +
       to_string(prev_node->action.type) + "\"/>";
 
     if (prev != *node->input_arcs.rbegin()) {
@@ -1259,10 +1192,7 @@ STNBTBuilder::start_execution_block(
   return ret;
 }
 
-std::string
-STNBTBuilder::end_execution_block(
-  const Node::Ptr node,
-  const int & l) const
+std::string STNBTBuilder::end_execution_block(const Node::Ptr node, const int & l) const
 {
   std::string ret;
   std::string ret_aux = bt_end_action_;
@@ -1272,10 +1202,9 @@ STNBTBuilder::end_execution_block(
   std::string check_actions;
   for (const auto & prev : node->input_arcs) {
     const auto & prev_node = std::get<0>(prev);
-    check_actions = check_actions + t(1) + "<CheckAction action=\"" +
-      action_id + " " + action_type + " " +
-      to_action_id(prev_node->action, action_time_precision_) + " " +
-      to_string(prev_node->action.type) + "\"/>";
+    check_actions = check_actions + t(1) + "<CheckAction action=\"" + action_id + " " +
+      action_type + " " + to_action_id(prev_node->action, action_time_precision_) +
+      " " + to_string(prev_node->action.type) + "\"/>";
 
     if (prev != *node->input_arcs.rbegin()) {
       check_actions = check_actions + "\n";
@@ -1295,24 +1224,19 @@ STNBTBuilder::end_execution_block(
   return ret;
 }
 
-void
-STNBTBuilder::get_flow_dotgraph(
-  Node::Ptr node,
-  std::set<std::string> & edges)
+void STNBTBuilder::get_flow_dotgraph(Node::Ptr node, std::set<std::string> & edges)
 {
   for (const auto & arc : node->output_arcs) {
     auto child = std::get<0>(arc);
-    std::string edge = std::to_string(node->node_num) + "->" + std::to_string(child->node_num) +
-      ";\n";
+    std::string edge =
+      std::to_string(node->node_num) + "->" + std::to_string(child->node_num) + ";\n";
     edges.insert(edge);
     get_flow_dotgraph(child, edges);
   }
 }
 
-std::string
-STNBTBuilder::get_node_dotgraph(
-  Node::Ptr node,
-  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map)
+std::string STNBTBuilder::get_node_dotgraph(
+  Node::Ptr node, std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map)
 {
   std::stringstream ss;
   ss << t(2) << node->node_num << " [label=\"";
@@ -1344,13 +1268,12 @@ STNBTBuilder::get_node_dotgraph(
   return ss.str();
 }
 
-ActionExecutor::Status
-STNBTBuilder::get_action_status(
+ActionExecutor::Status STNBTBuilder::get_action_status(
   ActionStamped action_stamped,
   std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map)
 {
-  auto index = "(" + action_stamped.action.get_action_string() + "):" +
-    std::to_string(static_cast<int>(action_stamped.time * 1000));
+  auto index = "(" + action_stamped.action.get_action_string() +
+    "):" + std::to_string(static_cast<int>(action_stamped.time * 1000));
   if (action_map->find(index) != action_map->end()) {
     if ((*action_map)[index].action_executor) {
       return (*action_map)[index].action_executor->get_internal_status();
@@ -1362,10 +1285,7 @@ STNBTBuilder::get_action_status(
   }
 }
 
-std::string
-STNBTBuilder::add_dot_graph_legend(
-  int level_counter,
-  int node_counter)
+std::string STNBTBuilder::add_dot_graph_legend(int level_counter, int node_counter)
 {
   std::stringstream ss;
   int legend_counter = level_counter;
@@ -1388,17 +1308,18 @@ STNBTBuilder::add_dot_graph_legend(
   ss << t(3);
   ss << "labeljust = l;\n";
   ss << t(3);
-  ss << legend_node_counter++ <<
-    " [label=\n\"Finished action\n\",labeljust=c,style=filled,color=green4,fillcolor=seagreen2];\n";
+  ss << legend_node_counter++
+     << " [label=\n\"Finished "
+    "action\n\",labeljust=c,style=filled,color=green4,fillcolor=seagreen2];\n";
   ss << t(3);
-  ss << legend_node_counter++ <<
-    " [label=\n\"Failed action\n\",labeljust=c,style=filled,color=red,fillcolor=pink];\n";
+  ss << legend_node_counter++
+     << " [label=\n\"Failed action\n\",labeljust=c,style=filled,color=red,fillcolor=pink];\n";
   ss << t(3);
-  ss << legend_node_counter++ <<
-    " [label=\n\"Current action\n\",labeljust=c,style=filled,color=blue,fillcolor=skyblue];\n";
+  ss << legend_node_counter++
+     << " [label=\n\"Current action\n\",labeljust=c,style=filled,color=blue,fillcolor=skyblue];\n";
   ss << t(3);
-  ss << legend_node_counter++ << " [label=\n\"Future action\n\",labeljust=c,style=filled," <<
-    "color=yellow3,fillcolor=lightgoldenrod1];\n";
+  ss << legend_node_counter++ << " [label=\n\"Future action\n\",labeljust=c,style=filled,"
+     << "color=yellow3,fillcolor=lightgoldenrod1];\n";
   ss << t(2);
   ss << "}\n";
 
@@ -1417,14 +1338,12 @@ STNBTBuilder::add_dot_graph_legend(
   return ss.str();
 }
 
-void
-STNBTBuilder::print_graph(const plansys2::Graph::Ptr graph) const
+void STNBTBuilder::print_graph(const plansys2::Graph::Ptr graph) const
 {
   print_node(graph->nodes.front(), 0);
 }
 
-void
-STNBTBuilder::print_node(const plansys2::Node::Ptr node, int level) const
+void STNBTBuilder::print_node(const plansys2::Node::Ptr node, int level) const
 {
   std::cerr << t(level) << "(" << node->node_num << ") ";
   if (node->action.type == ActionType::START) {
@@ -1451,8 +1370,7 @@ STNBTBuilder::print_node(const plansys2::Node::Ptr node, int level) const
   }
 }
 
-void
-STNBTBuilder::print_arcs(const plansys2::Graph::Ptr graph) const
+void STNBTBuilder::print_arcs(const plansys2::Graph::Ptr graph) const
 {
   for (const auto node : graph->nodes) {
     int row = node->node_num;
@@ -1460,30 +1378,22 @@ STNBTBuilder::print_arcs(const plansys2::Graph::Ptr graph) const
       auto child = std::get<0>(arc);
       int col = child->node_num;
 
-      std::string error_msg = std::to_string(node->node_num) +
-        " -> " +
-        std::to_string(child->node_num) +
-        " : " +
+      std::string error_msg =
+        std::to_string(node->node_num) + " -> " + std::to_string(child->node_num) + " : " +
         to_action_id(node->action, action_time_precision_) + "_" + to_string(node->action.type) +
-        " -> " +
-        to_action_id(child->action, action_time_precision_) + "_" + to_string(child->action.type) +
-        " : " +
-        "upper = dist(" + std::to_string(row) + ", " + std::to_string(col) + ") = " +
-        std::to_string(std::get<2>(arc)) +
-        ", " +
-        "lower = dist(" + std::to_string(col) + ", " + std::to_string(row) + ") = " +
-        std::to_string(-1.0 * std::get<1>(arc));
+        " -> " + to_action_id(child->action, action_time_precision_) + "_" +
+        to_string(child->action.type) + " : " + "upper = dist(" + std::to_string(row) + ", " +
+        std::to_string(col) + ") = " + std::to_string(std::get<2>(arc)) + ", " + "lower = dist(" +
+        std::to_string(col) + ", " + std::to_string(row) +
+        ") = " + std::to_string(-1.0 * std::get<1>(arc));
 
       std::cerr << error_msg << std::endl;
     }
   }
 }
 
-void
-STNBTBuilder::replace(
-  std::string & str,
-  const std::string & from,
-  const std::string & to) const
+void STNBTBuilder::replace(
+  std::string & str, const std::string & from, const std::string & to) const
 {
   size_t start_pos = std::string::npos;
   while ((start_pos = str.find(from)) != std::string::npos) {
@@ -1491,21 +1401,17 @@ STNBTBuilder::replace(
   }
 }
 
-bool
-STNBTBuilder::is_end(
-  const std::tuple<Node::Ptr, double, double> & edge,
-  const ActionStamped & action) const
+bool STNBTBuilder::is_end(
+  const std::tuple<Node::Ptr, double, double> & edge, const ActionStamped & action) const
 {
   const auto & node = std::get<0>(edge);
   auto t_1 = to_int_time(node->action.time, action_time_precision_ + 1);
   auto t_2 = to_int_time(action.time, action_time_precision_ + 1);
-  return action.type == ActionType::START &&
-         node->action.type == ActionType::END &&
-         (t_1 == t_2) && (node->action.expression == action.expression);
+  return action.type == ActionType::START && node->action.type == ActionType::END && (t_1 == t_2) &&
+         (node->action.expression == action.expression);
 }
 
-std::string
-STNBTBuilder::t(const int & level) const
+std::string STNBTBuilder::t(const int & level) const
 {
   std::string ret;
   for (int i = 0; i < level; i++) {

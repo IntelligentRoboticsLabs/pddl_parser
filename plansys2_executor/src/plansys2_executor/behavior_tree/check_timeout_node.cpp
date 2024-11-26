@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <iostream>
+#include "plansys2_executor/behavior_tree/check_timeout_node.hpp"
+
 #include <iomanip>
-#include <string>
+#include <iostream>
 #include <map>
 #include <memory>
+#include <string>
 #include <tuple>
-
-#include "plansys2_executor/behavior_tree/check_timeout_node.hpp"
 
 namespace plansys2
 {
 
-CheckTimeout::CheckTimeout(
-  const std::string & xml_tag_name,
-  const BT::NodeConfig & conf)
+CheckTimeout::CheckTimeout(const std::string & xml_tag_name, const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
 {
   action_map_ =
@@ -34,15 +32,13 @@ CheckTimeout::CheckTimeout(
     "action_map");
 
   problem_client_ =
-    config().blackboard->get<std::shared_ptr<plansys2::ProblemExpertClient>>(
-    "problem_client");
+    config().blackboard->get<std::shared_ptr<plansys2::ProblemExpertClient>>("problem_client");
 
   node_ = config().blackboard->get<rclcpp_lifecycle::LifecycleNode::SharedPtr>("node");
   start_ = node_->now();
 }
 
-BT::NodeStatus
-CheckTimeout::tick()
+BT::NodeStatus CheckTimeout::tick()
 {
   std::string action;
   getInput("action", action);
@@ -56,9 +52,9 @@ CheckTimeout::tick()
       auto elapsed_time = (current_time - start_).seconds();
       if (elapsed_time > max_duration) {
         RCLCPP_ERROR_STREAM(
-          node_->get_logger(),
-          "Actual duration of " << action << " exceeds max duration (" << std::fixed <<
-            std::setprecision(2) << max_duration << " secs).");
+          node_->get_logger(), "Actual duration of " << action << " exceeds max duration ("
+                                                     << std::fixed << std::setprecision(2)
+                                                     << max_duration << " secs).");
         return BT::NodeStatus::FAILURE;
       }
     }

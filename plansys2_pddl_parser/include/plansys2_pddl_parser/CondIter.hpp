@@ -41,7 +41,9 @@ public:
 
   MyIterator & operator++()
   {
-    while (condStack().size() && condStack.last().done()) {condStack.pop_back();}
+    while (condStack().size() && condStack.last().done()) {
+      condStack.pop_back();
+    }
 
     return *this;
   }

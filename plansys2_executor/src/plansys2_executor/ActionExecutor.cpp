@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
+#include "plansys2_executor/ActionExecutor.hpp"
+
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "plansys2_pddl_parser/Utils.hpp"
-
-#include "plansys2_executor/ActionExecutor.hpp"
 
 namespace plansys2
 {
@@ -27,8 +27,7 @@ using std::placeholders::_1;
 using namespace std::chrono_literals;
 
 ActionExecutor::ActionExecutor(
-  const std::string & action,
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+  const std::string & action, rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 : node_(node), state_(IDLE), completion_(0.0)
 {
   action_hub_pub_ = node_->create_publisher<plansys2_msgs::msg::ActionExecution>(
@@ -46,8 +45,7 @@ ActionExecutor::ActionExecutor(
   state_time_ = start_execution_;
 }
 
-void
-ActionExecutor::action_hub_callback(const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
+void ActionExecutor::action_hub_callback(const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
 {
   last_msg = *msg;
 
@@ -73,7 +71,8 @@ ActionExecutor::action_hub_callback(const plansys2_msgs::msg::ActionExecution::S
       }
       break;
     case plansys2_msgs::msg::ActionExecution::FEEDBACK:
-      if (state_ != RUNNING || msg->arguments != action_params_ || msg->action != action_name_ ||
+      if (
+        state_ != RUNNING || msg->arguments != action_params_ || msg->action != action_name_ ||
         msg->node_id != current_performer_id_)
       {
         return;
@@ -84,8 +83,9 @@ ActionExecutor::action_hub_callback(const plansys2_msgs::msg::ActionExecution::S
 
       break;
     case plansys2_msgs::msg::ActionExecution::FINISH:
-      if (msg->arguments == action_params_ &&
-        msg->action == action_name_ && msg->node_id == current_performer_id_)
+      if (
+        msg->arguments == action_params_ && msg->action == action_name_ &&
+        msg->node_id == current_performer_id_)
       {
         if (msg->success) {
           state_ = SUCCESS;
@@ -105,14 +105,13 @@ ActionExecutor::action_hub_callback(const plansys2_msgs::msg::ActionExecution::S
       break;
     default:
       RCLCPP_ERROR(
-        node_->get_logger(), "Msg %d type not recognized in %s executor requester",
-        msg->type, action_.c_str());
+        node_->get_logger(), "Msg %d type not recognized in %s executor requester", msg->type,
+        action_.c_str());
       break;
   }
 }
 
-void
-ActionExecutor::confirm_performer(const std::string & node_id)
+void ActionExecutor::confirm_performer(const std::string & node_id)
 {
   plansys2_msgs::msg::ActionExecution msg;
   msg.type = plansys2_msgs::msg::ActionExecution::CONFIRM;
@@ -123,8 +122,7 @@ ActionExecutor::confirm_performer(const std::string & node_id)
   action_hub_pub_->publish(msg);
 }
 
-void
-ActionExecutor::reject_performer(const std::string & node_id)
+void ActionExecutor::reject_performer(const std::string & node_id)
 {
   plansys2_msgs::msg::ActionExecution msg;
   msg.type = plansys2_msgs::msg::ActionExecution::REJECT;
@@ -135,8 +133,7 @@ ActionExecutor::reject_performer(const std::string & node_id)
   action_hub_pub_->publish(msg);
 }
 
-void
-ActionExecutor::request_for_performers()
+void ActionExecutor::request_for_performers()
 {
   plansys2_msgs::msg::ActionExecution msg;
   msg.type = plansys2_msgs::msg::ActionExecution::REQUEST;
@@ -147,8 +144,7 @@ ActionExecutor::request_for_performers()
   action_hub_pub_->publish(msg);
 }
 
-BT::NodeStatus
-ActionExecutor::get_status()
+BT::NodeStatus ActionExecutor::get_status()
 {
   switch (state_) {
     case IDLE:
@@ -170,14 +166,9 @@ ActionExecutor::get_status()
   }
 }
 
-bool
-ActionExecutor::is_finished()
-{
-  return state_ == SUCCESS || state_ == FAILURE;
-}
+bool ActionExecutor::is_finished() {return state_ == SUCCESS || state_ == FAILURE;}
 
-BT::NodeStatus
-ActionExecutor::tick(const rclcpp::Time & now)
+BT::NodeStatus ActionExecutor::tick(const rclcpp::Time & now)
 {
   switch (state_) {
     case IDLE:
@@ -190,20 +181,17 @@ ActionExecutor::tick(const rclcpp::Time & now)
       feedback_ = "";
 
       request_for_performers();
-      waiting_timer_ = node_->create_wall_timer(
-        1s, std::bind(&ActionExecutor::wait_timeout, this));
+      waiting_timer_ = node_->create_wall_timer(1s, std::bind(&ActionExecutor::wait_timeout, this));
       break;
-    case DEALING:
-      {
+    case DEALING: {
         auto time_since_dealing = (node_->now() - state_time_).seconds();
         if (time_since_dealing > 30.0) {
           RCLCPP_ERROR(
-            node_->get_logger(),
-            "Aborting %s. Timeout after requesting for 30 seconds", action_.c_str());
+            node_->get_logger(), "Aborting %s. Timeout after requesting for 30 seconds",
+            action_.c_str());
           state_ = FAILURE;
         }
-      }
-      break;
+      } break;
 
     case RUNNING:
       break;
@@ -218,8 +206,7 @@ ActionExecutor::tick(const rclcpp::Time & now)
   return get_status();
 }
 
-void
-ActionExecutor::cancel()
+void ActionExecutor::cancel()
 {
   state_ = CANCELLED;
   plansys2_msgs::msg::ActionExecution msg;
@@ -231,26 +218,24 @@ ActionExecutor::cancel()
   action_hub_pub_->publish(msg);
 }
 
-std::string
-ActionExecutor::get_name(const std::string & action_expr)
+std::string ActionExecutor::get_name(const std::string & action_expr)
 {
   std::string working_action_expr = parser::pddl::getReducedString(action_expr);
   working_action_expr.erase(0, 1);  // remove initial (
-  working_action_expr.pop_back();  // remove last )
+  working_action_expr.pop_back();   // remove last )
 
   size_t delim = working_action_expr.find(" ");
 
   return working_action_expr.substr(0, delim);
 }
 
-std::vector<std::string>
-ActionExecutor::get_params(const std::string & action_expr)
+std::vector<std::string> ActionExecutor::get_params(const std::string & action_expr)
 {
   std::vector<std::string> ret;
 
   std::string working_action_expr = parser::pddl::getReducedString(action_expr);
   working_action_expr.erase(0, 1);  // remove initial (
-  working_action_expr.pop_back();  // remove last )
+  working_action_expr.pop_back();   // remove last )
 
   size_t delim = working_action_expr.find(" ");
 
@@ -268,8 +253,7 @@ ActionExecutor::get_params(const std::string & action_expr)
   return ret;
 }
 
-void
-ActionExecutor::wait_timeout()
+void ActionExecutor::wait_timeout()
 {
   RCLCPP_WARN(node_->get_logger(), "No action performer for %s. retrying", action_.c_str());
   request_for_performers();

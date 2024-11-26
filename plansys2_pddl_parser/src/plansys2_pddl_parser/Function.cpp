@@ -22,7 +22,9 @@ void Function::PDDLPrint(
   std::ostream & s, unsigned indent, const TokenStruct<std::string> & ts, const Domain & d) const
 {
   Lifted::PDDLPrint(s, indent, ts, d);
-  if (returnType >= 0) {s << " - " << d.types[returnType]->name;}
+  if (returnType >= 0) {
+    s << " - " << d.types[returnType]->name;
+  }
 }
 
 plansys2_msgs::msg::Node::SharedPtr Function::getTree(

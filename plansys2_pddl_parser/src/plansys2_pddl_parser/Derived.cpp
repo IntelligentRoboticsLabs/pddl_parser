@@ -21,7 +21,9 @@ namespace pddl
 Derived::Derived(const Derived * z, Domain & d)
 : Lifted(z), cond(0), lifted(d.preds.get(z->name))
 {
-  if (z->cond) {cond = z->cond->copy(d);}
+  if (z->cond) {
+    cond = z->cond->copy(d);
+  }
 }
 
 void Derived::PDDLPrint(
@@ -36,11 +38,15 @@ void Derived::PDDLPrint(
     ss << "?" << d.types[params[i]]->getName() << dstruct.size();
     dstruct.insert(ss.str());
     s << " " << ss.str();
-    if (d.typed) {s << " - " << d.types[params[i]]->name;}
+    if (d.typed) {
+      s << " - " << d.types[params[i]]->name;
+    }
   }
   s << " )\n";
 
-  if (cond) {cond->PDDLPrint(s, 1, dstruct, d);}
+  if (cond) {
+    cond->PDDLPrint(s, 1, dstruct, d);
+  }
 
   s << "\n)\n";
 }

@@ -37,12 +37,16 @@ public:
   Exists(const Exists * e, Domain & d)
   : ParamCond(e), cond(0)
   {
-    if (e->cond) {cond = e->cond->copy(d);}
+    if (e->cond) {
+      cond = e->cond->copy(d);
+    }
   }
 
   ~Exists()
   {
-    if (cond) {delete cond;}
+    if (cond) {
+      delete cond;
+    }
   }
 
   void print(std::ostream & s) const

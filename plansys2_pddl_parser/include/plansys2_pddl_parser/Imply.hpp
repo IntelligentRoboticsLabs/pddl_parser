@@ -37,18 +37,24 @@ public:
   Imply(const Imply * f, Domain & d)
   : ParamCond(f), cond(0)
   {
-    if (f->cond) {cond = f->cond->copy(d);}
+    if (f->cond) {
+      cond = f->cond->copy(d);
+    }
   }
 
   ~Imply()
   {
-    if (cond) {delete cond;}
+    if (cond) {
+      delete cond;
+    }
   }
 
   void print(std::ostream & s) const
   {
     s << "Imply" << params << ":\n";
-    if (cond) {cond->print(s);}
+    if (cond) {
+      cond->print(s);
+    }
   }
 
   void PDDLPrint(

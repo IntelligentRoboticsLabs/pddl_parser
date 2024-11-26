@@ -15,18 +15,18 @@
 #ifndef PLANSYS2_PROBLEM_EXPERT__UTILS_HPP_
 #define PLANSYS2_PROBLEM_EXPERT__UTILS_HPP_
 
-#include <tuple>
-#include <memory>
-#include <string>
 #include <map>
-#include <vector>
+#include <memory>
 #include <set>
-#include <utility>
+#include <string>
+#include <tuple>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
 
 namespace plansys2
 {
@@ -36,13 +36,11 @@ std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyPredicate
   const std::unordered_set<plansys2::Predicate> & predicates);
 
 std::tuple<bool, std::vector<std::map<std::string, std::string>>> unifyFunction(
-  const plansys2::Function & function,
-  const std::unordered_set<plansys2::Function> & functions);
+  const plansys2::Function & function, const std::unordered_set<plansys2::Function> & functions);
 
 void mergeParamsValuesDicts(
   const std::map<std::string, std::string> & dict1,
-  const std::map<std::string, std::string> & dict2,
-  std::map<std::string, std::string> & dict3);
+  const std::map<std::string, std::string> & dict2, std::map<std::string, std::string> & dict3);
 std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
   const std::vector<std::map<std::string, std::string>> & vector1,
   const std::vector<std::map<std::string, std::string>> & vector2);
@@ -52,26 +50,18 @@ std::vector<std::map<std::string, std::string>> complementParamsValuesVector(
   const std::unordered_set<plansys2::Instance> & instances);
 
 std::tuple<bool, std::vector<std::map<std::string, std::string>>> negateResult(
-  const plansys2_msgs::msg::Node & node,
-  const bool & result,
+  const plansys2_msgs::msg::Node & node, const bool & result,
   const std::vector<std::map<std::string, std::string>> & param_dict_vector,
-  const std::unordered_set<plansys2::Instance> & instances
-);
+  const std::unordered_set<plansys2::Instance> & instances);
 
 void solveDerivedPredicates(
-  plansys2::State & state,
-  const std::vector<plansys2_msgs::msg::Node>& root_nodes
-);
+  plansys2::State & state, const std::vector<plansys2_msgs::msg::Node> & root_nodes);
 
-void solveDerivedPredicates(
-  plansys2::State & state
-);
+void solveDerivedPredicates(plansys2::State & state);
 
 void groundPredicate(
-  plansys2::State & new_state,
-  const plansys2::Predicate & predicate,
-  const std::vector<std::map<std::string, std::string>> & params_values_vector
-);
+  plansys2::State & new_state, const plansys2::Predicate & predicate,
+  const std::vector<std::map<std::string, std::string>> & params_values_vector);
 
 /// Evaluate a PDDL expression represented as a tree.
 /**
@@ -90,15 +80,13 @@ void groundPredicate(
  *         result(3) vector with the set of possible  values for the expression parameters
  */
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
-  const plansys2_msgs::msg::Tree & tree,
-  const plansys2::State & state,
-  uint8_t node_id = 0,
+  const plansys2_msgs::msg::Tree & tree, const plansys2::State & state, uint8_t node_id = 0,
   bool negate = false);
 
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0, bool negate = false);
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id = 0,
+  bool negate = false);
 
 /// Check a PDDL expression represented as a tree.
 /**
@@ -110,13 +98,12 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
 */
 bool check(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0, bool negate = false);
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id = 0,
+  bool negate = false);
 
 bool check(
-  const plansys2_msgs::msg::Tree & tree,
-  const plansys2::State & state,
-  uint32_t node_id = 0, bool negate = false);
+  const plansys2_msgs::msg::Tree & tree, const plansys2::State & state, uint32_t node_id = 0,
+  bool negate = false);
 
 /// Apply a PDDL expression represented as a tree.
 /**
@@ -128,29 +115,23 @@ bool check(
  */
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  uint32_t node_id = 0, bool negate = false, bool derive=true);
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id = 0,
+  bool negate = false, bool derive = true);
+
+bool apply(
+  const plansys2_msgs::msg::Tree & tree, plansys2::State & state, uint32_t node_id = 0,
+  bool negate = false, bool derive = true);
+
+bool apply(
+  const plansys2_msgs::msg::Tree & tree, plansys2::State & state,
+  std::vector<plansys2_msgs::msg::Node> & nodes_modified, uint32_t node_id = 0, bool negate = false,
+  bool derive = true);
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  plansys2::State & state,
-  uint32_t node_id = 0, bool negate = false, bool derive=true);
-
-bool apply(
-  const plansys2_msgs::msg::Tree & tree,
-  plansys2::State & state,
-  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
-  uint32_t node_id = 0, bool negate = false, bool derive=true);
-
-bool apply(
-  const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  plansys2::State &state,
-  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
-  bool use_state = false,
-  uint32_t node_id = 0,
-  bool negate = false, bool derive=true
-);
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, plansys2::State & state,
+  std::vector<plansys2_msgs::msg::Node> & nodes_modified, bool use_state = false,
+  uint32_t node_id = 0, bool negate = false, bool derive = true);
 
 /// Parse the action expression and time (optional) from an input string.
 /**
@@ -212,6 +193,5 @@ std::string get_action_name(const std::string & input);
 std::vector<std::string> get_action_params(const std::string & action_expr);
 
 }  // namespace plansys2
-
 
 #endif  // PLANSYS2_PROBLEM_EXPERT__UTILS_HPP_

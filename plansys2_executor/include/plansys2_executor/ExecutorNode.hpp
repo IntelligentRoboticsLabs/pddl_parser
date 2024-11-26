@@ -15,33 +15,29 @@
 #ifndef PLANSYS2_EXECUTOR__EXECUTORNODE_HPP_
 #define PLANSYS2_EXECUTOR__EXECUTORNODE_HPP_
 
-#include <memory>
-#include <vector>
-#include <string>
 #include <map>
-
-#include "plansys2_domain_expert/DomainExpertClient.hpp"
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
-#include "plansys2_planner/PlannerClient.hpp"
-#include "plansys2_executor/ActionExecutor.hpp"
-#include "plansys2_executor/BTBuilder.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
-
+#include "plansys2_domain_expert/DomainExpertClient.hpp"
+#include "plansys2_executor/ActionExecutor.hpp"
+#include "plansys2_executor/BTBuilder.hpp"
 #include "plansys2_msgs/action/execute_plan.hpp"
 #include "plansys2_msgs/msg/action_execution_info.hpp"
-#include "plansys2_msgs/srv/get_ordered_sub_goals.hpp"
 #include "plansys2_msgs/msg/plan.hpp"
-#include "std_msgs/msg/string.hpp"
-
+#include "plansys2_msgs/srv/get_ordered_sub_goals.hpp"
+#include "plansys2_planner/PlannerClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "pluginlib/class_list_macros.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
-
-#include "pluginlib/class_loader.hpp"
-#include "pluginlib/class_list_macros.hpp"
+#include "std_msgs/msg/string.hpp"
 
 namespace plansys2
 {
@@ -51,8 +47,7 @@ class ExecutorNode : public rclcpp_lifecycle::LifecycleNode
 public:
   using ExecutePlan = plansys2_msgs::action::ExecutePlan;
   using GoalHandleExecutePlan = rclcpp_action::ServerGoalHandle<ExecutePlan>;
-  using CallbackReturnT =
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+  using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
   ExecutorNode();
 
@@ -92,8 +87,7 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<plansys2_msgs::msg::Plan>::SharedPtr executing_plan_pub_;
 
   rclcpp_action::Server<ExecutePlan>::SharedPtr execute_plan_action_server_;
-  rclcpp::Service<plansys2_msgs::srv::GetOrderedSubGoals>::SharedPtr
-    get_ordered_sub_goals_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetOrderedSubGoals>::SharedPtr get_ordered_sub_goals_service_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr dotgraph_pub_;
 
   std::optional<std::vector<plansys2_msgs::msg::Tree>> getOrderedSubGoals();
@@ -101,8 +95,7 @@ protected:
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_plan_service_;
 
   rclcpp_action::GoalResponse handle_goal(
-    const rclcpp_action::GoalUUID & uuid,
-    std::shared_ptr<const ExecutePlan::Goal> goal);
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const ExecutePlan::Goal> goal);
 
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
@@ -114,8 +107,7 @@ protected:
   std::vector<plansys2_msgs::msg::ActionExecutionInfo> get_feedback_info(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
 
-  void print_execution_info(
-    std::shared_ptr<std::map<std::string, ActionExecutionInfo>> exec_info);
+  void print_execution_info(std::shared_ptr<std::map<std::string, ActionExecutionInfo>> exec_info);
 };
 
 }  // namespace plansys2

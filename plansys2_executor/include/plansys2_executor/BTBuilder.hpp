@@ -15,12 +15,12 @@
 #ifndef PLANSYS2_EXECUTOR__BTBUILDER_HPP_
 #define PLANSYS2_EXECUTOR__BTBUILDER_HPP_
 
-#include <map>
-#include <set>
-#include <tuple>
 #include <list>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
+#include <tuple>
 
 #include "plansys2_executor/ActionExecutor.hpp"
 #include "plansys2_msgs/msg/plan.hpp"
@@ -31,16 +31,7 @@ namespace plansys2
 namespace bt_builder
 {
 
-enum struct ActionType
-{
-  UNKNOWN,
-  INIT,
-  DURATIVE,
-  START,
-  OVERALL,
-  END,
-  GOAL
-};
+enum struct ActionType { UNKNOWN, INIT, DURATIVE, START, OVERALL, END, GOAL };
 
 struct ActionStamped
 {
@@ -83,8 +74,7 @@ public:
   using Ptr = std::shared_ptr<plansys2::bt_builder::BTBuilder>;
 
   virtual void initialize(
-    const std::string & bt_action_1 = "",
-    const std::string & bt_action_2 = "",
+    const std::string & bt_action_1 = "", const std::string & bt_action_2 = "",
     int precision = 3) = 0;
 
   virtual std::string get_tree(const plansys2_msgs::msg::Plan & current_plan) = 0;
@@ -92,8 +82,7 @@ public:
   virtual bool propagate(plansys2::bt_builder::Graph::Ptr graph) = 0;
   virtual std::string get_dotgraph(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
-    bool enable_legend = false,
-    bool enable_print_graph = false) = 0;
+    bool enable_legend = false, bool enable_print_graph = false) = 0;
 
   static int to_int_time(float time, int power)
   {

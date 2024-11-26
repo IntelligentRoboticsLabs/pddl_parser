@@ -12,55 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
 #include <string>
 #include <vector>
-#include <regex>
-#include <iostream>
-#include <memory>
-#include <fstream>
-#include <map>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
-
-#include "plansys2_domain_expert/DomainExpertNode.hpp"
-#include "plansys2_domain_expert/DomainExpertClient.hpp"
-#include "plansys2_problem_expert/ProblemExpertNode.hpp"
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
-#include "plansys2_planner/PlannerNode.hpp"
-#include "plansys2_planner/PlannerClient.hpp"
-#include "plansys2_executor/BTBuilder.hpp"
-
-#include "plansys2_executor/ActionExecutor.hpp"
-#include "plansys2_executor/ActionExecutorClient.hpp"
-#include "plansys2_executor/ExecutorNode.hpp"
-#include "plansys2_executor/ExecutorClient.hpp"
-#include "plansys2_problem_expert/Utils.hpp"
-
 #include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/utils/shared_library.h"
-#include "behaviortree_cpp/blackboard.h"
-
+#include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "plansys2_domain_expert/DomainExpertClient.hpp"
+#include "plansys2_domain_expert/DomainExpertNode.hpp"
+#include "plansys2_executor/ActionExecutor.hpp"
+#include "plansys2_executor/ActionExecutorClient.hpp"
+#include "plansys2_executor/BTBuilder.hpp"
+#include "plansys2_executor/ExecutorClient.hpp"
+#include "plansys2_executor/ExecutorNode.hpp"
+#include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
+#include "plansys2_executor/behavior_tree/check_overall_req_node.hpp"
 #include "plansys2_executor/behavior_tree/execute_action_node.hpp"
 #include "plansys2_executor/behavior_tree/wait_action_node.hpp"
 #include "plansys2_executor/behavior_tree/wait_atstart_req_node.hpp"
-#include "plansys2_executor/behavior_tree/check_overall_req_node.hpp"
-#include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
-#include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
-#include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
-
-#include "lifecycle_msgs/msg/state.hpp"
 #include "plansys2_msgs/msg/action_execution_info.hpp"
-
-#include "pluginlib/class_loader.hpp"
+#include "plansys2_planner/PlannerClient.hpp"
+#include "plansys2_planner/PlannerNode.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertNode.hpp"
+#include "plansys2_problem_expert/Utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
-
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-
-#include "gtest/gtest.h"
-
 
 TEST(executor, action_executor_api)
 {
@@ -75,8 +66,7 @@ TEST(executor, action_executor_api)
   ASSERT_EQ(action_executor_1->get_status(), BT::NodeStatus::IDLE);
 }
 
-using CallbackReturnT =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using namespace std::chrono_literals;
 
 class MoveAction : public plansys2::ActionExecutorClient
@@ -88,22 +78,14 @@ public:
     return std::make_shared<MoveAction>(node_name, rate);
   }
 
-
   MoveAction(const std::string & id, const std::chrono::nanoseconds & rate)
-  : ActionExecutorClient(id, rate),
-    executions_(0),
-    cycles_(0),
-    runtime_(0)
+  : ActionExecutorClient(id, rate), executions_(0), cycles_(0), runtime_(0)
   {
   }
 
-  void set_runtime(double runtime)
-  {
-    runtime_ = runtime;
-  }
+  void set_runtime(double runtime) {runtime_ = runtime;}
 
-  CallbackReturnT
-  on_activate(const rclcpp_lifecycle::State & state)
+  CallbackReturnT on_activate(const rclcpp_lifecycle::State & state)
   {
     std::cerr << "MoveAction::on_activate" << std::endl;
     counter_ = 0;
@@ -159,7 +141,6 @@ public:
     return std::make_shared<MoveAction>(node_name, rate);
   }
 
-
   TransportAction(const std::string & id, const std::chrono::nanoseconds & rate)
   : ActionExecutorClient(id, rate)
   {
@@ -167,8 +148,7 @@ public:
     cycles_ = 0;
   }
 
-  CallbackReturnT
-  on_activate(const rclcpp_lifecycle::State & state)
+  CallbackReturnT on_activate(const rclcpp_lifecycle::State & state)
   {
     std::cerr << "TransportAction::on_activate" << std::endl;
     counter_ = 0;
@@ -236,16 +216,15 @@ TEST(executor, action_executor_client)
   std::vector<plansys2_msgs::msg::ActionExecution> history_msgs;
   bool confirmed = false;
   auto actions_sub = aux_node->create_subscription<plansys2_msgs::msg::ActionExecution>(
-    "actions_hub",
-    rclcpp::QoS(100).reliable(), [&](plansys2_msgs::msg::ActionExecution::UniquePtr msg) {
-      history_msgs.push_back(*msg);
-    });
+    "actions_hub", rclcpp::QoS(100).reliable(),
+    [&](plansys2_msgs::msg::ActionExecution::UniquePtr msg) {history_msgs.push_back(*msg);});
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   std::string bt_xml_tree =
     R"(
@@ -279,7 +258,6 @@ TEST(executor, action_executor_client)
 
   auto tree = factory.createTreeFromText(bt_xml_tree, blackboard);
 
-
   auto status = BT::NodeStatus::RUNNING;
   while (status != BT::NodeStatus::SUCCESS) {
     status = tree.tickOnce();
@@ -293,7 +271,6 @@ TEST(executor, action_executor_client)
   ASSERT_EQ(transport_action_node->executions_, 3);
   ASSERT_EQ(transport_action_node->cycles_, 15);
   // ASSERT_EQ(history_msgs.size(), 64);
-
 
   finish = true;
   t.join();
@@ -322,9 +299,10 @@ TEST(executor, action_executor)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -419,10 +397,9 @@ TEST(executor, action_executor)
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
-
   std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::bt_builder::BTBuilder");
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader(
+    "plansys2_executor", "plansys2::bt_builder::BTBuilder");
   try {
     bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {
@@ -439,10 +416,10 @@ TEST(executor, action_executor)
 class ExecuteActionTest : public plansys2::ExecuteAction
 {
 public:
-  ExecuteActionTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : ExecuteAction(xml_tag_name, conf) {}
+  ExecuteActionTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : ExecuteAction(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -464,10 +441,10 @@ public:
 class WaitActionTest : public plansys2::WaitAction
 {
 public:
-  WaitActionTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : WaitAction(xml_tag_name, conf) {}
+  WaitActionTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : WaitAction(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -488,10 +465,10 @@ public:
 class CheckOverAllReqTest : public plansys2::CheckOverAllReq
 {
 public:
-  CheckOverAllReqTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : CheckOverAllReq(xml_tag_name, conf) {}
+  CheckOverAllReqTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : CheckOverAllReq(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -512,10 +489,10 @@ public:
 class WaitAtStartReqTest : public plansys2::WaitAtStartReq
 {
 public:
-  WaitAtStartReqTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : WaitAtStartReq(xml_tag_name, conf) {}
+  WaitAtStartReqTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : WaitAtStartReq(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -536,10 +513,10 @@ public:
 class CheckAtEndReqTest : public plansys2::CheckAtEndReq
 {
 public:
-  CheckAtEndReqTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : CheckAtEndReq(xml_tag_name, conf) {}
+  CheckAtEndReqTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : CheckAtEndReq(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -560,10 +537,10 @@ public:
 class ApplyAtStartEffectTest : public plansys2::ApplyAtStartEffect
 {
 public:
-  ApplyAtStartEffectTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : ApplyAtStartEffect(xml_tag_name, conf) {}
+  ApplyAtStartEffectTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : ApplyAtStartEffect(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -584,10 +561,10 @@ public:
 class ApplyAtEndEffectTest : public plansys2::ApplyAtEndEffect
 {
 public:
-  ApplyAtEndEffectTest(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf)
-  : ApplyAtEndEffect(xml_tag_name, conf) {}
+  ApplyAtEndEffectTest(const std::string & xml_tag_name, const BT::NodeConfig & conf)
+  : ApplyAtEndEffect(xml_tag_name, conf)
+  {
+  }
 
   void halt() override
   {
@@ -649,12 +626,12 @@ TEST(executor, action_real_action_1)
   exe.add_node(move_action_node->get_node_base_interface());
   exe.add_node(test_lf_node->get_node_base_interface());
 
-
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -770,7 +747,6 @@ TEST(executor, action_real_action_1)
     </root>
   )";
 
-
   std::vector<std::string> predicates = {
     "(robot_at r2d2 steering_wheels_zone)",
     "(robot_available r2d2)",
@@ -792,9 +768,7 @@ TEST(executor, action_real_action_1)
     ASSERT_EQ(ApplyAtStartEffectTest::test_status, BT::NodeStatus::SUCCESS);
     ASSERT_FALSE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
     ASSERT_FALSE(
-      problem_client->existPredicate(
-        plansys2::Predicate(
-          "(robot_at r2d2 steering_wheels_zone)")));
+      problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 steering_wheels_zone)")));
 
     status = tree.tickOnce();
     ASSERT_EQ(CheckOverAllReqTest::test_status, BT::NodeStatus::SUCCESS);
@@ -834,9 +808,7 @@ TEST(executor, action_real_action_1)
     }
 
     ASSERT_FALSE(
-      problem_client->existPredicate(
-        plansys2::Predicate(
-          "(robot_at r2d2 assembly_zone)")));
+      problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 assembly_zone)")));
     ASSERT_FALSE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
 
     while (ExecuteActionTest::test_status != BT::NodeStatus::SUCCESS) {
@@ -854,7 +826,6 @@ TEST(executor, action_real_action_1)
   } catch (const std::exception & e) {
     std::cerr << e.what() << '\n';
   }
-
 
   ExecuteActionTest::test_status = BT::NodeStatus::IDLE;
   WaitActionTest::test_status = BT::NodeStatus::IDLE;
@@ -904,12 +875,12 @@ TEST(executor, action_real_action_2)
   exe.add_node(move_action_node->get_node_base_interface());
   exe.add_node(test_lf_node->get_node_base_interface());
 
-
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -1025,7 +996,6 @@ TEST(executor, action_real_action_2)
     </root>
   )";
 
-
   std::vector<std::string> predicates = {
     "(robot_at r2d2 steering_wheels_zone)",
     "(robot_available r2d2)",
@@ -1047,9 +1017,7 @@ TEST(executor, action_real_action_2)
     ASSERT_EQ(ApplyAtStartEffectTest::test_status, BT::NodeStatus::SUCCESS);
     ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
     ASSERT_TRUE(
-      problem_client->existPredicate(
-        plansys2::Predicate(
-          "(robot_at r2d2 steering_wheels_zone)")));
+      problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 steering_wheels_zone)")));
 
     status = tree.tickOnce();
     ASSERT_EQ(CheckOverAllReqTest::test_status, BT::NodeStatus::SUCCESS);
@@ -1089,9 +1057,7 @@ TEST(executor, action_real_action_2)
     }
 
     ASSERT_FALSE(
-      problem_client->existPredicate(
-        plansys2::Predicate(
-          "(robot_at r2d2 assembly_zone)")));
+      problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 assembly_zone)")));
     ASSERT_FALSE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
 
     while (ExecuteActionTest::test_status != BT::NodeStatus::SUCCESS) {
@@ -1109,7 +1075,6 @@ TEST(executor, action_real_action_2)
   } catch (const std::exception & e) {
     std::cerr << e.what() << '\n';
   }
-
 
   ExecuteActionTest::test_status = BT::NodeStatus::IDLE;
   WaitActionTest::test_status = BT::NodeStatus::IDLE;
@@ -1159,12 +1124,12 @@ TEST(executor, cancel_bt_execution)
   exe.add_node(move_action_node->get_node_base_interface());
   exe.add_node(test_lf_node->get_node_base_interface());
 
-
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -1266,9 +1231,7 @@ TEST(executor, cancel_bt_execution)
     ASSERT_EQ(ApplyAtStartEffectTest::test_status, BT::NodeStatus::SUCCESS);
     ASSERT_FALSE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
     ASSERT_FALSE(
-      problem_client->existPredicate(
-        plansys2::Predicate(
-          "(robot_at r2d2 steering_wheels_zone)")));
+      problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 steering_wheels_zone)")));
 
     status = tree.tickOnce();
     ASSERT_EQ(CheckOverAllReqTest::test_status, BT::NodeStatus::SUCCESS);
@@ -1362,12 +1325,12 @@ TEST(executor, executor_client_execute_plan)
   exe.add_node(move_action_node->get_node_base_interface());
   exe.add_node(test_lf_node->get_node_base_interface());
 
-
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -1466,8 +1429,7 @@ TEST(executor, executor_client_execute_plan)
     }
   }
 
-  ASSERT_TRUE(
-    problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 body_car_zone)")));
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 body_car_zone)")));
 
   ASSERT_TRUE(executor_client->getResult().has_value());
   result = executor_client->getResult().value();
@@ -1512,12 +1474,12 @@ TEST(executor, executor_client_execute_plan_2)
   exe.add_node(move_action_node->get_node_base_interface());
   exe.add_node(test_lf_node->get_node_base_interface());
 
-
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -1612,8 +1574,7 @@ TEST(executor, executor_client_execute_plan_2)
     }
   }
 
-  ASSERT_TRUE(
-    problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 body_car_zone)")));
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 body_car_zone)")));
 
   ASSERT_TRUE(executor_client->getResult().has_value());
   result = executor_client->getResult().value();
@@ -1634,7 +1595,6 @@ public:
     return std::make_shared<PatrolAction>(node_name, rate);
   }
 
-
   PatrolAction(const std::string & id, const std::chrono::nanoseconds & rate)
   : ActionExecutorClient(id, rate)
   {
@@ -1642,8 +1602,7 @@ public:
     cycles_ = 0;
   }
 
-  CallbackReturnT
-  on_activate(const rclcpp_lifecycle::State & state)
+  CallbackReturnT on_activate(const rclcpp_lifecycle::State & state)
   {
     std::cerr << "PatrolAction::on_activate" << std::endl;
     counter_ = 0;
@@ -1672,7 +1631,6 @@ public:
   int executions_;
   int cycles_;
 };
-
 
 TEST(executor, executor_client_ordered_sub_goals)
 {
@@ -1713,7 +1671,9 @@ TEST(executor, executor_client_ordered_sub_goals)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -1752,28 +1712,17 @@ TEST(executor, executor_client_ordered_sub_goals)
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("wp2", "waypoint")));
 
   std::vector<std::string> predicates = {
-    "(robot_at r2d2 wp0)",
-    "(connected wp0 wp1)",
-    "(connected wp1 wp0)",
-    "(connected wp0 wp2)",
-    "(connected wp2 wp0)",
-    "(connected wp1 wp2)",
-    "(connected wp2 wp1)",
+    "(robot_at r2d2 wp0)", "(connected wp0 wp1)", "(connected wp1 wp0)", "(connected wp0 wp2)",
+    "(connected wp2 wp0)", "(connected wp1 wp2)", "(connected wp2 wp1)",
   };
   for (const auto & pred : predicates) {
     ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate(pred)));
   }
 
   std::vector<std::string> functions = {
-    "(= (speed r2d2) 1.0)",
-    "(= (max_range r2d2) 100.0)",
-    "(= (state_of_charge r2d2) 100.0)",
-    "(= (distance wp0 wp1) 5.0)",
-    "(= (distance wp1 wp0) 5.0)",
-    "(= (distance wp0 wp2) 15.0)",
-    "(= (distance wp2 wp0) 15.0)",
-    "(= (distance wp1 wp2) 5.0)",
-    "(= (distance wp2 wp1) 5.0)",
+    "(= (speed r2d2) 1.0)", "(= (max_range r2d2) 100.0)", "(= (state_of_charge r2d2) 100.0)",
+    "(= (distance wp0 wp1) 5.0)", "(= (distance wp1 wp0) 5.0)", "(= (distance wp0 wp2) 15.0)",
+    "(= (distance wp2 wp0) 15.0)", "(= (distance wp1 wp2) 5.0)", "(= (distance wp2 wp1) 5.0)",
   };
   for (const auto & func : functions) {
     ASSERT_TRUE(problem_client->addFunction(plansys2::Function(func)));
@@ -1812,8 +1761,7 @@ TEST(executor, executor_client_ordered_sub_goals)
   ASSERT_EQ(actual_sub_goals.size(), expected_sub_goals.size());
   for (size_t i = 0; i < actual_sub_goals.size(); i++) {
     ASSERT_EQ(
-      parser::pddl::toString(actual_sub_goals[i]),
-      parser::pddl::toString(expected_sub_goals[i]));
+      parser::pddl::toString(actual_sub_goals[i]), parser::pddl::toString(expected_sub_goals[i]));
   }
 
   finish = true;
@@ -1853,12 +1801,12 @@ TEST(executor, executor_client_cancel_plan)
   exe.add_node(move_action_node->get_node_base_interface());
   exe.add_node(test_lf_node->get_node_base_interface());
 
-
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -1922,7 +1870,8 @@ TEST(executor, executor_client_cancel_plan)
 
     while (rclcpp::ok() && executor_client->execute_and_check_plan()) {
       auto feedback = executor_client->getFeedBack();
-      if (!feedback.action_execution_status.empty() &&
+      if (
+        !feedback.action_execution_status.empty() &&
         feedback.action_execution_status[0].status ==
         plansys2_msgs::msg::ActionExecutionInfo::EXECUTING &&
         (test_node_1->now() - start).seconds() > 3)
@@ -1945,8 +1894,7 @@ TEST(executor, executor_client_cancel_plan)
   }
 
   ASSERT_EQ(
-    move_action_node->get_current_state().id(),
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    move_action_node->get_current_state().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   finish = true;
   t.join();
@@ -1983,8 +1931,7 @@ TEST(executor, action_timeout)
   executor_node->set_parameter({"bt_builder_plugin", "SimpleBTBuilder"});
   executor_node->set_parameter({"action_timeouts.actions", std::vector<std::string>({"move"})});
   // have to declare because the actions vector above was not available at node creation
-  executor_node->declare_parameter<double>(
-    "action_timeouts.move.duration_overrun_percentage", 1.0);
+  executor_node->declare_parameter<double>("action_timeouts.move.duration_overrun_percentage", 1.0);
   executor_node->set_parameter({"action_timeouts.move.duration_overrun_percentage", 1.0});
 
   rclcpp::executors::SingleThreadedExecutor exe;
@@ -1998,7 +1945,9 @@ TEST(executor, action_timeout)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -2066,9 +2015,8 @@ TEST(executor, action_timeout)
       std::stringstream ss;
       ss.setf(std::ios_base::fixed, std::ios_base::floatfield);
       for (const auto & action_feedback : feedback.action_execution_status) {
-        ss << "[" << action_feedback.action << " " << std::setprecision(1) <<
-          action_feedback.completion * 100.0 <<
-          "%]";
+        ss << "[" << action_feedback.action << " " << std::setprecision(1)
+           << action_feedback.completion * 100.0 << "%]";
       }
       auto & clk = *executor_node->get_clock();
       RCLCPP_WARN_THROTTLE(executor_node->get_logger(), clk, 500, "%s", ss.str().c_str());
@@ -2080,8 +2028,7 @@ TEST(executor, action_timeout)
   auto result = executor_client->getResult().value();
   ASSERT_FALSE(result.success);
   ASSERT_EQ(
-    result.action_execution_status[0].status,
-    plansys2_msgs::msg::ActionExecutionInfo::CANCELLED);
+    result.action_execution_status[0].status, plansys2_msgs::msg::ActionExecutionInfo::CANCELLED);
 
   {
     rclcpp::Rate rate(10);
@@ -2092,13 +2039,11 @@ TEST(executor, action_timeout)
   }
 
   ASSERT_EQ(
-    move_action_node->get_current_state().id(),
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    move_action_node->get_current_state().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   finish = true;
   t.join();
 }
-
 
 int main(int argc, char ** argv)
 {

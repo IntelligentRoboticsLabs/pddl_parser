@@ -12,29 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
 #include <string>
 #include <vector>
-#include <regex>
-#include <iostream>
-#include <memory>
-#include <map>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
-
 #include "gtest/gtest.h"
-#include "plansys2_domain_expert/DomainExpertNode.hpp"
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
-#include "plansys2_problem_expert/ProblemExpertNode.hpp"
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
-#include "plansys2_planner/PlannerNode.hpp"
-#include "plansys2_planner/PlannerClient.hpp"
+#include "plansys2_domain_expert/DomainExpertNode.hpp"
 #include "plansys2_executor/BTBuilder.hpp"
-
-#include "pluginlib/class_loader.hpp"
+#include "plansys2_planner/PlannerClient.hpp"
+#include "plansys2_planner/PlannerNode.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertNode.hpp"
 #include "pluginlib/class_list_macros.hpp"
-
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
-
 
 TEST(executiotest_noden_tree, bt_builder_factory)
 {
@@ -59,9 +55,10 @@ TEST(executiotest_noden_tree, bt_builder_factory)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -153,15 +150,14 @@ TEST(executiotest_noden_tree, bt_builder_factory)
 
   ASSERT_TRUE(
     problem_client->setGoal(
-      plansys2::Goal(
-        "(and (car_assembled car_1) (car_assembled car_2) (car_assembled car_3))")));
+      plansys2::Goal("(and (car_assembled car_1) (car_assembled car_2) (car_assembled car_3))")));
 
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
   std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::bt_builder::BTBuilder");
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader(
+    "plansys2_executor", "plansys2::bt_builder::BTBuilder");
   try {
     bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {
@@ -175,7 +171,6 @@ TEST(executiotest_noden_tree, bt_builder_factory)
   finish = true;
   t.join();
 }
-
 
 TEST(executiotest_noden_tree, bt_builder_factory_2)
 {
@@ -200,9 +195,10 @@ TEST(executiotest_noden_tree, bt_builder_factory_2)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -302,8 +298,8 @@ TEST(executiotest_noden_tree, bt_builder_factory_2)
   ASSERT_TRUE(plan);
 
   std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::bt_builder::BTBuilder");
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader(
+    "plansys2_executor", "plansys2::bt_builder::BTBuilder");
   try {
     bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {
@@ -340,9 +336,10 @@ TEST(executiotest_noden_tree, bt_builder_factory_3)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -373,22 +370,13 @@ TEST(executiotest_noden_tree, bt_builder_factory_3)
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("wp_control", "waypoint")));
   for (unsigned i = 1; i <= 4; i++) {
     ASSERT_TRUE(
-      problem_client->addInstance(
-        plansys2::Instance(
-          "wp" + std::to_string(
-            i), "waypoint")));
+      problem_client->addInstance(plansys2::Instance("wp" + std::to_string(i), "waypoint")));
   }
 
   std::vector<std::string> predicates = {
-    "(robot_at r2d2 wp_control)",
-    "(charger_at wp3)",
-    "(connected wp_control wp1)",
-    "(connected wp1 wp_control)",
-    "(connected wp_control wp2)",
-    "(connected wp2 wp_control)",
-    "(connected wp_control wp3)",
-    "(connected wp3 wp_control)",
-    "(connected wp_control wp4)",
+    "(robot_at r2d2 wp_control)", "(charger_at wp3)", "(connected wp_control wp1)",
+    "(connected wp1 wp_control)", "(connected wp_control wp2)", "(connected wp2 wp_control)",
+    "(connected wp_control wp3)", "(connected wp3 wp_control)", "(connected wp_control wp4)",
     "(connected wp4 wp_control)"};
 
   for (const auto & pred : predicates) {
@@ -426,15 +414,14 @@ TEST(executiotest_noden_tree, bt_builder_factory_3)
 
   ASSERT_TRUE(
     problem_client->setGoal(
-      plansys2::Goal(
-        "(and (patrolled wp1) (patrolled wp2) (patrolled wp3) (patrolled wp4))")));
+      plansys2::Goal("(and (patrolled wp1) (patrolled wp2) (patrolled wp3) (patrolled wp4))")));
 
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
   std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::bt_builder::BTBuilder");
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader(
+    "plansys2_executor", "plansys2::bt_builder::BTBuilder");
   try {
     bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {

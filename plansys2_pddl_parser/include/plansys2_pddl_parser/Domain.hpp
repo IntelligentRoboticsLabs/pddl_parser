@@ -46,14 +46,14 @@ public:
   bool equality;                  // whether domain supports equality
   bool strips, adl, condeffects;  // whether domain is strips, adl and/or has conditional effects
   bool typed, cons, costs;        // whether domain is typed, has constants, has costs
-  bool temp,  // whether domain is temporal
-    nondet,  // whether domain is is non-deterministic
-    neg,  // whether domain has negative precons
-    disj;  // whether domain has disjunctive preconditions
-  bool universal;        // whether domain has universal precons
-  bool fluents;          // whether domains contains fluents
-  bool derivedpred;      // whether domain contains derived predicates
-  bool existentialcond;  // whether domain contains existential predicates
+  bool temp,                      // whether domain is temporal
+    nondet,                       // whether domain is is non-deterministic
+    neg,                          // whether domain has negative precons
+    disj;                         // whether domain has disjunctive preconditions
+  bool universal;                 // whether domain has universal precons
+  bool fluents;                   // whether domains contains fluents
+  bool derivedpred;               // whether domain contains derived predicates
+  bool existentialcond;           // whether domain contains existential predicates
 
   TokenStruct<Type *> types;       // types
   TokenStruct<Lifted *> preds;     // predicates
@@ -88,12 +88,24 @@ public:
 
   virtual ~Domain()
   {
-    for (unsigned i = 0; i < types.size(); ++i) {delete types[i];}
-    for (unsigned i = 0; i < preds.size(); ++i) {delete preds[i];}
-    for (unsigned i = 0; i < funcs.size(); ++i) {delete funcs[i];}
-    for (unsigned i = 0; i < actions.size(); ++i) {delete actions[i];}
-    for (unsigned i = 0; i < derived.size(); ++i) {delete derived[i];}
-    for (unsigned i = 0; i < tasks.size(); ++i) {delete tasks[i];}
+    for (unsigned i = 0; i < types.size(); ++i) {
+      delete types[i];
+    }
+    for (unsigned i = 0; i < preds.size(); ++i) {
+      delete preds[i];
+    }
+    for (unsigned i = 0; i < funcs.size(); ++i) {
+      delete funcs[i];
+    }
+    for (unsigned i = 0; i < actions.size(); ++i) {
+      delete actions[i];
+    }
+    for (unsigned i = 0; i < derived.size(); ++i) {
+      delete derived[i];
+    }
+    for (unsigned i = 0; i < tasks.size(); ++i) {
+      delete tasks[i];
+    }
   }
 
   virtual void parse(const std::string & s)
@@ -101,14 +113,18 @@ public:
     Stringreader f(s);
     name = f.parseName("domain");
 
-    if (DOMAIN_DEBUG) {std::cout << name << "\n";}
+    if (DOMAIN_DEBUG) {
+      std::cout << name << "\n";
+    }
 
     for (; f.getChar() != ')'; f.next()) {
       f.assert_token("(");
       f.assert_token(":");
       std::string t = f.getToken();
 
-      if (DOMAIN_DEBUG) {std::cout << t << "\n";}
+      if (DOMAIN_DEBUG) {
+        std::cout << t << "\n";
+      }
 
       if (!parseBlock(t, f)) {
         f.tokenExit(t);
@@ -148,7 +164,9 @@ public:
       f.assert_token(":");
       std::string s = f.getToken();
 
-      if (DOMAIN_DEBUG) {std::cout << "  " << s << "\n";}
+      if (DOMAIN_DEBUG) {
+        std::cout << "  " << s << "\n";
+      }
 
       if (!parseRequirement(s)) {
         f.tokenExit(s);
@@ -218,7 +236,9 @@ public:
   IntVec convertTypes(const StringVec & v)
   {
     IntVec out;
-    for (unsigned i = 0; i < v.size(); ++i) {out.push_back(types.index(getType(v[i])->name));}
+    for (unsigned i = 0; i < v.size(); ++i) {
+      out.push_back(types.index(getType(v[i])->name));
+    }
     return out;
   }
 
@@ -255,9 +275,14 @@ public:
 
     // By default, the supertype of a type is "object"
     for (unsigned i = 1; i < types.size(); ++i) {
-      if (types[i]->supertype == 0) {types[0]->insertSubtype(types[i]);}}
+      if (types[i]->supertype == 0) {
+        types[0]->insertSubtype(types[i]);
+      }
+    }
 
-    for (unsigned i = 0; DOMAIN_DEBUG && i < types.size(); ++i) {std::cout << "  " << types[i];}
+    for (unsigned i = 0; DOMAIN_DEBUG && i < types.size(); ++i) {
+      std::cout << "  " << types[i];
+    }
   }
 
   void parseConstants(Stringreader & f)
@@ -277,7 +302,9 @@ public:
     }
     for (unsigned i = 0; DOMAIN_DEBUG && i < types.size(); ++i) {
       std::cout << " ";
-      if (typed) {std::cout << " " << types[i] << ":";}
+      if (typed) {
+        std::cout << " " << types[i] << ":";
+      }
       for (unsigned j = 0; j < types[i]->constants.size(); ++j) {
         std::cout << " " << types[i]->constants[j];
       }
@@ -306,7 +333,9 @@ public:
         Lifted * c = new Lifted(f.getToken());
         c->parse(f, types[0]->constants, *this);
 
-        if (DOMAIN_DEBUG) {std::cout << "  " << c;}
+        if (DOMAIN_DEBUG) {
+          std::cout << "  " << c;
+        }
         preds.insert(c);
       }
     }
@@ -325,7 +354,9 @@ public:
       Function * c = new Function(f.getToken());
       c->parse(f, types[0]->constants, *this);
 
-      if (DOMAIN_DEBUG) {std::cout << "  " << c;}
+      if (DOMAIN_DEBUG) {
+        std::cout << "  " << c;
+      }
       funcs.insert(c);
     }
     ++f.c;
@@ -342,7 +373,9 @@ public:
     Action * a = new Action(f.getToken());
     a->parse(f, types[0]->constants, *this);
 
-    if (DOMAIN_DEBUG) {std::cout << a << "\n";}
+    if (DOMAIN_DEBUG) {
+      std::cout << a << "\n";
+    }
     actions.insert(a);
   }
 
@@ -357,7 +390,9 @@ public:
     Derived * d = new Derived;
     d->parse(f, types[0]->constants, *this);
 
-    if (DOMAIN_DEBUG) {std::cout << d << "\n";}
+    if (DOMAIN_DEBUG) {
+      std::cout << d << "\n";
+    }
     derived.insert(d);
   }
 
@@ -372,7 +407,9 @@ public:
     Action * a = new TemporalAction(f.getToken());
     a->parse(f, types[0]->constants, *this);
 
-    if (DOMAIN_DEBUG) {std::cout << a << "\n";}
+    if (DOMAIN_DEBUG) {
+      std::cout << a << "\n";
+    }
     actions.insert(a);
   }
 
@@ -381,7 +418,9 @@ public:
   TokenStruct<Type *> copyTypes()
   {
     TokenStruct<Type *> out;
-    for (unsigned i = 0; i < types.size(); ++i) {out.insert(types[i]->copy());}
+    for (unsigned i = 0; i < types.size(); ++i) {
+      out.insert(types[i]->copy());
+    }
 
     for (unsigned i = 1; i < types.size(); ++i) {
       if (types[i]->supertype) {
@@ -397,7 +436,9 @@ public:
   // Set the types to "otherTypes"
   void setTypes(const TokenStruct<Type *> & otherTypes)
   {
-    for (unsigned i = 0; i < types.size(); ++i) {delete types[i];}
+    for (unsigned i = 0; i < types.size(); ++i) {
+      delete types[i];
+    }
     types = otherTypes;
   }
 
@@ -419,7 +460,9 @@ public:
   Lifted * createPredicate(const std::string & name, const StringVec & params = StringVec())
   {
     Lifted * pred = new Lifted(name);
-    for (unsigned i = 0; i < params.size(); ++i) {pred->params.push_back(types.index(params[i]));}
+    for (unsigned i = 0; i < params.size(); ++i) {
+      pred->params.push_back(types.index(params[i]));
+    }
     preds.insert(pred);
     return pred;
   }
@@ -429,7 +472,9 @@ public:
     const std::string & name, int type, const StringVec & params = StringVec())
   {
     Function * func = new Function(name, type);
-    for (unsigned i = 0; i < params.size(); ++i) {func->params.push_back(types.index(params[i]));}
+    for (unsigned i = 0; i < params.size(); ++i) {
+      func->params.push_back(types.index(params[i]));
+    }
     funcs.insert(func);
     return func;
   }
@@ -438,7 +483,9 @@ public:
   Action * createAction(const std::string & name, const StringVec & params = StringVec())
   {
     Action * action = new Action(name);
-    for (unsigned i = 0; i < params.size(); ++i) {action->params.push_back(types.index(params[i]));}
+    for (unsigned i = 0; i < params.size(); ++i) {
+      action->params.push_back(types.index(params[i]));
+    }
     action->pre = new And;
     action->eff = new And;
     actions.insert(action);
@@ -453,7 +500,9 @@ public:
     And * old = dynamic_cast<And *>(cond);
     if (old == 0) {
       action->pre = new And;
-      if (cond) {dynamic_cast<And *>(action->pre)->add(cond->copy(*this));}
+      if (cond) {
+        dynamic_cast<And *>(action->pre)->add(cond->copy(*this));
+      }
     } else {
       action->pre = old->copy(*this);
     }
@@ -464,7 +513,9 @@ public:
     bool neg, const std::string & act, const std::string & pred, const IntVec & params = IntVec())
   {
     Action * action = actions.get(act);
-    if (action->pre == 0) {action->pre = new And;}
+    if (action->pre == 0) {
+      action->pre = new And;
+    }
     And * a = dynamic_cast<And *>(action->pre);
     if (neg) {
       a->add(new Not(ground(pred, params)));
@@ -494,7 +545,9 @@ public:
     And * old = dynamic_cast<And *>(cond);
     if (old == 0) {
       action->eff = new And;
-      if (cond) {dynamic_cast<And *>(action->eff)->add(cond->copy(*this));}
+      if (cond) {
+        dynamic_cast<And *>(action->eff)->add(cond->copy(*this));
+      }
     } else {
       action->eff = old->copy(*this);
     }
@@ -505,7 +558,9 @@ public:
     bool neg, const std::string & act, const std::string & pred, const IntVec & params = IntVec())
   {
     Action * action = actions.get(act);
-    if (action->eff == 0) {action->eff = new And;}
+    if (action->eff == 0) {
+      action->eff = new And;
+    }
     And * a = dynamic_cast<And *>(action->eff);
     if (neg) {
       a->add(new Not(ground(pred, params)));
@@ -518,7 +573,9 @@ public:
   void addCost(const std::string & act, int cost)
   {
     Action * action = actions.get(act);
-    if (action->eff == 0) {action->eff = new And;}
+    if (action->eff == 0) {
+      action->eff = new And;
+    }
     And * a = dynamic_cast<And *>(action->eff);
     a->add(new Increase(cost));
   }
@@ -527,7 +584,9 @@ public:
   void addCost(const std::string & act, const std::string & func, const IntVec & params = IntVec())
   {
     Action * action = actions.get(act);
-    if (action->eff == 0) {action->eff = new And;}
+    if (action->eff == 0) {
+      action->eff = new And;
+    }
     And * a = dynamic_cast<And *>(action->eff);
     a->add(new Increase(funcs.get(func), params));
   }
@@ -535,7 +594,9 @@ public:
   void addFunctionModifier(const std::string & act, FunctionModifier * fm)
   {
     Action * action = actions.get(act);
-    if (action->eff == 0) {action->eff = new And;}
+    if (action->eff == 0) {
+      action->eff = new And;
+    }
     And * a = dynamic_cast<And *>(action->eff);
     a->add(fm);
   }
@@ -555,7 +616,9 @@ public:
   StringVec typeList(ParamCond * c)
   {
     StringVec out;
-    for (unsigned i = 0; i < c->params.size(); ++i) {out.push_back(types[c->params[i]]->name);}
+    for (unsigned i = 0; i < c->params.size(); ++i) {
+      out.push_back(types[c->params[i]]->name);
+    }
     return out;
   }
 
@@ -579,7 +642,10 @@ public:
   bool assertSubtype(int t1, int t2)
   {
     for (Type * type = types[t1]; type != 0; type = type->supertype) {
-      if (type->name == types[t2]->name) {return 1;}}
+      if (type->name == types[t2]->name) {
+        return 1;
+      }
+    }
     return 0;
   }
 
@@ -589,7 +655,9 @@ public:
     bool res = false;
     for (int t = 0; t < types.size() && !res; t++) {
       for (int c = 0; c < types[t]->constants.size() && !res; c++) {
-        if (types[t]->constants[c] == name) {res = true;}
+        if (types[t]->constants[c] == name) {
+          res = true;
+        }
       }
     }
     return res;
@@ -601,10 +669,14 @@ public:
     bool found = false;
     for (t = 0; t < types.size() && !found; t++) {
       for (c = 0; c < types[t]->constants.size() && !found; c++) {
-        if (name == types[t]->constants[c]) {found = true;}
+        if (name == types[t]->constants[c]) {
+          found = true;
+        }
       }
     }
-    if (!found) {return IntPair(-1, -1);}
+    if (!found) {
+      return IntPair(-1, -1);
+    }
     return IntPair(c - 1, t - 1);
   }
 
@@ -623,7 +695,9 @@ public:
 
     if (typed) {
       os << "( :types\n";
-      for (unsigned i = 1; i < types.size(); ++i) {types[i]->PDDLPrint(os);}
+      for (unsigned i = 1; i < types.size(); ++i) {
+        types[i]->PDDLPrint(os);
+      }
       os << ")\n";
     }
 
@@ -633,7 +707,9 @@ public:
         for (unsigned j = 0; j < types[i]->constants.size(); j++) {
           if (!types[i]->definedInSubtype(types[i]->constants[j])) {
             os << "\t" << types[i]->constants[j] << " ";
-            if (typed) {os << "- " << types[i]->name;}
+            if (typed) {
+              os << "- " << types[i]->name;
+            }
             os << "\n";
           }
         }
@@ -674,20 +750,48 @@ public:
   virtual std::ostream & print_requirements(std::ostream & os) const
   {
     os << "( :requirements";
-    if (equality) {os << " :equality";}
-    if (strips) {os << " :strips";}
-    if (costs) {os << " :action-cost";}
-    if (adl) {os << " :adl";}
-    if (neg) {os << " :negative-preconditions";}
-    if (condeffects) {os << " :conditional-effects";}
-    if (typed) {os << " :typing";}
-    if (temp) {os << " :durative-actions";}
-    if (nondet) {os << " :non-deterministic";}
-    if (universal) {os << " :universal-preconditions";}
-    if (fluents) {os << " :fluents";}
-    if (disj) {os << " :disjunctive-preconditions";}
-    if (derivedpred) {os << " :derived-predicates";}
-    if (existentialcond) {os << " :existential-preconditions";}
+    if (equality) {
+      os << " :equality";
+    }
+    if (strips) {
+      os << " :strips";
+    }
+    if (costs) {
+      os << " :action-cost";
+    }
+    if (adl) {
+      os << " :adl";
+    }
+    if (neg) {
+      os << " :negative-preconditions";
+    }
+    if (condeffects) {
+      os << " :conditional-effects";
+    }
+    if (typed) {
+      os << " :typing";
+    }
+    if (temp) {
+      os << " :durative-actions";
+    }
+    if (nondet) {
+      os << " :non-deterministic";
+    }
+    if (universal) {
+      os << " :universal-preconditions";
+    }
+    if (fluents) {
+      os << " :fluents";
+    }
+    if (disj) {
+      os << " :disjunctive-preconditions";
+    }
+    if (derivedpred) {
+      os << " :derived-predicates";
+    }
+    if (existentialcond) {
+      os << " :existential-preconditions";
+    }
     os << " )\n";
     return os;
   }
@@ -698,23 +802,47 @@ public:
   {
     std::string s = f.getToken();
 
-    if (s == "and") {return new And;}
-    if (s == "exists") {return new Exists;}
-    if (s == "forall") {return new Forall;}
-    if (s == "imply") {return new Imply;}
-    if (s == "assign") {return new Assign;}
-    if (s == "increase") {return new Increase;}
-    if (s == "decrease") {return new Decrease;}
-    if (s == "not") {return new Not;}
-    if (s == "oneof") {return new Oneof;}
-    if (s == "or") {return new Or;}
-    if (s == "when") {return new When;}
+    if (s == "and") {
+      return new And;
+    }
+    if (s == "exists") {
+      return new Exists;
+    }
+    if (s == "forall") {
+      return new Forall;
+    }
+    if (s == "imply") {
+      return new Imply;
+    }
+    if (s == "assign") {
+      return new Assign;
+    }
+    if (s == "increase") {
+      return new Increase;
+    }
+    if (s == "decrease") {
+      return new Decrease;
+    }
+    if (s == "not") {
+      return new Not;
+    }
+    if (s == "oneof") {
+      return new Oneof;
+    }
+    if (s == "or") {
+      return new Or;
+    }
+    if (s == "when") {
+      return new When;
+    }
     if (s == "=" || s == ">=" || s == ">" || s == "<=" || s == "<") {
       return new CompositeExpression(s);
     }
 
     int i = preds.index(s);
-    if (i >= 0) {return new Ground(preds[i]);}
+    if (i >= 0) {
+      return new Ground(preds[i]);
+    }
 
     f.tokenExit(s);
 

@@ -73,9 +73,8 @@ plansys2_msgs::msg::Node::SharedPtr Ground::getTree(
       }
     } else {
       // param has a constant value; retrive from domain::type[t_i]::constants[c_i]
-      int type_idx = lifted->params[i];  // idx of the type of this param [ref: d.type]
-      int constant_idx =
-        (-1 * params[i]) - 1;  // idx of the constant value [ref: d.type.constant]
+      int type_idx = lifted->params[i];         // idx of the type of this param [ref: d.type]
+      int constant_idx = (-1 * params[i]) - 1;  // idx of the constant value [ref: d.type.constant]
       param.name = d.types[type_idx]->constants[constant_idx];  // the actual constant value
     }
 

@@ -16,15 +16,14 @@
 #define PLANSYS2_EXECUTOR__BT_BUILDER_PLUGINS__STN_BT_BUILDER_HPP_
 
 #include <eigen3/Eigen/Dense>
-
 #include <list>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <tuple>
-#include <utility>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
@@ -50,17 +49,14 @@ class STNBTBuilder : public BTBuilder
 public:
   STNBTBuilder();
   void initialize(
-    const std::string & bt_action_1 = "",
-    const std::string & bt_action_2 = "",
-    int precision = 3);
+    const std::string & bt_action_1 = "", const std::string & bt_action_2 = "", int precision = 3);
 
   std::string get_tree(const plansys2_msgs::msg::Plan & current_plan);
   Graph::Ptr get_graph() {return stn_;}
   bool propagate(const Graph::Ptr stn);
   std::string get_dotgraph(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
-    bool enable_legend = false,
-    bool enable_print_graph = false);
+    bool enable_legend = false, bool enable_print_graph = false);
 
 protected:
   Graph::Ptr build_stn(const plansys2_msgs::msg::Plan & plan) const;
@@ -76,43 +72,30 @@ protected:
   std::multimap<int, ActionStamped> get_simple_plan(const plansys2_msgs::msg::Plan & plan) const;
 
   std::map<int, StateVec> get_states(
-    const std::set<int> & happenings,
-    const std::multimap<int, ActionStamped> & plan) const;
+    const std::set<int> & happenings, const std::multimap<int, ActionStamped> & plan) const;
   plansys2_msgs::msg::Tree from_state(
     const std::unordered_set<plansys2::Predicate> & preds,
     const std::vector<plansys2::Function> & funcs) const;
 
-  std::vector<Node::Ptr> get_nodes(
-    const ActionStamped & action,
-    const Graph::Ptr graph) const;
+  std::vector<Node::Ptr> get_nodes(const ActionStamped & action, const Graph::Ptr graph) const;
 
-  bool is_match(
-    const Node::Ptr node,
-    const ActionStamped & action) const;
+  bool is_match(const Node::Ptr node, const ActionStamped & action) const;
 
   std::vector<std::pair<int, ActionStamped>> get_parents(
-    const std::pair<int, ActionStamped> & action,
-    const std::multimap<int, ActionStamped> & plan,
-    const std::set<int> & happenings,
-    const std::map<int, StateVec> & states) const;
+    const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+    const std::set<int> & happenings, const std::map<int, StateVec> & states) const;
 
   std::vector<std::pair<int, ActionStamped>> get_satisfy(
-    const std::pair<int, ActionStamped> & action,
-    const std::multimap<int, ActionStamped> & plan,
-    const std::set<int> & happenings,
-    const std::map<int, StateVec> & states) const;
+    const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+    const std::set<int> & happenings, const std::map<int, StateVec> & states) const;
 
   std::vector<std::pair<int, ActionStamped>> get_threat(
-    const std::pair<int, ActionStamped> & action,
-    const std::multimap<int, ActionStamped> & plan,
-    const std::set<int> & happenings,
-    const std::map<int, StateVec> & states) const;
+    const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+    const std::set<int> & happenings, const std::map<int, StateVec> & states) const;
 
   bool can_apply(
-    const std::pair<int, ActionStamped> & action,
-    const std::multimap<int, ActionStamped> & plan,
-    const int & time,
-    StateVec & state) const;
+    const std::pair<int, ActionStamped> & action, const std::multimap<int, ActionStamped> & plan,
+    const int & time, StateVec & state) const;
 
   StateVec get_diff(const StateVec & X_1, const StateVec & X_2) const;
   StateVec get_intersection(const StateVec & X_1, const StateVec & X_2) const;
@@ -127,30 +110,18 @@ protected:
   void floyd_warshall(Eigen::MatrixXd & dist) const;
 
   std::string get_flow(
-    const Node::Ptr node,
-    const Node::Ptr prev_node,
-    std::set<Node::Ptr> & used,
+    const Node::Ptr node, const Node::Ptr prev_node, std::set<Node::Ptr> & used,
     const int & level) const;
 
-  std::string start_execution_block(
-    const Node::Ptr node,
-    const int & l) const;
-  std::string end_execution_block(
-    const Node::Ptr node,
-    const int & l) const;
+  std::string start_execution_block(const Node::Ptr node, const int & l) const;
+  std::string end_execution_block(const Node::Ptr node, const int & l) const;
 
-  void get_flow_dotgraph(
-    Node::Ptr node,
-    std::set<std::string> & edges);
+  void get_flow_dotgraph(Node::Ptr node, std::set<std::string> & edges);
   std::string get_node_dotgraph(
-    Node::Ptr node,
-    std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
+    Node::Ptr node, std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
   ActionExecutor::Status get_action_status(
-    ActionStamped action,
-    std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
-  std::string add_dot_graph_legend(
-    int level_counter,
-    int node_counter);
+    ActionStamped action, std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
+  std::string add_dot_graph_legend(int level_counter, int node_counter);
   void print_graph(const plansys2::Graph::Ptr graph) const;
   void print_node(const Node::Ptr node, int level) const;
   void print_arcs(const plansys2::Graph::Ptr graph) const;
@@ -158,8 +129,7 @@ protected:
   void replace(std::string & str, const std::string & from, const std::string & to) const;
 
   bool is_end(
-    const std::tuple<Node::Ptr, double, double> & edge,
-    const ActionStamped & action) const;
+    const std::tuple<Node::Ptr, double, double> & edge, const ActionStamped & action) const;
 
   std::string t(const int & level) const;
 
@@ -174,7 +144,6 @@ protected:
 
 }  // namespace bt_builder
 }  // namespace plansys2
-
 
 #include "pluginlib/class_list_macros.hpp"
 

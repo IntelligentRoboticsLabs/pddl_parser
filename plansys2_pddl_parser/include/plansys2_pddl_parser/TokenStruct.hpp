@@ -55,13 +55,13 @@ public:
   TokenStruct() {}
 
   TokenStruct(const TokenStruct & ts)
-  : tokens(ts.tokens), tokenMap(ts.tokenMap), types(ts.types)
-  {
-  }
+  : tokens(ts.tokens), tokenMap(ts.tokenMap), types(ts.types) {}
 
   void append(const TokenStruct & ts)
   {
-    for (unsigned i = 0; i < ts.size(); ++i) {insert(ts[i]);}
+    for (unsigned i = 0; i < ts.size(); ++i) {
+      insert(ts[i]);
+    }
     types.insert(types.end(), ts.types.begin(), ts.types.end());
   }
 
@@ -73,7 +73,9 @@ public:
 
   void clear()
   {
-    for (unsigned i = 0; i < size(); ++i) {delete tokens[i];}
+    for (unsigned i = 0; i < size(); ++i) {
+      delete tokens[i];
+    }
 
     tokens.clear();
     tokenMap.clear();

@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
+#include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
+
 #include <map>
 #include <memory>
+#include <string>
 #include <tuple>
-
-#include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
 
 namespace plansys2
 {
 
-CheckAtEndReq::CheckAtEndReq(
-  const std::string & xml_tag_name,
-  const BT::NodeConfig & conf)
+CheckAtEndReq::CheckAtEndReq(const std::string & xml_tag_name, const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
 {
   action_map_ =
@@ -32,12 +30,10 @@ CheckAtEndReq::CheckAtEndReq(
     "action_map");
 
   problem_client_ =
-    config().blackboard->get<std::shared_ptr<plansys2::ProblemExpertClient>>(
-    "problem_client");
+    config().blackboard->get<std::shared_ptr<plansys2::ProblemExpertClient>>("problem_client");
 }
 
-BT::NodeStatus
-CheckAtEndReq::tick()
+BT::NodeStatus CheckAtEndReq::tick()
 {
   std::string action;
   getInput("action", action);
@@ -54,9 +50,8 @@ CheckAtEndReq::tick()
     (*action_map_)[action].execution_error_info = "Error checking at end requirements";
 
     RCLCPP_ERROR_STREAM(
-      node->get_logger(),
-      "[" << action << "]" << (*action_map_)[action].execution_error_info << ": " <<
-        parser::pddl::toString(reqs));
+      node->get_logger(), "[" << action << "]" << (*action_map_)[action].execution_error_info
+                              << ": " << parser::pddl::toString(reqs));
 
     return BT::NodeStatus::FAILURE;
   } else {

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
-#include <chrono>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "gtest/gtest.h"
@@ -761,8 +761,9 @@ TEST(problem_expert, get_predicate_with_derived)
     predicates.end());
 
   ASSERT_FALSE(
-    predicates.find(parser::pddl::fromStringPredicate("(inferred-exists-another-drone-at-drone_area drone123)")) !=
-    predicates.end());
+    predicates.find(
+      parser::pddl::fromStringPredicate(
+        "(inferred-exists-another-drone-at-drone_area drone123)")) != predicates.end());
 
   ASSERT_TRUE(
     predicates.find(parser::pddl::fromStringPredicate("(person_at jack bedroom)")) !=

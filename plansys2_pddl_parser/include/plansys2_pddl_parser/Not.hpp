@@ -40,18 +40,24 @@ public:
   Not(const Not * n, Domain & d)
   : cond(0)
   {
-    if (n->cond) {cond = reinterpret_cast<Ground *>(n->cond->copy(d));}
+    if (n->cond) {
+      cond = reinterpret_cast<Ground *>(n->cond->copy(d));
+    }
   }
 
   ~Not()
   {
-    if (cond) {delete cond;}
+    if (cond) {
+      delete cond;
+    }
   }
 
   void print(std::ostream & s) const
   {
     s << "not ";
-    if (cond) {cond->print(s);}
+    if (cond) {
+      cond->print(s);
+    }
   }
 
   void PDDLPrint(

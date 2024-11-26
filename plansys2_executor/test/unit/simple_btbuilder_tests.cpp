@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -22,9 +23,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-#include <chrono>
-
-#include "rclcpp/rclcpp.hpp"
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "behaviortree_cpp/behavior_tree.h"
@@ -62,14 +60,14 @@ public:
     return plansys2::bt_builder::SimpleBTBuilder::get_tree(current_plan);
   }
 
-  std::vector<plansys2::bt_builder::ActionStamped> get_plan_actions(const plansys2_msgs::msg::Plan & plan)
+  std::vector<plansys2::bt_builder::ActionStamped> get_plan_actions(
+    const plansys2_msgs::msg::Plan & plan)
   {
     return plansys2::bt_builder::SimpleBTBuilder::get_plan_actions(plan);
   }
 
   bool is_action_executable(
-    const plansys2::bt_builder::ActionStamped & action,
-    const plansys2::State & state)
+    const plansys2::bt_builder::ActionStamped & action, const plansys2::State & state)
   {
     return plansys2::bt_builder::SimpleBTBuilder::is_action_executable(action, state);
   }
@@ -83,19 +81,20 @@ public:
     std::vector<plansys2::bt_builder::ActionStamped> & action_sequence,
     const plansys2::State & state, int & node_counter)
   {
-    return plansys2::bt_builder::SimpleBTBuilder::get_roots(
-      action_sequence, state, node_counter);
+    return plansys2::bt_builder::SimpleBTBuilder::get_roots(action_sequence, state, node_counter);
   }
 
   plansys2::bt_builder::ActionNode::Ptr get_node_satisfy(
-    const plansys2_msgs::msg::Tree & requirement, const plansys2::bt_builder::ActionGraph::Ptr & graph,
+    const plansys2_msgs::msg::Tree & requirement,
+    const plansys2::bt_builder::ActionGraph::Ptr & graph,
     const plansys2::bt_builder::ActionNode::Ptr & current)
   {
     return plansys2::bt_builder::SimpleBTBuilder::get_node_satisfy(requirement, graph, current);
   }
 
   plansys2::bt_builder::ActionNode::Ptr get_node_satisfy(
-    const plansys2_msgs::msg::Tree & requirement, const plansys2::bt_builder::ActionNode::Ptr & node,
+    const plansys2_msgs::msg::Tree & requirement,
+    const plansys2::bt_builder::ActionNode::Ptr & node,
     const plansys2::bt_builder::ActionNode::Ptr & current)
   {
     return plansys2::bt_builder::SimpleBTBuilder::get_node_satisfy(requirement, node, current);
@@ -118,8 +117,7 @@ public:
   }
 
   void remove_existing_requirements(
-    std::vector<plansys2_msgs::msg::Tree> & requirements,
-    const plansys2::State & state)
+    std::vector<plansys2_msgs::msg::Tree> & requirements, const plansys2::State & state)
   {
     plansys2::bt_builder::SimpleBTBuilder::remove_existing_requirements(requirements, state);
   }
@@ -128,13 +126,13 @@ public:
 class TestPlannerNode : public rclcpp::Node
 {
 private:
-  rclcpp::Service<plansys2_msgs::srv::ValidateDomain>::SharedPtr
-    validate_domain_service_ = create_service<plansys2_msgs::srv::ValidateDomain>(
-      "planner/validate_domain",
-      std::bind(
-        &TestPlannerNode::validate_domain_service_callback,
-        this, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3));
+  rclcpp::Service<plansys2_msgs::srv::ValidateDomain>::SharedPtr validate_domain_service_ =
+    create_service<plansys2_msgs::srv::ValidateDomain>(
+    "planner/validate_domain",
+    std::bind(
+      &TestPlannerNode::validate_domain_service_callback, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
+
 public:
   TestPlannerNode()
   : Node("test_planner_node") {}
@@ -267,77 +265,52 @@ TEST(simple_btbuilder_tests, test_plan_1)
   ASSERT_FALSE(
     plansys2::check(action_sequence[5].action.get_at_start_requirements(), problem_client));
 
-  ASSERT_TRUE(
-    btbuilder->is_action_executable(action_sequence[0], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[1], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[2], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[3], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[4], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[5], state));
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[0], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[1], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], state));
 
   ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia entrance)")));
-  ASSERT_FALSE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia chargingroom)")));
+  ASSERT_FALSE(
+    state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia chargingroom)")));
 
-  plansys2::apply(
-    action_sequence[0].action.get_at_start_effects(), state);
+  plansys2::apply(action_sequence[0].action.get_at_start_effects(), state);
   plansys2::apply(action_sequence[0].action.get_at_end_effects(), state);
 
   ASSERT_FALSE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia entrance)")));
-  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia chargingroom)")));
-
   ASSERT_TRUE(
-    btbuilder->is_action_executable(action_sequence[1], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[2], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[3], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[4], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[5], state));
-  plansys2::apply(
-    action_sequence[1].action.get_at_start_effects(), state);
+    state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia chargingroom)")));
+
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[1], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[2], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], state));
+  plansys2::apply(action_sequence[1].action.get_at_start_effects(), state);
   plansys2::apply(action_sequence[1].action.get_at_end_effects(), state);
 
-  ASSERT_TRUE(
-    btbuilder->is_action_executable(action_sequence[2], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[3], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[4], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[5], state));
-  plansys2::apply(
-    action_sequence[2].action.get_at_start_effects(), state);
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[2], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[3], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], state));
+  plansys2::apply(action_sequence[2].action.get_at_start_effects(), state);
   plansys2::apply(action_sequence[2].action.get_at_end_effects(), state);
 
-  ASSERT_TRUE(
-    btbuilder->is_action_executable(action_sequence[3], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[4], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[5], state));
-  plansys2::apply(
-    action_sequence[3].action.get_at_start_effects(), state);
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[3], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[4], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], state));
+  plansys2::apply(action_sequence[3].action.get_at_start_effects(), state);
   plansys2::apply(action_sequence[3].action.get_at_end_effects(), state);
 
-  ASSERT_TRUE(
-    btbuilder->is_action_executable(action_sequence[4], state));
-  ASSERT_FALSE(
-    btbuilder->is_action_executable(action_sequence[5], state));
-  plansys2::apply(
-    action_sequence[4].action.get_at_start_effects(), state);
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[4], state));
+  ASSERT_FALSE(btbuilder->is_action_executable(action_sequence[5], state));
+  plansys2::apply(action_sequence[4].action.get_at_start_effects(), state);
   plansys2::apply(action_sequence[4].action.get_at_end_effects(), state);
 
-  ASSERT_TRUE(
-    btbuilder->is_action_executable(action_sequence[5], state));
-  plansys2::apply(
-    action_sequence[5].action.get_at_start_effects(), state);
+  ASSERT_TRUE(btbuilder->is_action_executable(action_sequence[5], state));
+  plansys2::apply(action_sequence[5].action.get_at_start_effects(), state);
   plansys2::apply(action_sequence[5].action.get_at_end_effects(), state);
 
   ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at leia bathroom)")));
@@ -489,20 +462,21 @@ TEST(simple_btbuilder_tests, test_plan_2)
   ASSERT_EQ(action_sequence.size(), 22u);
 
   int node_counter = 0;
-  auto roots =
-    btbuilder->get_roots(action_sequence, state, node_counter);
+  auto roots = btbuilder->get_roots(action_sequence, state, node_counter);
   ASSERT_EQ(roots.size(), 3u);
   // Apply roots actions
   for (auto & action_node : roots) {
-    plansys2::apply(
-      action_node->action.action.get_at_start_effects(), state);
-    plansys2::apply(
-      action_node->action.action.get_at_end_effects(), state);
+    plansys2::apply(action_node->action.action.get_at_start_effects(), state);
+    plansys2::apply(action_node->action.action.get_at_end_effects(), state);
   }
 
-  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot1 steering_wheels_zone)")));
-  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot2 wheels_zone)")));
-  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot3 body_car_zone)")));
+  ASSERT_TRUE(
+    state.hasPredicate(
+      parser::pddl::fromStringPredicate("(robot_at robot1 steering_wheels_zone)")));
+  ASSERT_TRUE(
+    state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot2 wheels_zone)")));
+  ASSERT_TRUE(
+    state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot3 body_car_zone)")));
 
   tree.nodes.clear();
   parser::pddl::fromString(
@@ -1021,10 +995,13 @@ TEST(simple_btbuilder_tests, test_plan_with_derived_existential)
   plan_item_0.action = "(start_robot bluerov)";
   plan_item_1.action = "(reconfigure f_maintain_motion fd_unground fd_recover_thrusters)";
   plan_item_2.action = "(reconfigure f_generate_search_path fd_unground fd_spiral_high)";
-  plan_item_3.action = "(search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters)";
+  plan_item_3.action =
+    "(search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters)";
   plan_item_4.action = "(reconfigure f_follow_pipeline fd_unground fd_follow_pipeline)";
   plan_item_5.action = "(reconfigure f_generate_search_path fd_spiral_high fd_unground)";
-  plan_item_6.action = "(inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters)";
+  plan_item_6.action =
+    "(inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline "
+    "fd_recover_thrusters)";
 
   plan.items.push_back(plan_item_0);
   plan.items.push_back(plan_item_1);
@@ -1037,7 +1014,10 @@ TEST(simple_btbuilder_tests, test_plan_with_derived_existential)
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
   auto action_graph = btbuilder->get_graph(plan);
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-  std::cout << "\n get_graph time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]\n" << std::endl;
+  std::cout << "\n get_graph time difference = "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()
+            << "[ms]\n"
+            << std::endl;
   btbuilder->print_graph_csv(action_graph);
 
   auto tabulated_graph = btbuilder->get_graph_tabular(action_graph);

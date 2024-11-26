@@ -15,16 +15,15 @@
 #ifndef PLANSYS2_CORE__PLANSOLVERBASE_HPP_
 #define PLANSYS2_CORE__PLANSOLVERBASE_HPP_
 
+#include <memory>
 #include <optional>
 #include <string>
-#include <memory>
 
 #include "plansys2_msgs/msg/plan.hpp"
-
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-using namespace std::chrono_literals;
+using namespace std::chrono_literals;  // NOLINT
 
 namespace plansys2
 {
@@ -42,8 +41,9 @@ public:
    * @param plugin_name The plugin name.
    */
   virtual void configure(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr lc_node,
-    const std::string & plugin_name) {}
+    rclcpp_lifecycle::LifecycleNode::SharedPtr lc_node, const std::string & plugin_name)
+  {
+  }
 
   /**
    * @brief Returns a plan given a PDDL domain and problem definition.
@@ -54,8 +54,7 @@ public:
   */
   virtual std::optional<plansys2_msgs::msg::Plan> getPlan(
     const std::string & domain, const std::string & problem,
-    const std::string & node_namespace = "",
-    const rclcpp::Duration solver_timeout = 15s) = 0;
+    const std::string & node_namespace = "", const rclcpp::Duration solver_timeout = 15s) = 0;
 
   /**
    * @brief Exposes a capability to validate a PDDL domain.
@@ -64,8 +63,7 @@ public:
    * @return True if the domain is valid, otherwise false.
   */
   virtual bool isDomainValid(
-    const std::string & domain,
-    const std::string & node_namespace = "") = 0;
+    const std::string & domain, const std::string & node_namespace = "") = 0;
 };
 
 }  // namespace plansys2

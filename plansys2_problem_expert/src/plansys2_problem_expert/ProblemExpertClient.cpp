@@ -52,8 +52,8 @@ ProblemExpertClient::ProblemExpertClient()
     "problem_expert/get_problem_predicate");
   get_problem_predicates_client_ =
     node_->create_client<plansys2_msgs::srv::GetStates>("problem_expert/get_problem_predicates");
-  get_problem_inferred_predicates_client_ =
-    node_->create_client<plansys2_msgs::srv::GetStates>("problem_expert/get_problem_inferred_predicates");
+  get_problem_inferred_predicates_client_ = node_->create_client<plansys2_msgs::srv::GetStates>(
+    "problem_expert/get_problem_inferred_predicates");
   get_problem_function_details_client_ =
     node_->create_client<plansys2_msgs::srv::GetNodeDetails>("problem_expert/get_problem_function");
   get_problem_functions_client_ =
@@ -114,7 +114,6 @@ plansys2::State ProblemExpertClient::getState()
         << result.error_info);
     return {};
   }
-
 }
 
 std::unordered_set<plansys2::Instance> ProblemExpertClient::getInstances()
@@ -492,7 +491,8 @@ std::unordered_set<plansys2::Function> ProblemExpertClient::getFunctions()
   auto result = *future_result.get();
 
   if (result.success) {
-    return plansys2::convertVectorToUnorderedSet<plansys2::Function, plansys2_msgs::msg::Node>(result.states);
+    return plansys2::convertVectorToUnorderedSet<plansys2::Function, plansys2_msgs::msg::Node>(
+      result.states);
   } else {
     RCLCPP_ERROR_STREAM(
       node_->get_logger(), get_problem_functions_client_->get_service_name()

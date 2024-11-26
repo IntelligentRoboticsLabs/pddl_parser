@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
+#include "plansys2_executor/behavior_tree/wait_action_node.hpp"
+
 #include <map>
 #include <memory>
-
-#include "plansys2_executor/behavior_tree/wait_action_node.hpp"
+#include <string>
 
 namespace plansys2
 {
 
-WaitAction::WaitAction(
-  const std::string & xml_tag_name,
-  const BT::NodeConfig & conf)
+WaitAction::WaitAction(const std::string & xml_tag_name, const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
 {
   action_map_ =
@@ -31,8 +29,7 @@ WaitAction::WaitAction(
     "action_map");
 }
 
-BT::NodeStatus
-WaitAction::tick()
+BT::NodeStatus WaitAction::tick()
 {
   std::string action;
   getInput("action", action);
@@ -41,7 +38,8 @@ WaitAction::tick()
     return BT::NodeStatus::RUNNING;  // Not started yet
   }
 
-  if ((*action_map_)[action].action_executor != nullptr &&
+  if (
+    (*action_map_)[action].action_executor != nullptr &&
     (*action_map_)[action].action_executor->is_finished())
   {
     return BT::NodeStatus::SUCCESS;

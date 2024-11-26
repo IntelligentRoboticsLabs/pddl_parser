@@ -12,54 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
 #include <string>
 #include <vector>
-#include <regex>
-#include <iostream>
-#include <memory>
-#include <fstream>
-#include <map>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
-
-#include "plansys2_domain_expert/DomainExpertNode.hpp"
-#include "plansys2_domain_expert/DomainExpertClient.hpp"
-#include "plansys2_problem_expert/ProblemExpertNode.hpp"
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
-#include "plansys2_planner/PlannerNode.hpp"
-#include "plansys2_planner/PlannerClient.hpp"
-#include "plansys2_executor/BTBuilder.hpp"
-
-#include "plansys2_executor/ActionExecutor.hpp"
-#include "plansys2_executor/ActionExecutorClient.hpp"
-#include "plansys2_executor/ExecutorNode.hpp"
-#include "plansys2_executor/ExecutorClient.hpp"
-#include "plansys2_problem_expert/Utils.hpp"
-
 #include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/utils/shared_library.h"
-#include "behaviortree_cpp/blackboard.h"
-
+#include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "plansys2_domain_expert/DomainExpertClient.hpp"
+#include "plansys2_domain_expert/DomainExpertNode.hpp"
+#include "plansys2_executor/ActionExecutor.hpp"
+#include "plansys2_executor/ActionExecutorClient.hpp"
+#include "plansys2_executor/BTBuilder.hpp"
+#include "plansys2_executor/ExecutorClient.hpp"
+#include "plansys2_executor/ExecutorNode.hpp"
+#include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
+#include "plansys2_executor/behavior_tree/check_overall_req_node.hpp"
 #include "plansys2_executor/behavior_tree/execute_action_node.hpp"
 #include "plansys2_executor/behavior_tree/wait_action_node.hpp"
 #include "plansys2_executor/behavior_tree/wait_atstart_req_node.hpp"
-#include "plansys2_executor/behavior_tree/check_overall_req_node.hpp"
-#include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
-#include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
-#include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
-
-#include "lifecycle_msgs/msg/state.hpp"
-
+#include "plansys2_planner/PlannerClient.hpp"
+#include "plansys2_planner/PlannerNode.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertNode.hpp"
+#include "plansys2_problem_expert/Utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-#include "gtest/gtest.h"
-
-
-using CallbackReturnT =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using namespace std::chrono_literals;
 
 class MoveAction : public plansys2::ActionExecutorClient
@@ -71,7 +62,6 @@ public:
     return std::make_shared<MoveAction>(node_name, rate);
   }
 
-
   MoveAction(const std::string & id, const std::chrono::nanoseconds & rate)
   : ActionExecutorClient(id, rate)
   {
@@ -79,8 +69,7 @@ public:
     cycles_ = 0;
   }
 
-  CallbackReturnT
-  on_activate(const rclcpp_lifecycle::State & state)
+  CallbackReturnT on_activate(const rclcpp_lifecycle::State & state)
   {
     std::cerr << "MoveAction::on_activate" << std::endl;
     counter_ = 0;
@@ -141,7 +130,9 @@ TEST(action_execution, protocol_basic)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   ASSERT_EQ(move_action_executor->get_internal_status(), plansys2::ActionExecutor::Status::IDLE);
@@ -161,8 +152,7 @@ TEST(action_execution, protocol_basic)
   }
 
   ASSERT_EQ(
-    move_action_node->get_current_state().id(),
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    move_action_node->get_current_state().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   ASSERT_EQ(
     move_action_node->get_internal_status().state,
@@ -207,14 +197,12 @@ TEST(action_execution, protocol_basic)
     move_action_node->get_internal_status().state,
     plansys2_msgs::msg::ActionPerformerStatus::READY);
 
-
   ASSERT_EQ(action_execution_msgs.size(), 8u);
   ASSERT_EQ(action_execution_msgs[3].type, plansys2_msgs::msg::ActionExecution::FEEDBACK);
   ASSERT_EQ(action_execution_msgs[4].type, plansys2_msgs::msg::ActionExecution::FEEDBACK);
   ASSERT_EQ(action_execution_msgs[5].type, plansys2_msgs::msg::ActionExecution::FEEDBACK);
   ASSERT_EQ(action_execution_msgs[6].type, plansys2_msgs::msg::ActionExecution::FEEDBACK);
   ASSERT_EQ(action_execution_msgs[7].type, plansys2_msgs::msg::ActionExecution::FINISH);
-
 
   ASSERT_EQ(move_action_executor->get_internal_status(), plansys2::ActionExecutor::Status::SUCCESS);
   ASSERT_EQ(
@@ -256,7 +244,9 @@ TEST(action_execution, protocol_cancelation)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
 
   ASSERT_EQ(move_action_executor->get_internal_status(), plansys2::ActionExecutor::Status::IDLE);
@@ -276,8 +266,7 @@ TEST(action_execution, protocol_cancelation)
   }
 
   ASSERT_EQ(
-    move_action_node->get_current_state().id(),
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    move_action_node->get_current_state().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   ASSERT_EQ(
     move_action_node->get_internal_status().state,
@@ -298,8 +287,7 @@ TEST(action_execution, protocol_cancelation)
   ASSERT_EQ(
     move_action_node->get_current_state().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
-  ASSERT_EQ(
-    move_action_executor->get_internal_status(), plansys2::ActionExecutor::Status::RUNNING);
+  ASSERT_EQ(move_action_executor->get_internal_status(), plansys2::ActionExecutor::Status::RUNNING);
   ASSERT_EQ(
     move_action_node->get_internal_status().state,
     plansys2_msgs::msg::ActionPerformerStatus::RUNNING);
@@ -330,12 +318,10 @@ TEST(action_execution, protocol_cancelation)
   }
 
   ASSERT_EQ(
-    move_action_executor->get_internal_status(),
-    plansys2::ActionExecutor::Status::CANCELLED);
+    move_action_executor->get_internal_status(), plansys2::ActionExecutor::Status::CANCELLED);
   ASSERT_EQ(
     move_action_node->get_internal_status().state,
     plansys2_msgs::msg::ActionPerformerStatus::READY);
-
 
   ASSERT_EQ(action_execution_msgs.size(), 6u);
   ASSERT_EQ(action_execution_msgs[3].type, plansys2_msgs::msg::ActionExecution::FEEDBACK);

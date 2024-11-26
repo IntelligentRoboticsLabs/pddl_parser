@@ -37,21 +37,33 @@ public:
   Or(const Or * o, Domain & d)
   : first(0), second(0)
   {
-    if (o->first) {first = o->first->copy(d);}
-    if (o->second) {second = o->second->copy(d);}
+    if (o->first) {
+      first = o->first->copy(d);
+    }
+    if (o->second) {
+      second = o->second->copy(d);
+    }
   }
 
   ~Or()
   {
-    if (first) {delete first;}
-    if (second) {delete second;}
+    if (first) {
+      delete first;
+    }
+    if (second) {
+      delete second;
+    }
   }
 
   void print(std::ostream & s) const
   {
     s << "OR:\n";
-    if (first) {first->print(s);}
-    if (second) {second->print(s);}
+    if (first) {
+      first->print(s);
+    }
+    if (second) {
+      second->print(s);
+    }
   }
 
   void PDDLPrint(

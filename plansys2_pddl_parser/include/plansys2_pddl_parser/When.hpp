@@ -37,21 +37,33 @@ public:
   When(const When * w, Domain & d)
   : pars(0), cond(0)
   {
-    if (w->pars) {pars = w->pars->copy(d);}
-    if (w->cond) {cond = w->cond->copy(d);}
+    if (w->pars) {
+      pars = w->pars->copy(d);
+    }
+    if (w->cond) {
+      cond = w->cond->copy(d);
+    }
   }
 
   ~When()
   {
-    if (pars) {delete pars;}
-    if (cond) {delete cond;}
+    if (pars) {
+      delete pars;
+    }
+    if (cond) {
+      delete cond;
+    }
   }
 
   void print(std::ostream & s) const
   {
     s << "when:\n";
-    if (pars) {pars->print(s);}
-    if (cond) {cond->print(s);}
+    if (pars) {
+      pars->print(s);
+    }
+    if (cond) {
+      cond->print(s);
+    }
   }
 
   void PDDLPrint(

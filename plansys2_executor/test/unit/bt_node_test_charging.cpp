@@ -12,45 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
 #include <string>
 #include <vector>
-#include <regex>
-#include <iostream>
-#include <memory>
-#include <fstream>
-#include <map>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
-
-#include "plansys2_domain_expert/DomainExpertNode.hpp"
-#include "plansys2_domain_expert/DomainExpertClient.hpp"
-#include "plansys2_problem_expert/ProblemExpertNode.hpp"
-#include "plansys2_problem_expert/ProblemExpertClient.hpp"
-#include "plansys2_planner/PlannerNode.hpp"
-#include "plansys2_planner/PlannerClient.hpp"
-#include "plansys2_executor/BTBuilder.hpp"
-
-#include "plansys2_executor/ActionExecutor.hpp"
-#include "plansys2_executor/ActionExecutorClient.hpp"
-#include "plansys2_problem_expert/Utils.hpp"
-
 #include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/blackboard.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/utils/shared_library.h"
-#include "behaviortree_cpp/blackboard.h"
-
+#include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "plansys2_domain_expert/DomainExpertClient.hpp"
+#include "plansys2_domain_expert/DomainExpertNode.hpp"
+#include "plansys2_executor/ActionExecutor.hpp"
+#include "plansys2_executor/ActionExecutorClient.hpp"
+#include "plansys2_executor/BTBuilder.hpp"
+#include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
 #include "plansys2_executor/behavior_tree/execute_action_node.hpp"
 #include "plansys2_executor/behavior_tree/wait_atstart_req_node.hpp"
-#include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
-#include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
-
-#include "lifecycle_msgs/msg/state.hpp"
-
+#include "plansys2_planner/PlannerClient.hpp"
+#include "plansys2_planner/PlannerNode.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertNode.hpp"
+#include "plansys2_problem_expert/Utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-
-#include "gtest/gtest.h"
 
 TEST(problem_expert, wait_atstart_req_test)
 {
@@ -74,9 +67,10 @@ TEST(problem_expert, wait_atstart_req_test)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -102,13 +96,11 @@ TEST(problem_expert, wait_atstart_req_test)
 
   auto action_map = std::make_shared<std::map<std::string, plansys2::ActionExecutionInfo>>();
   (*action_map)["(move robot1 wp1 wp2):5"] = plansys2::ActionExecutionInfo();
-  (*action_map)["(move robot1 wp1 wp2):5"].action_info =
-    domain_client->getDurativeAction(
+  (*action_map)["(move robot1 wp1 wp2):5"].action_info = domain_client->getDurativeAction(
     plansys2::get_action_name("(move robot1 wp1 wp2)"),
     plansys2::get_action_params("(move robot1 wp1 wp2)"));
 
-  ASSERT_FALSE(
-    (*action_map)["(move robot1 wp1 wp2):5"].action_info.is_empty());
+  ASSERT_FALSE((*action_map)["(move robot1 wp1 wp2):5"].action_info.is_empty());
 
   std::string bt_xml_tree =
     R"(
@@ -136,16 +128,11 @@ TEST(problem_expert, wait_atstart_req_test)
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("wp2", "waypoint")));
 
   std::vector<std::string> predicates = {
-    "(robot_at robot1 wp1)",
-    "(charger_at wp2)",
-    "(connected wp1 wp2)"};
+    "(robot_at robot1 wp1)", "(charger_at wp2)", "(connected wp1 wp2)"};
 
   std::vector<std::string> functions = {
-    "(= (speed robot1) 3)",
-    "(= (max_range robot1) 75)",
-    "(= (state_of_charge robot1) 99)",
-    "(= (distance wp1 wp2) 15)",
-    "(= (distance wp2 wp1) 15)"};
+    "(= (speed robot1) 3)", "(= (max_range robot1) 75)", "(= (state_of_charge robot1) 99)",
+    "(= (distance wp1 wp2) 15)", "(= (distance wp2 wp1) 15)"};
 
   try {
     auto tree = factory.createTreeFromText(bt_xml_tree, blackboard);
@@ -198,9 +185,10 @@ TEST(problem_expert, apply_atstart_effect_test)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -226,13 +214,11 @@ TEST(problem_expert, apply_atstart_effect_test)
 
   auto action_map = std::make_shared<std::map<std::string, plansys2::ActionExecutionInfo>>();
   (*action_map)["(move robot1 wp1 wp2):5"] = plansys2::ActionExecutionInfo();
-  (*action_map)["(move robot1 wp1 wp2):5"].action_info =
-    domain_client->getDurativeAction(
+  (*action_map)["(move robot1 wp1 wp2):5"].action_info = domain_client->getDurativeAction(
     plansys2::get_action_name("(move robot1 wp1 wp2)"),
     plansys2::get_action_params("(move robot1 wp1 wp2)"));
 
-  ASSERT_FALSE(
-    (*action_map)["(move robot1 wp1 wp2):5"].action_info.is_empty());
+  ASSERT_FALSE((*action_map)["(move robot1 wp1 wp2):5"].action_info.is_empty());
 
   std::string bt_xml_tree =
     R"(
@@ -261,20 +247,15 @@ TEST(problem_expert, apply_atstart_effect_test)
 
   try {
     std::vector<std::string> predicates = {
-      "(robot_at robot1 wp1)",
-      "(charger_at wp2)",
-      "(connected wp1 wp2)"};
+      "(robot_at robot1 wp1)", "(charger_at wp2)", "(connected wp1 wp2)"};
 
     for (const auto & pred : predicates) {
       ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate(pred)));
     }
 
     std::vector<std::string> functions = {
-      "(= (speed robot1) 3)",
-      "(= (max_range robot1) 75)",
-      "(= (state_of_charge robot1) 99)",
-      "(= (distance wp1 wp2) 15)",
-      "(= (distance wp2 wp1) 15)"};
+      "(= (speed robot1) 3)", "(= (max_range robot1) 75)", "(= (state_of_charge robot1) 99)",
+      "(= (distance wp1 wp2) 15)", "(= (distance wp2 wp1) 15)"};
 
     for (const auto & func : functions) {
       ASSERT_TRUE(problem_client->addFunction(plansys2::Function(func)));
@@ -324,9 +305,10 @@ TEST(problem_expert, apply_atend_effect_test)
 
   bool finish = false;
   std::thread t([&]() {
-      while (!finish) {exe.spin_some();}
+      while (!finish) {
+        exe.spin_some();
+      }
     });
-
 
   domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -352,13 +334,11 @@ TEST(problem_expert, apply_atend_effect_test)
 
   auto action_map = std::make_shared<std::map<std::string, plansys2::ActionExecutionInfo>>();
   (*action_map)["(move robot1 wp1 wp2):5"] = plansys2::ActionExecutionInfo();
-  (*action_map)["(move robot1 wp1 wp2):5"].action_info =
-    domain_client->getDurativeAction(
+  (*action_map)["(move robot1 wp1 wp2):5"].action_info = domain_client->getDurativeAction(
     plansys2::get_action_name("(move robot1 wp1 wp2)"),
     plansys2::get_action_params("(move robot1 wp1 wp2)"));
 
-  ASSERT_FALSE(
-    (*action_map)["(move robot1 wp1 wp2):5"].action_info.is_empty());
+  ASSERT_FALSE((*action_map)["(move robot1 wp1 wp2):5"].action_info.is_empty());
 
   std::string bt_xml_tree =
     R"(
@@ -387,20 +367,15 @@ TEST(problem_expert, apply_atend_effect_test)
 
   try {
     std::vector<std::string> predicates = {
-      "(robot_at robot1 wp1)",
-      "(charger_at wp2)",
-      "(connected wp1 wp2)"};
+      "(robot_at robot1 wp1)", "(charger_at wp2)", "(connected wp1 wp2)"};
 
     for (const auto & pred : predicates) {
       ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate(pred)));
     }
 
     std::vector<std::string> functions = {
-      "(= (speed robot1) 3)",
-      "(= (max_range robot1) 75)",
-      "(= (state_of_charge robot1) 99)",
-      "(= (distance wp1 wp2) 15)",
-      "(= (distance wp2 wp1) 15)"};
+      "(= (speed robot1) 3)", "(= (max_range robot1) 75)", "(= (state_of_charge robot1) 99)",
+      "(= (distance wp1 wp2) 15)", "(= (distance wp2 wp1) 15)"};
 
     for (const auto & func : functions) {
       ASSERT_TRUE(problem_client->addFunction(plansys2::Function(func)));

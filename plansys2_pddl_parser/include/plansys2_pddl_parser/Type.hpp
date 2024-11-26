@@ -77,9 +77,13 @@ public:
   {
     for (unsigned i = 0; i < subtypes.size(); ++i) {
       for (unsigned j = 0; j < subtypes[i]->constants.size(); ++j) {
-        if (subtypes[i]->constants[j] == s) {return true;}
+        if (subtypes[i]->constants[j] == s) {
+          return true;
+        }
       }
-      if (subtypes[i]->definedInSubtype(s)) {return true;}
+      if (subtypes[i]->definedInSubtype(s)) {
+        return true;
+      }
     }
     return false;
   }
@@ -87,14 +91,18 @@ public:
   void print(std::ostream & stream) const
   {
     stream << name;
-    if (supertype) {stream << "[" << supertype->name << "]";}
+    if (supertype) {
+      stream << "[" << supertype->name << "]";
+    }
     stream << "\n";
   }
 
   virtual void PDDLPrint(std::ostream & s) const
   {
     s << "\t" << name;
-    if (supertype) {s << " - " << supertype->name;}
+    if (supertype) {
+      s << " - " << supertype->name;
+    }
     s << "\n";
   }
 
@@ -175,7 +183,9 @@ public:
   unsigned noObjects()
   {
     unsigned total = objects.size() + constants.size();
-    for (unsigned i = 0; i < subtypes.size(); ++i) {total += subtypes[i]->noObjects();}
+    for (unsigned i = 0; i < subtypes.size(); ++i) {
+      total += subtypes[i]->noObjects();
+    }
     return total;
   }
 

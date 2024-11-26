@@ -45,15 +45,23 @@ public:
 
   ~FunctionModifier()
   {
-    if (modifiedGround) {delete modifiedGround;}
-    if (modifierExpr) {delete modifierExpr;}
+    if (modifiedGround) {
+      delete modifiedGround;
+    }
+    if (modifierExpr) {
+      delete modifierExpr;
+    }
   }
 
   void print(std::ostream & s) const
   {
     s << name << " ";
-    if (modifiedGround) {modifiedGround->print(s);}
-    if (modifierExpr) {modifierExpr->print(s);}
+    if (modifiedGround) {
+      modifiedGround->print(s);
+    }
+    if (modifierExpr) {
+      modifierExpr->print(s);
+    }
     s << "\n";
   }
 
@@ -92,7 +100,9 @@ public:
   : FunctionModifier("decrease", val) {}
 
   explicit Decrease(Function * f, const IntVec & p = IntVec())
-  : FunctionModifier("decrease", f, p) {}
+  : FunctionModifier("decrease", f, p)
+  {
+  }
 
   Decrease(const FunctionModifier * i, Domain & d)
   : FunctionModifier("decrease", i, d) {}
@@ -107,7 +117,9 @@ public:
   : FunctionModifier("increase", val) {}
 
   explicit Increase(Function * f, const IntVec & p = IntVec())
-  : FunctionModifier("increase", f, p) {}
+  : FunctionModifier("increase", f, p)
+  {
+  }
 
   Increase(const FunctionModifier * i, Domain & d)
   : FunctionModifier("increase", i, d) {}

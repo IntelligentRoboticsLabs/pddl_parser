@@ -35,17 +35,23 @@ public:
 
   And(const And * a, Domain & d)
   {
-    for (unsigned i = 0; i < a->conds.size(); ++i) {conds.push_back(a->conds[i]->copy(d));}
+    for (unsigned i = 0; i < a->conds.size(); ++i) {
+      conds.push_back(a->conds[i]->copy(d));
+    }
   }
 
   ~And()
   {
-    for (unsigned i = 0; i < conds.size(); ++i) {delete conds[i];}
+    for (unsigned i = 0; i < conds.size(); ++i) {
+      delete conds[i];
+    }
   }
 
   void print(std::ostream & s) const
   {
-    for (unsigned i = 0; i < conds.size(); ++i) {conds[i]->print(s);}
+    for (unsigned i = 0; i < conds.size(); ++i) {
+      conds[i]->print(s);
+    }
   }
 
   void PDDLPrint(
@@ -62,7 +68,9 @@ public:
 
   void addParams(int m, unsigned n)
   {
-    for (unsigned i = 0; i < conds.size(); ++i) {conds[i]->addParams(m, n);}
+    for (unsigned i = 0; i < conds.size(); ++i) {
+      conds[i]->addParams(m, n);
+    }
   }
 
   Condition * copy(Domain & d) {return new And(this, d);}

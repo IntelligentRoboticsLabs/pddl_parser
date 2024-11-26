@@ -23,7 +23,9 @@ void Not::PDDLPrint(
 {
   tabindent(s, indent);
   s << "( not ";
-  if (cond) {cond->PDDLPrint(s, 0, ts, d);}
+  if (cond) {
+    cond->PDDLPrint(s, 0, ts, d);
+  }
   s << " )";
 }
 

@@ -87,6 +87,6 @@ def generate_launch_description():
     ld.add_action(declare_bt_builder_plugin_cmd)
 
     # Declare the launch options
-    ld.add_action(executor_cmd)
+    # ld.add_action(executor_cmd)
 
     return ld

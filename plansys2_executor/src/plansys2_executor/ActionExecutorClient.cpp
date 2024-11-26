@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
+#include "plansys2_executor/ActionExecutorClient.hpp"
+
 #include <memory>
+#include <string>
 #include <vector>
 
-#include "lifecycle_msgs/msg/transition.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "plansys2_msgs/msg/action_execution_info.hpp"
-
-#include "plansys2_executor/ActionExecutorClient.hpp"
 
 namespace plansys2
 {
@@ -29,11 +28,8 @@ namespace plansys2
 using namespace std::chrono_literals;
 
 ActionExecutorClient::ActionExecutorClient(
-  const std::string & node_name,
-  const std::chrono::nanoseconds & rate)
-: CascadeLifecycleNode(node_name),
-  rate_(rate),
-  commited_(false)
+  const std::string & node_name, const std::chrono::nanoseconds & rate)
+: CascadeLifecycleNode(node_name), rate_(rate), commited_(false)
 {
   declare_parameter<std::string>("action_name", "");
   declare_parameter<std::vector<std::string>>(
@@ -46,12 +42,10 @@ ActionExecutorClient::ActionExecutorClient(
   status_.node_name = get_name();
 }
 
-using CallbackReturnT =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using std::placeholders::_1;
 
-CallbackReturnT
-ActionExecutorClient::on_configure(const rclcpp_lifecycle::State & state)
+CallbackReturnT ActionExecutorClient::on_configure(const rclcpp_lifecycle::State & state)
 {
   status_pub_ = create_publisher<plansys2_msgs::msg::ActionPerformerStatus>(
     "performers_status", rclcpp::QoS(100).reliable());
@@ -96,22 +90,19 @@ ActionExecutorClient::on_configure(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
-CallbackReturnT
-ActionExecutorClient::on_activate(const rclcpp_lifecycle::State & state)
+CallbackReturnT ActionExecutorClient::on_activate(const rclcpp_lifecycle::State & state)
 {
   status_.state = plansys2_msgs::msg::ActionPerformerStatus::RUNNING;
   status_.status_stamp = now();
   start_time_ = now();
-  timer_ = create_wall_timer(
-    rate_, std::bind(&ActionExecutorClient::do_work, this));
+  timer_ = create_wall_timer(rate_, std::bind(&ActionExecutorClient::do_work, this));
 
-//  do_work();
+  //  do_work();
 
   return CallbackReturnT::SUCCESS;
 }
 
-CallbackReturnT
-ActionExecutorClient::on_deactivate(const rclcpp_lifecycle::State & state)
+CallbackReturnT ActionExecutorClient::on_deactivate(const rclcpp_lifecycle::State & state)
 {
   status_.state = plansys2_msgs::msg::ActionPerformerStatus::READY;
   status_.status_stamp = now();
@@ -120,12 +111,13 @@ ActionExecutorClient::on_deactivate(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
-void
-ActionExecutorClient::action_hub_callback(const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
+void ActionExecutorClient::action_hub_callback(
+  const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
 {
   switch (msg->type) {
     case plansys2_msgs::msg::ActionExecution::REQUEST:
-      if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE &&
+      if (
+        get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE &&
         !commited_ && should_execute(msg->action, msg->arguments))
       {
         commited_ = true;
@@ -133,7 +125,8 @@ ActionExecutorClient::action_hub_callback(const plansys2_msgs::msg::ActionExecut
       }
       break;
     case plansys2_msgs::msg::ActionExecution::CONFIRM:
-      if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE &&
+      if (
+        get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE &&
         commited_ && msg->node_id == get_name())
       {
         current_arguments_ = msg->arguments;
@@ -147,7 +140,8 @@ ActionExecutorClient::action_hub_callback(const plansys2_msgs::msg::ActionExecut
       }
       break;
     case plansys2_msgs::msg::ActionExecution::CANCEL:
-      if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE &&
+      if (
+        get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE &&
         msg->node_id == get_name())
       {
         trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
@@ -159,14 +153,12 @@ ActionExecutorClient::action_hub_callback(const plansys2_msgs::msg::ActionExecut
       break;
     default:
       RCLCPP_ERROR(
-        get_logger(), "Msg %d type not recognized in %s executor performer",
-        msg->type, get_name());
+        get_logger(), "Msg %d type not recognized in %s executor performer", msg->type, get_name());
       break;
   }
 }
 
-bool
-ActionExecutorClient::should_execute(
+bool ActionExecutorClient::should_execute(
   const std::string & action, const std::vector<std::string> & args)
 {
   if (action != action_managed_) {
@@ -176,13 +168,13 @@ ActionExecutorClient::should_execute(
   if (!specialized_arguments_.empty()) {
     if (specialized_arguments_.size() != args.size()) {
       RCLCPP_WARN(
-        get_logger(), "current and specialized arguments length doesn't match %zu %zu",
-        args.size(), specialized_arguments_.size());
+        get_logger(), "current and specialized arguments length doesn't match %zu %zu", args.size(),
+        specialized_arguments_.size());
     }
 
     for (size_t i = 0; i < specialized_arguments_.size() && i < args.size(); i++) {
-      if (specialized_arguments_[i] != "" && args[i] != "" &&
-        specialized_arguments_[i] != args[i])
+      if (
+        specialized_arguments_[i] != "" && args[i] != "" && specialized_arguments_[i] != args[i])
       {
         return false;
       }
@@ -192,9 +184,7 @@ ActionExecutorClient::should_execute(
   return true;
 }
 
-void
-ActionExecutorClient::send_response(
-  const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
+void ActionExecutorClient::send_response(const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
 {
   plansys2_msgs::msg::ActionExecution msg_resp(*msg);
   msg_resp.type = plansys2_msgs::msg::ActionExecution::RESPONSE;
@@ -203,8 +193,7 @@ ActionExecutorClient::send_response(
   action_hub_pub_->publish(msg_resp);
 }
 
-void
-ActionExecutorClient::send_feedback(float completion, const std::string & status)
+void ActionExecutorClient::send_feedback(float completion, const std::string & status)
 {
   plansys2_msgs::msg::ActionExecution msg_resp;
   msg_resp.type = plansys2_msgs::msg::ActionExecution::FEEDBACK;
@@ -217,8 +206,7 @@ ActionExecutorClient::send_feedback(float completion, const std::string & status
   action_hub_pub_->publish(msg_resp);
 }
 
-void
-ActionExecutorClient::finish(bool success, float completion, const std::string & status)
+void ActionExecutorClient::finish(bool success, float completion, const std::string & status)
 {
   if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);

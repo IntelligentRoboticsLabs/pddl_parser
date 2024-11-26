@@ -16,14 +16,12 @@
 #define PLANSYS2_EXECUTOR__BEHAVIOR_TREE__EXECUTE_ACTION_NODE_HPP_
 
 #include <map>
-#include <string>
 #include <memory>
 #include <random>
+#include <string>
 
 #include "behaviortree_cpp/action_node.h"
-
 #include "plansys2_executor/ActionExecutor.hpp"
-
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -33,9 +31,7 @@ namespace plansys2
 class ExecuteAction : public BT::ActionNodeBase
 {
 public:
-  ExecuteAction(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf);
+  ExecuteAction(const std::string & xml_tag_name, const BT::NodeConfig & conf);
 
   void halt();
   BT::NodeStatus tick() override;

@@ -42,8 +42,12 @@ public:
 
   virtual ~Instance()
   {
-    for (unsigned i = 0; i < init.size(); ++i) {delete init[i];}
-    if (nullptr != goal) {delete goal;}
+    for (unsigned i = 0; i < init.size(); ++i) {
+      delete init[i];
+    }
+    if (nullptr != goal) {
+      delete goal;
+    }
   }
 
   void parse(const std::string & s)
@@ -51,14 +55,18 @@ public:
     Stringreader f(s);
     name = f.parseName("problem");
 
-    if (DOMAIN_DEBUG) {std::cout << name << "\n";}
+    if (DOMAIN_DEBUG) {
+      std::cout << name << "\n";
+    }
 
     for (; f.getChar() != ')'; f.next()) {
       f.assert_token("(");
       f.assert_token(":");
       std::string t = f.getToken();
 
-      if (DOMAIN_DEBUG) {std::cout << t << "\n";}
+      if (DOMAIN_DEBUG) {
+        std::cout << t << "\n";
+      }
 
       if (t == "domain") {
         parseDomain(f);
@@ -115,12 +123,16 @@ public:
     for (unsigned i = 0; i < ts.size(); ++i) {
       Type * type = d.getType(ts.types[i]);
       std::pair<bool, unsigned> pair = type->parseObject(ts[i]);
-      if (pair.first == false) {type->objects.insert(ts[i]);}
+      if (pair.first == false) {
+        type->objects.insert(ts[i]);
+      }
     }
 
     for (unsigned i = 0; DOMAIN_DEBUG && i < d.types.size(); ++i) {
       std::cout << " ";
-      if (d.typed) {std::cout << " " << d.types[i] << ":";}
+      if (d.typed) {
+        std::cout << " " << d.types[i] << ":";
+      }
       for (unsigned j = 0; j < d.types[i]->objects.size(); ++j) {
         std::cout << " " << d.types[i]->objects[j];
       }
@@ -137,7 +149,9 @@ public:
 
       std::string s = f.getToken();
       int i = d.funcs.index(s);
-      if (i < 0) {f.tokenExit(s);}
+      if (i < 0) {
+        f.tokenExit(s);
+      }
 
       if (d.funcs[i]->returnType < 0) {
         c = new GroundFunc<double>(d.funcs[i]);
@@ -159,7 +173,9 @@ public:
     }
     ++f.c;
 
-    for (unsigned i = 0; DOMAIN_DEBUG && i < init.size(); ++i) {std::cout << "  " << init[i];}
+    for (unsigned i = 0; DOMAIN_DEBUG && i < init.size(); ++i) {
+      std::cout << "  " << init[i];
+    }
   }
 
   virtual void parseGoal(Stringreader & f)
@@ -283,7 +299,9 @@ public:
         for (unsigned j = 0; j < d.types[i]->objects.size(); ++j) {
           stream << d.types[i]->objects[j] << " ";
         }
-        if (d.typed) {stream << "- " << d.types[i]->name;}
+        if (d.typed) {
+          stream << "- " << d.types[i]->name;
+        }
         stream << "\n";
       }
     }
@@ -291,14 +309,16 @@ public:
 
     stream << "( :init\n";
     for (unsigned i = 0; i < init.size(); ++i) {
-      (reinterpret_cast<TypeGround *>(init[i]))->PDDLPrint(
-        stream, 1, TokenStruct<std::string>(), d);
+      (reinterpret_cast<TypeGround *>(init[i]))
+      ->PDDLPrint(stream, 1, TokenStruct<std::string>(), d);
       stream << "\n";
     }
     stream << ")\n";
 
     stream << "( :goal\n";
-    if (nullptr != goal) {goal->PDDLPrint(stream, 1, ts /* TokenStruct< std::string >() */, d);}
+    if (nullptr != goal) {
+      goal->PDDLPrint(stream, 1, ts /* TokenStruct< std::string >() */, d);
+    }
     stream << ")\n";
 
     if (metric) {

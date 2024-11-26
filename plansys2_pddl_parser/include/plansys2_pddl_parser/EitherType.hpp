@@ -34,7 +34,9 @@ public:
   std::string getName() const
   {
     std::string out = "either";
-    for (unsigned i = 0; i < subtypes.size(); ++i) {out += "_" + subtypes[i]->getName();}
+    for (unsigned i = 0; i < subtypes.size(); ++i) {
+      out += "_" + subtypes[i]->getName();
+    }
     return out;
   }
 

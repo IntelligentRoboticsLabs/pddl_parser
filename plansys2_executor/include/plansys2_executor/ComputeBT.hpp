@@ -18,6 +18,8 @@
 #include <memory>
 #include <string>
 
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_domain_expert/DomainExpertNode.hpp"
 #include "plansys2_executor/BTBuilder.hpp"
@@ -26,18 +28,12 @@
 #include "plansys2_planner/PlannerNode.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
 #include "plansys2_problem_expert/ProblemExpertNode.hpp"
-
-#include "lifecycle_msgs/msg/state.hpp"
-#include "lifecycle_msgs/msg/transition.hpp"
-
-#include "std_srvs/srv/trigger.hpp"
-
+#include "pluginlib/class_list_macros.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
-
-#include "pluginlib/class_loader.hpp"
-#include "pluginlib/class_list_macros.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace plansys2
 {
@@ -45,8 +41,7 @@ namespace plansys2
 class ComputeBT : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-  using CallbackReturnT =
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+  using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
   ComputeBT();
 

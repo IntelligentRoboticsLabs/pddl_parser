@@ -118,8 +118,8 @@ ProblemExpertNode::ProblemExpertNode()
   get_problem_inferred_predicates_service_ = create_service<plansys2_msgs::srv::GetStates>(
     "problem_expert/get_problem_inferred_predicates",
     std::bind(
-      &ProblemExpertNode::get_problem_inferred_predicates_service_callback, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3));
+      &ProblemExpertNode::get_problem_inferred_predicates_service_callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   get_problem_function_details_service_ = create_service<plansys2_msgs::srv::GetNodeDetails>(
     "problem_expert/get_problem_function",
@@ -543,7 +543,8 @@ void ProblemExpertNode::get_problem_functions_service_callback(
     RCLCPP_WARN(get_logger(), "Requesting service in non-active state");
   } else {
     response->success = true;
-    response->states = plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Node, plansys2::Function>(
+    response->states =
+      plansys2::convertUnorderedSetToVector<plansys2_msgs::msg::Node, plansys2::Function>(
       problem_expert_->getFunctions());
   }
 }

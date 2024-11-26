@@ -43,10 +43,18 @@ public:
 
   ~TemporalAction()
   {
-    if (durationExpr) {delete durationExpr;}
-    if (pre_o) {delete pre_o;}
-    if (pre_e) {delete pre_e;}
-    if (eff_e) {delete eff_e;}
+    if (durationExpr) {
+      delete durationExpr;
+    }
+    if (pre_o) {
+      delete pre_o;
+    }
+    if (pre_e) {
+      delete pre_e;
+    }
+    if (eff_e) {
+      delete eff_e;
+    }
   }
 
   void print(std::ostream & s) const

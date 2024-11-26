@@ -39,14 +39,9 @@ ProblemExpert::ProblemExpert(std::shared_ptr<DomainExpert> & domain_expert)
   state_.setDerivedPredicates(domain_expert_->getDerivedPredicatesGraph());
 }
 
-void ProblemExpert::updateInferredPredicates() {
-  solveDerivedPredicates(state_);
-}
+void ProblemExpert::updateInferredPredicates() {solveDerivedPredicates(state_);}
 
-plansys2::State ProblemExpert::getState()
-{
-  return state_;
-}
+plansys2::State ProblemExpert::getState() {return state_;}
 
 bool ProblemExpert::addInstance(const plansys2::Instance & instance)
 {
@@ -78,7 +73,10 @@ bool ProblemExpert::addInstance(const plansys2::Instance & instance)
   return true;
 }
 
-std::unordered_set<plansys2::Instance> ProblemExpert::getInstances() {return state_.getInstances();}
+std::unordered_set<plansys2::Instance> ProblemExpert::getInstances()
+{
+  return state_.getInstances();
+}
 
 bool ProblemExpert::removeInstance(const plansys2::Instance & instance)
 {
@@ -112,8 +110,7 @@ std::unordered_set<plansys2::Predicate> ProblemExpert::getInferredPredicates()
 
 bool ProblemExpert::addPredicate(const plansys2::Predicate & predicate)
 {
-  if (state_.hasPredicate(predicate))
-  {
+  if (state_.hasPredicate(predicate)) {
     return true;
   }
   if (isValidPredicate(predicate)) {
@@ -139,7 +136,10 @@ std::optional<plansys2::Predicate> ProblemExpert::getPredicate(const std::string
   return {};
 }
 
-std::unordered_set<plansys2::Function> ProblemExpert::getFunctions() {return state_.getFunctions();}
+std::unordered_set<plansys2::Function> ProblemExpert::getFunctions()
+{
+  return state_.getFunctions();
+}
 
 bool ProblemExpert::addFunction(const plansys2::Function & function)
 {

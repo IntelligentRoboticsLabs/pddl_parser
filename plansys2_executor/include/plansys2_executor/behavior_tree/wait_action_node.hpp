@@ -16,14 +16,11 @@
 #define PLANSYS2_EXECUTOR__BEHAVIOR_TREE__WAIT_ACTION_NODE_HPP_
 
 #include <map>
-#include <string>
 #include <memory>
-
+#include <string>
 
 #include "behaviortree_cpp/action_node.h"
-
 #include "plansys2_executor/ActionExecutor.hpp"
-
 #include "plansys2_executor/behavior_tree/execute_action_node.hpp"
 
 namespace plansys2
@@ -32,9 +29,7 @@ namespace plansys2
 class WaitAction : public BT::ActionNodeBase
 {
 public:
-  WaitAction(
-    const std::string & xml_tag_name,
-    const BT::NodeConfig & conf);
+  WaitAction(const std::string & xml_tag_name, const BT::NodeConfig & conf);
 
   void halt() {}
   BT::NodeStatus tick() override;

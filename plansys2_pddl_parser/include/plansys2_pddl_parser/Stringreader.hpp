@@ -140,7 +140,9 @@ public:
   std::string getToken(const TokenStruct<T> & ts)
   {
     std::string t = getToken();
-    if (ts.index(t) < 0) {tokenExit(t);}
+    if (ts.index(t) < 0) {
+      tokenExit(t);
+    }
     return t;
   }
 
@@ -219,7 +221,9 @@ public:
         out.insert(getToken());
       }
     }
-    if (k < out.size()) {out.types.insert(out.types.end(), out.size() - k, check ? "object" : "");}
+    if (k < out.size()) {
+      out.types.insert(out.types.end(), out.size() - k, check ? "object" : "");
+    }
     ++c;
 
     return out;

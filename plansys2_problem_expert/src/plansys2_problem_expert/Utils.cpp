@@ -219,18 +219,18 @@ std::vector<std::map<std::string, std::string>> mergeParamsValuesVector(
   vector3.reserve(vector1.size() * vector2.size());
 
 #pragma omp parallel for schedule(dynamic)
-    for (size_t i = 0; i < vector1.size(); ++i) {
-      for (const auto & dict2 : vector2) {
-        std::map<std::string, std::string> dict3;
+  for (size_t i = 0; i < vector1.size(); ++i) {
+    for (const auto & dict2 : vector2) {
+      std::map<std::string, std::string> dict3;
 
-        mergeParamsValuesDicts(vector1[i], dict2, dict3);
+      mergeParamsValuesDicts(vector1[i], dict2, dict3);
 
-        if (!dict3.empty()) {
-          #pragma omp critical
-          vector3.emplace_back(std::move(dict3));
-        }
+      if (!dict3.empty()) {
+#pragma omp critical
+        vector3.emplace_back(std::move(dict3));
       }
     }
+  }
   return std::move(vector3);
 }
 
@@ -241,23 +241,23 @@ void solveDerivedPredicates(plansys2::State & state)
 }
 
 void solveDerivedPredicates(
-  plansys2::State & state,
-  const std::vector<plansys2_msgs::msg::Node>& root_nodes
-)
+  plansys2::State & state, const std::vector<plansys2_msgs::msg::Node> & root_nodes)
 {
-  if (root_nodes.empty()){
+  if (root_nodes.empty()) {
     state.resetInferredPredicates();
   }
   std::unordered_set<std::string> derived_ungrounded_cache;
 
-  for (const auto& derived : state.getDerivedPredicatesDepthFirst(root_nodes)) {
-    if (!root_nodes.empty() && derived_ungrounded_cache.find(derived.predicate.name) == derived_ungrounded_cache.end())
+  for (const auto & derived : state.getDerivedPredicatesDepthFirst(root_nodes)) {
+    if (
+      !root_nodes.empty() &&
+      derived_ungrounded_cache.find(derived.predicate.name) == derived_ungrounded_cache.end())
     {
       state.ungroundDerivedPredicate(derived);
       derived_ungrounded_cache.insert(derived.predicate.name);
     }
-    auto [_, evaluate_value, __, params_values] = evaluate(
-      derived.preconditions, state, derived.preconditions.nodes[0].node_id);
+    auto [_, evaluate_value, __, params_values] =
+      evaluate(derived.preconditions, state, derived.preconditions.nodes[0].node_id);
 
     if (evaluate_value && !params_values.empty()) {
       groundPredicate(state, derived.predicate, params_values);
@@ -266,10 +266,8 @@ void solveDerivedPredicates(
 }
 
 void groundPredicate(
-  plansys2::State & state,
-  const plansys2::Predicate & predicate,
-  const std::vector<std::map<std::string, std::string>> & params_values_vector
-)
+  plansys2::State & state, const plansys2::Predicate & predicate,
+  const std::vector<std::map<std::string, std::string>> & params_values_vector)
 {
   size_t num_params = predicate.parameters.size();
   size_t params_values_size = params_values_vector.size();
@@ -278,46 +276,45 @@ void groundPredicate(
   auto instances = state.getInstances();
 
 #pragma omp parallel for schedule(dynamic)
-    for (size_t j = 0; j < params_values_size; ++j) {
-      const auto & params_values = params_values_vector[j];
-      plansys2::Predicate new_predicate;
-      new_predicate.node_type = plansys2_msgs::msg::Node::PREDICATE;
-      new_predicate.name = predicate.name;
-      new_predicate.parameters.reserve(num_params);
-      bool add_predicate = true;
+  for (size_t j = 0; j < params_values_size; ++j) {
+    const auto & params_values = params_values_vector[j];
+    plansys2::Predicate new_predicate;
+    new_predicate.node_type = plansys2_msgs::msg::Node::PREDICATE;
+    new_predicate.name = predicate.name;
+    new_predicate.parameters.reserve(num_params);
+    bool add_predicate = true;
 
-      for (size_t i = 0; i < num_params; ++i) {
-        plansys2_msgs::msg::Param new_param = predicate.parameters[i];
+    for (size_t i = 0; i < num_params; ++i) {
+      plansys2_msgs::msg::Param new_param = predicate.parameters[i];
 
-        // Only perform lookup and assignment if the parameter is a variable (starts with '?')
-        if (new_param.name.front() == '?') {
-          auto it = params_values.find("?" + std::to_string(i));
-          if (it != params_values.end()) {
-            auto instance = instances.find(parser::pddl::fromStringParam(it->second));
-            if (
-              instance == instances.end() ||
-              !parser::pddl::checkParamTypeEquivalence(new_param, *instance))
-            {
-              add_predicate = false;
-              break;
-            }
-            new_param.name = it->second;
+      // Only perform lookup and assignment if the parameter is a variable (starts with '?')
+      if (new_param.name.front() == '?') {
+        auto it = params_values.find("?" + std::to_string(i));
+        if (it != params_values.end()) {
+          auto instance = instances.find(parser::pddl::fromStringParam(it->second));
+          if (
+            instance == instances.end() ||
+            !parser::pddl::checkParamTypeEquivalence(new_param, *instance))
+          {
+            add_predicate = false;
+            break;
           }
+          new_param.name = it->second;
         }
-        new_predicate.parameters.emplace_back(std::move(new_param));
       }
-
-      if (add_predicate) {
-        #pragma omp critical
-        state.addInferredPredicate(std::move(new_predicate));
-      }
+      new_predicate.parameters.emplace_back(std::move(new_param));
     }
+
+    if (add_predicate) {
+#pragma omp critical
+      state.addInferredPredicate(std::move(new_predicate));
+    }
+  }
 }
 
 std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> evaluate(
-  const plansys2_msgs::msg::Tree & tree,
-  const plansys2::State & state,
-  uint8_t node_id, bool negate)
+  const plansys2_msgs::msg::Tree & tree, const plansys2::State & state, uint8_t node_id,
+  bool negate)
 {
   if (tree.nodes.empty()) {
     return {true, true, 0, {}};
@@ -331,8 +328,8 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
         std::vector<std::map<std::string, std::string>> param_values;
 
         for (const auto & child_id : current_node.children) {
-          auto [child_success, child_value, _, child_param_values] = evaluate(
-            tree, state, child_id, negate);
+          auto [child_success, child_value, _, child_param_values] =
+            evaluate(tree, state, child_id, negate);
 
           success &= child_success;
           truth_value &= child_value;
@@ -360,8 +357,8 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
         std::vector<std::map<std::string, std::string>> param_values;
 
         for (auto & child_id : current_node.children) {
-          auto [child_success, child_value, _, child_param_values] = evaluate(
-            tree, state, child_id, negate);
+          auto [child_success, child_value, _, child_param_values] =
+            evaluate(tree, state, child_id, negate);
 
           success = success && child_success;
           truth_value = truth_value || child_value;
@@ -372,8 +369,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
       }
 
     case plansys2_msgs::msg::Node::NOT: {
-        return std::move(evaluate(
-          tree, state, current_node.children[0], !negate));
+        return std::move(evaluate(tree, state, current_node.children[0], !negate));
       }
 
     case plansys2_msgs::msg::Node::PREDICATE: {
@@ -394,20 +390,20 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
         double value = 0;
         std::vector<std::map<std::string, std::string>> param_values;
 
-          auto it = state.getFunction(current_node);
-          if (it != state.getFunctions().end()) {
-            value = it->value;
-          } else {
-            success = false;
-          }
+        auto it = state.getFunction(current_node);
+        if (it != state.getFunctions().end()) {
+          value = it->value;
+        } else {
+          success = false;
+        }
         return {success, false, value, std::move(param_values)};
       }
 
     case plansys2_msgs::msg::Node::EXPRESSION: {
-        auto [left_success, left_value, left_double, left_param_values] = evaluate(
-          tree, state, current_node.children[0], negate);
-        auto [right_success, right_value, right_double, right_param_values] = evaluate(
-          tree, state, current_node.children[1], negate);
+        auto [left_success, left_value, left_double, left_param_values] =
+          evaluate(tree, state, current_node.children[0], negate);
+        auto [right_success, right_value, right_double, right_param_values] =
+          evaluate(tree, state, current_node.children[1], negate);
 
         std::vector<std::map<std::string, std::string>> param_values;
 
@@ -527,10 +523,10 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
       }
 
     case plansys2_msgs::msg::Node::FUNCTION_MODIFIER: {
-        auto [left_success, left_value, left_double, left_param_values] = evaluate(
-          tree, state, current_node.children[0], negate);
-        auto [right_success, right_value, right_double, right_param_values] = evaluate(
-          tree, state, current_node.children[1], negate);
+        auto [left_success, left_value, left_double, left_param_values] =
+          evaluate(tree, state, current_node.children[0], negate);
+        auto [right_success, right_value, right_double, right_param_values] =
+          evaluate(tree, state, current_node.children[1], negate);
 
         if (!left_success || !right_success) {
           return {false, false, 0, {}};
@@ -564,35 +560,6 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
             success = false;
             break;
         }
-
-        // if (success && apply) {
-        // if (success && apply) {
-        //   uint8_t left_id = current_node.children[0];
-        //   if (use_state) {
-        //     // auto it = std::find_if(
-        //     //   functions.begin(), functions.end(),
-        //     //   std::bind(
-        //     //     &parser::pddl::checkNodeEquality, std::placeholders::_1, tree.nodes[left_id]));
-        //     // if (it != functions.end()) {
-        //     //   it->value = value;
-        //     // } else {
-        //     //   success = false;
-        //     // }
-        //     // auto it = std::find_if(
-        //     //   state.functions.begin(), state.functions.end(),
-        //     //   std::bind(
-        //     //     &parser::pddl::checkNodeEquality, std::placeholders::_1, tree.nodes[left_id]));
-        //     // if (it != state.functions.end()) {
-        //     //   it->value = value;
-        //     // } else {
-        //     //   success = false;
-        //     // }
-        //   } else {
-        //     std::stringstream ss;
-        //     ss << "(= " << parser::pddl::toString(tree, left_id) << " " << value << ")";
-        //     problem_client->updateFunction(parser::pddl::fromStringFunction(ss.str()));
-        //   }
-        // }
 
         return {success, false, value, {}};
       }
@@ -628,8 +595,7 @@ std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> 
       }
 
     case plansys2_msgs::msg::Node::EXISTS: {
-        return std::move(evaluate(
-          tree, state, current_node.children[0], negate));
+        return std::move(evaluate(tree, state, current_node.children[0], negate));
       }
 
     default:
@@ -658,7 +624,8 @@ bool check(
 }
 
 bool check(
-  const plansys2_msgs::msg::Tree & tree, const plansys2::State & state, uint32_t node_id, bool negate)
+  const plansys2_msgs::msg::Tree & tree, const plansys2::State & state, uint32_t node_id,
+  bool negate)
 {
   std::tuple<bool, bool, double, std::vector<std::map<std::string, std::string>>> ret =
     evaluate(tree, state, node_id, negate);
@@ -667,7 +634,8 @@ bool check(
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id, bool negate, bool derive)
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, uint32_t node_id, bool negate,
+  bool derive)
 {
   plansys2::State state;
   std::vector<plansys2_msgs::msg::Node> nodes_modified;
@@ -675,8 +643,8 @@ bool apply(
 }
 
 bool apply(
-  const plansys2_msgs::msg::Tree & tree, plansys2::State & state,
-  uint32_t node_id, bool negate, bool derive)
+  const plansys2_msgs::msg::Tree & tree, plansys2::State & state, uint32_t node_id, bool negate,
+  bool derive)
 {
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client;
   std::vector<plansys2_msgs::msg::Node> nodes_modified;
@@ -685,8 +653,8 @@ bool apply(
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree, plansys2::State & state,
-  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
-  uint32_t node_id, bool negate, bool derive)
+  std::vector<plansys2_msgs::msg::Node> & nodes_modified, uint32_t node_id, bool negate,
+  bool derive)
 {
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client;
   return apply(tree, problem_client, state, nodes_modified, true, node_id, negate, derive);
@@ -694,10 +662,9 @@ bool apply(
 
 bool apply(
   const plansys2_msgs::msg::Tree & tree,
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_client,
-  plansys2::State &state,
-  std::vector<plansys2_msgs::msg::Node>& nodes_modified,
-  bool use_state, uint32_t node_id, bool negate, bool derive)
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_client, plansys2::State & state,
+  std::vector<plansys2_msgs::msg::Node> & nodes_modified, bool use_state, uint32_t node_id,
+  bool negate, bool derive)
 {
   if (tree.nodes.empty()) {
     return true;
@@ -708,8 +675,8 @@ bool apply(
   switch (current_node.node_type) {
     case plansys2_msgs::msg::Node::AND: {
         for (const auto & child_id : current_node.children) {
-          bool child_success = apply(
-            tree, problem_client, state, nodes_modified, use_state, child_id, negate, false);
+          bool child_success =
+            apply(tree, problem_client, state, nodes_modified, use_state, child_id, negate, false);
           success &= child_success;
         }
         break;
@@ -717,14 +684,15 @@ bool apply(
 
     case plansys2_msgs::msg::Node::NOT: {
         success = apply(
-          tree, problem_client, state, nodes_modified, use_state,
-          current_node.children[0], !negate, false);
+          tree, problem_client, state, nodes_modified, use_state, current_node.children[0], !negate,
+          false);
         break;
       }
 
     case plansys2_msgs::msg::Node::PREDICATE: {
         if (use_state) {
-          success &= negate ? state.removePredicate(current_node) : state.addPredicate(current_node);
+          success &=
+            negate ? state.removePredicate(current_node) : state.addPredicate(current_node);
         } else {
           success &= negate ? problem_client->removePredicate(current_node) :
             problem_client->addPredicate(current_node);
@@ -737,7 +705,7 @@ bool apply(
       std::cerr << "Apply: Error parsing expresion [" << parser::pddl::toString(tree, node_id)
                 << "]" << std::endl;
   }
-  if (derive){
+  if (derive) {
     solveDerivedPredicates(state, nodes_modified);
   }
   return success;

@@ -15,19 +15,17 @@
 #ifndef PLANSYS2_EXECUTOR__ACTIONEXECUTORCLIENT_HPP_
 #define PLANSYS2_EXECUTOR__ACTIONEXECUTORCLIENT_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
+#include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_msgs/msg/action_execution.hpp"
 #include "plansys2_msgs/msg/action_performer_status.hpp"
-
-#include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
-
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_cascade_lifecycle/rclcpp_cascade_lifecycle.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp_cascade_lifecycle/rclcpp_cascade_lifecycle.hpp"
 
 namespace plansys2
 {
@@ -41,9 +39,7 @@ public:
     return std::make_shared<ActionExecutorClient>(node_name, rate);
   }
 
-  ActionExecutorClient(
-    const std::string & node_name,
-    const std::chrono::nanoseconds & rate);
+  ActionExecutorClient(const std::string & node_name, const std::chrono::nanoseconds & rate);
 
   rclcpp::Time get_start_time() const {return start_time_;}
   plansys2_msgs::msg::ActionPerformerStatus get_internal_status() const {return status_;}
@@ -54,8 +50,7 @@ protected:
   const std::vector<std::string> & get_arguments() const {return current_arguments_;}
   const std::string get_action_name() const {return action_managed_;}
 
-  using CallbackReturnT =
-    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+  using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
   virtual CallbackReturnT on_configure(const rclcpp_lifecycle::State & state);
   virtual CallbackReturnT on_activate(const rclcpp_lifecycle::State & state);
