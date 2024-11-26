@@ -159,11 +159,11 @@ TEST(executiotest_noden_tree, bt_builder_factory)
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
-  std::shared_ptr<plansys2::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::BTBuilder");
+  std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
+    "plansys2::bt_builder::BTBuilder");
   try {
-    bt_builder = bt_builder_loader.createSharedInstance("plansys2::SimpleBTBuilder");
+    bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {
     std::cerr << "pluginlib error: " << std::string(ex.what()) << std::endl;
   }
@@ -301,11 +301,11 @@ TEST(executiotest_noden_tree, bt_builder_factory_2)
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
-  std::shared_ptr<plansys2::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::BTBuilder");
+  std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
+    "plansys2::bt_builder::BTBuilder");
   try {
-    bt_builder = bt_builder_loader.createSharedInstance("plansys2::SimpleBTBuilder");
+    bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {
     std::cerr << "pluginlib error: " << std::string(ex.what()) << std::endl;
   }
@@ -432,11 +432,11 @@ TEST(executiotest_noden_tree, bt_builder_factory_3)
   auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
   ASSERT_TRUE(plan);
 
-  std::shared_ptr<plansys2::BTBuilder> bt_builder;
-  pluginlib::ClassLoader<plansys2::BTBuilder> bt_builder_loader("plansys2_executor",
-    "plansys2::BTBuilder");
+  std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader("plansys2_executor",
+    "plansys2::bt_builder::BTBuilder");
   try {
-    bt_builder = bt_builder_loader.createSharedInstance("plansys2::SimpleBTBuilder");
+    bt_builder = bt_builder_loader.createSharedInstance("plansys2::bt_builder::SimpleBTBuilder");
   } catch (pluginlib::PluginlibException & ex) {
     std::cerr << "pluginlib error: " << std::string(ex.what()) << std::endl;
   }

@@ -61,7 +61,7 @@ private:
   std::string action_bt_xml_;
   std::string start_action_bt_xml_;
   std::string end_action_bt_xml_;
-  pluginlib::ClassLoader<plansys2::BTBuilder> bt_builder_loader_;
+  pluginlib::ClassLoader<plansys2::bt_builder::BTBuilder> bt_builder_loader_;
 
   std::shared_ptr<plansys2::DomainExpertNode> domain_node_;
   std::shared_ptr<plansys2::PlannerNode> planner_node_;

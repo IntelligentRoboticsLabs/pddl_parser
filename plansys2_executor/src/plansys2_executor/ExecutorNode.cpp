@@ -58,7 +58,7 @@ using namespace std::chrono_literals;
 
 ExecutorNode::ExecutorNode()
 : rclcpp_lifecycle::LifecycleNode("executor"),
-  bt_builder_loader_("plansys2_executor", "plansys2::BTBuilder")
+  bt_builder_loader_("plansys2_executor", "plansys2::bt_builder::BTBuilder")
 {
   using namespace std::placeholders;
 
@@ -375,7 +375,7 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
   (*action_map)[":0"].at_end_effects_applied = true;
 
   for (const auto & plan_item : current_plan_.value().items) {
-    auto index = BTBuilder::to_action_id(plan_item, 3);
+    auto index = plansys2::bt_builder::BTBuilder::to_action_id(plan_item, 3);
 
 
     (*action_map)[index] = ActionExecutionInfo();
@@ -414,9 +414,9 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
     bt_builder_plugin = "SimpleBTBuilder";
   }
 
-  std::shared_ptr<plansys2::BTBuilder> bt_builder;
+  std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
   try {
-    bt_builder = bt_builder_loader_.createSharedInstance("plansys2::" + bt_builder_plugin);
+    bt_builder = bt_builder_loader_.createSharedInstance("plansys2::bt_builder::" + bt_builder_plugin);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_ERROR(get_logger(), "pluginlib error: %s", ex.what());
   }
@@ -635,7 +635,7 @@ ExecutorNode::print_execution_info(
         fprintf(stderr, "\tFAILURE\n");
         break;
     }
-    if (action_info.second.action_info.action.index() == std::variant_npos) {
+    if (action_info.second.action_info.is_empty()) {
       fprintf(stderr, "\tWith no action info\n");
     }
 

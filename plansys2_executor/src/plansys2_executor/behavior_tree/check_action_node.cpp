@@ -30,7 +30,7 @@ CheckAction::CheckAction(
   action_map_ =
     config().blackboard->get<std::shared_ptr<std::map<std::string, ActionExecutionInfo>>>(
     "action_map");
-  action_graph_ = config().blackboard->get<Graph::Ptr>("action_graph");
+  action_graph_ = config().blackboard->get<plansys2::bt_builder::Graph::Ptr>("action_graph");
   node_ = config().blackboard->get<rclcpp_lifecycle::LifecycleNode::SharedPtr>("node");
 }
 
@@ -77,12 +77,12 @@ CheckAction::tick()
     double lower = 0.0;
     double upper = std::numeric_limits<double>::infinity();
     if (action_graph_) {
-      Node::Ptr child_node = get_node(child_id, child_type);
-      Node::Ptr parent_node = get_node(parent_id, parent_type);
+      plansys2::bt_builder::Node::Ptr child_node = get_node(child_id, child_type);
+      plansys2::bt_builder::Node::Ptr parent_node = get_node(parent_id, parent_type);
 
       auto in = std::find_if(
         child_node->input_arcs.begin(), child_node->input_arcs.end(),
-        [&](std::tuple<Node::Ptr, double, double> arc) {
+        [&](std::tuple<plansys2::bt_builder::Node::Ptr, double, double> arc) {
           return std::get<0>(arc) == parent_node;
         });
 
@@ -100,14 +100,14 @@ CheckAction::tick()
   }
 }
 
-Node::Ptr
+plansys2::bt_builder::Node::Ptr
 CheckAction::get_node(const std::string & node_id, const std::string & node_type)
 {
   auto it = std::find_if(
     action_graph_->nodes.begin(), action_graph_->nodes.end(),
-    [&](Node::Ptr n) {
-      auto n_id = BTBuilder::to_action_id(n->action, 3);
-      auto n_type = BTBuilder::to_string(n->action.type);
+    [&](plansys2::bt_builder::Node::Ptr n) {
+      auto n_id = bt_builder::BTBuilder::to_action_id(n->action, 3);
+      auto n_type = bt_builder::BTBuilder::to_string(n->action.type);
       return n_id == node_id && n_type == node_type;
     });
   return *it;

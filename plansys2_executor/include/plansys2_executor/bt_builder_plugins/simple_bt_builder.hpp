@@ -59,29 +59,31 @@ namespace std {
 
 namespace plansys2
 {
+namespace bt_builder
+{
 
 struct ActionNode
 {
-  using Ptr = std::shared_ptr<ActionNode>;
-  static Ptr make_shared() {return std::make_shared<ActionNode>();}
+  using Ptr = std::shared_ptr<plansys2::bt_builder::ActionNode>;
+  static Ptr make_shared() {return std::make_shared<plansys2::bt_builder::ActionNode>();}
 
-  ActionStamped action;
+  plansys2::bt_builder::ActionStamped action;
   int node_num;
   int level_num;
 
   plansys2::State state;
 
-  std::list<ActionNode::Ptr> in_arcs;
-  std::list<ActionNode::Ptr> out_arcs;
+  std::list<plansys2::bt_builder::ActionNode::Ptr> in_arcs;
+  std::list<plansys2::bt_builder::ActionNode::Ptr> out_arcs;
 };
 
 struct ActionGraph
 {
-  using Ptr = std::shared_ptr<ActionGraph>;
-  static Ptr make_shared() {return std::make_shared<ActionGraph>();}
+  using Ptr = std::shared_ptr<plansys2::bt_builder::ActionGraph>;
+  static Ptr make_shared() {return std::make_shared<plansys2::bt_builder::ActionGraph>();}
 
-  std::list<ActionNode::Ptr> roots;
-  std::map<float, std::list<ActionNode::Ptr>> levels;
+  std::list<plansys2::bt_builder::ActionNode::Ptr> roots;
+  std::map<float, std::list<plansys2::bt_builder::ActionNode::Ptr>> levels;
 };
 
 class SimpleBTBuilder : public BTBuilder
@@ -94,8 +96,8 @@ public:
     int precision = 3);
 
   std::string get_tree(const plansys2_msgs::msg::Plan & current_plan);
-  Graph::Ptr get_graph() {return nullptr;}
-  bool propagate(Graph::Ptr) {return true;}
+  plansys2::bt_builder::Graph::Ptr get_graph() {return nullptr;}
+  bool propagate(plansys2::bt_builder::Graph::Ptr) {return true;}
   std::string get_dotgraph(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
     bool enable_legend = false,
@@ -105,76 +107,76 @@ protected:
   std::shared_ptr<plansys2::DomainExpertClient> domain_client_;
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client_;
 
-  ActionGraph::Ptr graph_;
+  plansys2::bt_builder::ActionGraph::Ptr graph_;
   std::string bt_;
   std::string bt_action_;
 
   std::unordered_map<std::pair<std::string, plansys2::State>, plansys2::State> action_state_cache;
 
-  ActionGraph::Ptr get_graph(const plansys2_msgs::msg::Plan & current_plan);
+  plansys2::bt_builder::ActionGraph::Ptr get_graph(const plansys2_msgs::msg::Plan & current_plan);
 
-  std::vector<ActionStamped> get_plan_actions(const plansys2_msgs::msg::Plan & plan);
-  void prune_backwards(ActionNode::Ptr new_node, ActionNode::Ptr node_satisfy);
-  void prune_forward(ActionNode::Ptr current, std::list<ActionNode::Ptr> & used_nodes);
+  std::vector<plansys2::bt_builder::ActionStamped> get_plan_actions(const plansys2_msgs::msg::Plan & plan);
+  void prune_backwards(plansys2::bt_builder::ActionNode::Ptr new_node, plansys2::bt_builder::ActionNode::Ptr node_satisfy);
+  void prune_forward(plansys2::bt_builder::ActionNode::Ptr current, std::list<plansys2::bt_builder::ActionNode::Ptr> & used_nodes);
   void get_state(
-    const ActionNode::Ptr & node,
-    std::list<ActionNode::Ptr> & used_nodes,
+    const plansys2::bt_builder::ActionNode::Ptr & node,
+    std::list<plansys2::bt_builder::ActionNode::Ptr> & used_nodes,
     plansys2::State & state);
 
   std::vector<plansys2_msgs::msg::Tree> check_requirements(
     const std::vector<plansys2_msgs::msg::Tree>& requirements,
-    std::shared_ptr<plansys2::ActionGraph>& graph,
-    std::shared_ptr<plansys2::ActionNode>& new_node
+    std::shared_ptr<plansys2::bt_builder::ActionGraph>& graph,
+    std::shared_ptr<plansys2::bt_builder::ActionNode>& new_node
   );
   bool check_requirement(
     const plansys2_msgs::msg::Tree& requirement,
-    std::shared_ptr<plansys2::ActionGraph>& graph,
-    std::shared_ptr<plansys2::ActionNode>& new_node
+    std::shared_ptr<plansys2::bt_builder::ActionGraph>& graph,
+    std::shared_ptr<plansys2::bt_builder::ActionNode>& new_node
   );
 
   bool is_action_executable(
-    const ActionStamped & action,
+    const plansys2::bt_builder::ActionStamped & action,
     const plansys2::State & state);
-  std::list<ActionNode::Ptr> get_roots(
-    std::vector<plansys2::ActionStamped> & action_sequence,
+  std::list<plansys2::bt_builder::ActionNode::Ptr> get_roots(
+    std::vector<plansys2::bt_builder::ActionStamped> & action_sequence,
     const plansys2::State & state,
     int & node_counter);
-  ActionNode::Ptr get_node_satisfy(
+  plansys2::bt_builder::ActionNode::Ptr get_node_satisfy(
     const plansys2_msgs::msg::Tree & requirement,
-    const ActionGraph::Ptr & graph,
-    const ActionNode::Ptr & current);
-  ActionNode::Ptr get_node_satisfy(
+    const plansys2::bt_builder::ActionGraph::Ptr & graph,
+    const plansys2::bt_builder::ActionNode::Ptr & current);
+  plansys2::bt_builder::ActionNode::Ptr get_node_satisfy(
     const plansys2_msgs::msg::Tree & requirement,
-    const ActionNode::Ptr & node,
-    const ActionNode::Ptr & current);
-  std::list<ActionNode::Ptr> get_node_contradict(
-    const ActionGraph::Ptr & graph,
-    const ActionNode::Ptr & current);
+    const plansys2::bt_builder::ActionNode::Ptr & node,
+    const plansys2::bt_builder::ActionNode::Ptr & current);
+  std::list<plansys2::bt_builder::ActionNode::Ptr> get_node_contradict(
+    const plansys2::bt_builder::ActionGraph::Ptr & graph,
+    const plansys2::bt_builder::ActionNode::Ptr & current);
   void get_node_contradict(
-    const ActionNode::Ptr & node,
-    const ActionNode::Ptr & current,
-    std::list<ActionNode::Ptr> & parents);
+    const plansys2::bt_builder::ActionNode::Ptr & node,
+    const plansys2::bt_builder::ActionNode::Ptr & current,
+    std::list<plansys2::bt_builder::ActionNode::Ptr> & parents);
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
     const plansys2::State & state);
   bool is_parallelizable(
-    const plansys2::ActionStamped & action,
+    const plansys2::bt_builder::ActionStamped & action,
     const plansys2::State & state,
-    const std::list<ActionNode::Ptr> & ret);
+    const std::list<plansys2::bt_builder::ActionNode::Ptr> & ret);
   void apply_action_to_state(
-    const plansys2::ActionStamped & action,
+    const plansys2::bt_builder::ActionStamped & action,
     plansys2::State & state);
 
   std::string get_flow_tree(
-    ActionNode::Ptr node,
+    plansys2::bt_builder::ActionNode::Ptr node,
     std::list<std::string> & used_nodes,
     int level = 0);
-  void get_flow_dotgraph(ActionNode::Ptr node, std::set<std::string> & edges);
+  void get_flow_dotgraph(plansys2::bt_builder::ActionNode::Ptr node, std::set<std::string> & edges);
   std::string get_node_dotgraph(
-    ActionNode::Ptr node, std::shared_ptr<std::map<std::string,
+    plansys2::bt_builder::ActionNode::Ptr node, std::shared_ptr<std::map<std::string,
     ActionExecutionInfo>> action_map, int level = 0);
   ActionExecutor::Status get_action_status(
-    ActionStamped action,
+    plansys2::bt_builder::ActionStamped action,
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
   void addDotGraphLegend(
     std::stringstream & ss, int tab_level, int level_counter,
@@ -182,29 +184,30 @@ protected:
 
   std::string t(int level);
 
-  std::string execution_block(const ActionNode::Ptr & node, int l);
+  std::string execution_block(const plansys2::bt_builder::ActionNode::Ptr & node, int l);
   void print_node(
-    const ActionNode::Ptr & node,
+    const plansys2::bt_builder::ActionNode::Ptr & node,
     int level,
-    std::set<ActionNode::Ptr> & used_nodes) const;
+    std::set<plansys2::bt_builder::ActionNode::Ptr> & used_nodes) const;
 
-  void print_graph(const plansys2::ActionGraph::Ptr & graph) const;
+  void print_graph(const plansys2::bt_builder::ActionGraph::Ptr & graph) const;
 
-  void print_node_csv(const ActionNode::Ptr & node, uint32_t root_num) const;
-  void print_graph_csv(const plansys2::ActionGraph::Ptr & graph) const;
+  void print_node_csv(const plansys2::bt_builder::ActionNode::Ptr & node, uint32_t root_num) const;
+  void print_graph_csv(const plansys2::bt_builder::ActionGraph::Ptr & graph) const;
 
   void get_node_tabular(
-    const plansys2::ActionNode::Ptr & node,
+    const plansys2::bt_builder::ActionNode::Ptr & node,
     uint32_t root_num,
     std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>> & graph) const;
   std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>> get_graph_tabular(
-    const plansys2::ActionGraph::Ptr & graph) const;
+    const plansys2::bt_builder::ActionGraph::Ptr & graph) const;
 };
 
+}  // namespace bt_builder
 }  // namespace plansys2
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(plansys2::SimpleBTBuilder, plansys2::BTBuilder)
+PLUGINLIB_EXPORT_CLASS(plansys2::bt_builder::SimpleBTBuilder, plansys2::bt_builder::BTBuilder)
 
 #endif  // PLANSYS2_EXECUTOR__BT_BUILDER_PLUGINS__SIMPLE_BT_BUILDER_HPP_

@@ -33,6 +33,8 @@
 
 namespace plansys2
 {
+namespace bt_builder
+{
 
 SimpleBTBuilder::SimpleBTBuilder()
 {
@@ -89,6 +91,7 @@ SimpleBTBuilder::get_node_satisfy(
   }
 
   ActionNode::Ptr ret = nullptr;
+
 
   // Get the state prior to applying the effects
   plansys2::State state = node->state;
@@ -149,14 +152,14 @@ SimpleBTBuilder::get_node_contradict(
 }
 
 void SimpleBTBuilder::apply_action_to_state(
-  const plansys2::ActionStamped & action,
+  const plansys2::bt_builder::ActionStamped & action,
   plansys2::State & state)
 {
   auto action_key = std::make_pair(action.action.get_action_string(), state);
   auto it = action_state_cache.find(action_key);
   if (it == action_state_cache.end()) {
     if (action.action.is_durative_action()) {
-      plansys2::apply(action.action.get_at_start_effects(), state, 0, false, false);
+      plansys2::apply(action.action.get_at_start_effects(), state);
     }
     plansys2::apply(action.action.get_at_end_effects(), state);
     action_state_cache.emplace(std::move(action_key), state);
@@ -167,7 +170,7 @@ void SimpleBTBuilder::apply_action_to_state(
 
 bool
 SimpleBTBuilder::is_parallelizable(
-  const plansys2::ActionStamped & action,
+  const plansys2::bt_builder::ActionStamped & action,
   const plansys2::State & state,
   const std::list<ActionNode::Ptr> & nodes)
 {
@@ -232,7 +235,7 @@ SimpleBTBuilder::get_node_contradict(
 
 std::list<ActionNode::Ptr>
 SimpleBTBuilder::get_roots(
-  std::vector<plansys2::ActionStamped> & action_sequence,
+  std::vector<plansys2::bt_builder::ActionStamped> & action_sequence,
   const plansys2::State & state,
   int & node_counter)
 {
@@ -328,8 +331,8 @@ SimpleBTBuilder::get_state(
 
 std::vector<plansys2_msgs::msg::Tree> SimpleBTBuilder::check_requirements(
   const std::vector<plansys2_msgs::msg::Tree>& requirements,
-  std::shared_ptr<plansys2::ActionGraph>& graph,
-  std::shared_ptr<plansys2::ActionNode>& new_node
+  std::shared_ptr<plansys2::bt_builder::ActionGraph>& graph,
+  std::shared_ptr<plansys2::bt_builder::ActionNode>& new_node
 )
 {
   std::vector<plansys2_msgs::msg::Tree> non_satisfied_requirements;
@@ -352,8 +355,8 @@ std::vector<plansys2_msgs::msg::Tree> SimpleBTBuilder::check_requirements(
 
 bool SimpleBTBuilder::check_requirement(
   const plansys2_msgs::msg::Tree& requirement,
-  std::shared_ptr<plansys2::ActionGraph>& graph,
-  std::shared_ptr<plansys2::ActionNode>& new_node
+  std::shared_ptr<plansys2::bt_builder::ActionGraph>& graph,
+  std::shared_ptr<plansys2::bt_builder::ActionNode>& new_node
 )
 {
   auto parent = get_node_satisfy(requirement, graph, new_node);
@@ -854,11 +857,11 @@ SimpleBTBuilder::get_plan_actions(const plansys2_msgs::msg::Plan & plan)
     action_stamped.duration = item.duration;
     auto actions = domain_client_->getActions();
     if (std::find(actions.begin(), actions.end(), get_action_name(item.action)) != actions.end()) {
-      action_stamped.action.action =
+      action_stamped.action =
         domain_client_->getAction(
         get_action_name(item.action), get_action_params(item.action));
     } else {
-      action_stamped.action.action =
+      action_stamped.action =
         domain_client_->getDurativeAction(
         get_action_name(item.action), get_action_params(item.action));
     }
@@ -871,9 +874,9 @@ SimpleBTBuilder::get_plan_actions(const plansys2_msgs::msg::Plan & plan)
 
 void
 SimpleBTBuilder::print_node(
-  const plansys2::ActionNode::Ptr & node,
+  const plansys2::bt_builder::ActionNode::Ptr & node,
   int level,
-  std::set<plansys2::ActionNode::Ptr> & used_nodes) const
+  std::set<plansys2::bt_builder::ActionNode::Ptr> & used_nodes) const
 {
   std::cerr << std::string(level, '\t') << "[" << node->action.time << "] ";
   std::cerr << node->action.action.get_action_name() << " ";
@@ -889,16 +892,16 @@ SimpleBTBuilder::print_node(
 }
 
 void
-SimpleBTBuilder::print_graph(const plansys2::ActionGraph::Ptr & graph) const
+SimpleBTBuilder::print_graph(const plansys2::bt_builder::ActionGraph::Ptr & graph) const
 {
-  std::set<plansys2::ActionNode::Ptr> used_nodes;
+  std::set<plansys2::bt_builder::ActionNode::Ptr> used_nodes;
   for (const auto & root : graph->roots) {
     print_node(root, 0, used_nodes);
   }
 }
 
 void
-SimpleBTBuilder::print_node_csv(const plansys2::ActionNode::Ptr & node, uint32_t root_num) const
+SimpleBTBuilder::print_node_csv(const plansys2::bt_builder::ActionNode::Ptr & node, uint32_t root_num) const
 {
   std::string out_str = std::to_string(root_num) + ", " +
     std::to_string(node->node_num) + ", " +
@@ -914,7 +917,7 @@ SimpleBTBuilder::print_node_csv(const plansys2::ActionNode::Ptr & node, uint32_t
 }
 
 void
-SimpleBTBuilder::print_graph_csv(const plansys2::ActionGraph::Ptr & graph) const
+SimpleBTBuilder::print_graph_csv(const plansys2::bt_builder::ActionGraph::Ptr & graph) const
 {
   uint32_t root_num = 0;
   for (const auto & root : graph->roots) {
@@ -925,7 +928,7 @@ SimpleBTBuilder::print_graph_csv(const plansys2::ActionGraph::Ptr & graph) const
 
 void
 SimpleBTBuilder::get_node_tabular(
-  const plansys2::ActionNode::Ptr & node,
+  const plansys2::bt_builder::ActionNode::Ptr & node,
   uint32_t root_num,
   std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>> & graph) const
 {
@@ -939,7 +942,7 @@ SimpleBTBuilder::get_node_tabular(
 }
 
 std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>>
-SimpleBTBuilder::get_graph_tabular(const plansys2::ActionGraph::Ptr & graph) const
+SimpleBTBuilder::get_graph_tabular(const plansys2::bt_builder::ActionGraph::Ptr & graph) const
 {
   std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>> graph_tabular;
   uint32_t root_num = 0;
@@ -950,4 +953,5 @@ SimpleBTBuilder::get_graph_tabular(const plansys2::ActionGraph::Ptr & graph) con
   return graph_tabular;
 }
 
+}  // namespace bt_builder
 }  // namespace plansys2

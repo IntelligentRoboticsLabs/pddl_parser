@@ -28,6 +28,8 @@
 
 namespace plansys2
 {
+namespace bt_builder
+{
 
 enum struct ActionType
 {
@@ -60,8 +62,8 @@ struct Node
   int node_num;
   ActionStamped action;
 
-  std::set<std::tuple<Node::Ptr, double, double>> input_arcs;
-  std::set<std::tuple<Node::Ptr, double, double>> output_arcs;
+  std::set<std::tuple<plansys2::bt_builder::Node::Ptr, double, double>> input_arcs;
+  std::set<std::tuple<plansys2::bt_builder::Node::Ptr, double, double>> output_arcs;
 
   explicit Node(int id)
   : node_num(id) {}
@@ -69,16 +71,16 @@ struct Node
 
 struct Graph
 {
-  using Ptr = std::shared_ptr<Graph>;
-  static Ptr make_shared() {return std::make_shared<Graph>();}
+  using Ptr = std::shared_ptr<plansys2::bt_builder::Graph>;
+  static Ptr make_shared() {return std::make_shared<plansys2::bt_builder::Graph>();}
 
-  std::list<Node::Ptr> nodes;
+  std::list<plansys2::bt_builder::Node::Ptr> nodes;
 };
 
 class BTBuilder
 {
 public:
-  using Ptr = std::shared_ptr<plansys2::BTBuilder>;
+  using Ptr = std::shared_ptr<plansys2::bt_builder::BTBuilder>;
 
   virtual void initialize(
     const std::string & bt_action_1 = "",
@@ -86,8 +88,8 @@ public:
     int precision = 3) = 0;
 
   virtual std::string get_tree(const plansys2_msgs::msg::Plan & current_plan) = 0;
-  virtual Graph::Ptr get_graph() = 0;
-  virtual bool propagate(Graph::Ptr graph) = 0;
+  virtual plansys2::bt_builder::Graph::Ptr get_graph() = 0;
+  virtual bool propagate(plansys2::bt_builder::Graph::Ptr graph) = 0;
   virtual std::string get_dotgraph(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
     bool enable_legend = false,
@@ -130,6 +132,7 @@ public:
   }
 };
 
+}  // namespace bt_builder
 }  // namespace plansys2
 
 #endif  // PLANSYS2_EXECUTOR__BTBUILDER_HPP_

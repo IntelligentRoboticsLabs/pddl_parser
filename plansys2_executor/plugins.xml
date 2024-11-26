@@ -1,9 +1,9 @@
 <class_libraries>
   <library path="bt_builder_plugins">
-    <class type="plansys2::SimpleBTBuilder" base_class_type="plansys2::BTBuilder">
+    <class type="plansys2::bt_builder::SimpleBTBuilder" base_class_type="plansys2::bt_builder::BTBuilder">
       <description></description>
     </class>
-    <class type="plansys2::STNBTBuilder" base_class_type="plansys2::BTBuilder">
+    <class type="plansys2::bt_builder::STNBTBuilder" base_class_type="plansys2::bt_builder::BTBuilder">
       <description></description>
     </class>
   </library>

@@ -35,6 +35,8 @@
 
 namespace plansys2
 {
+namespace bt_builder
+{
 
 struct StateVec
 {
@@ -170,11 +172,12 @@ protected:
   int action_time_precision_;
 };
 
+}  // namespace bt_builder
 }  // namespace plansys2
 
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(plansys2::STNBTBuilder, plansys2::BTBuilder)
+PLUGINLIB_EXPORT_CLASS(plansys2::bt_builder::STNBTBuilder, plansys2::bt_builder::BTBuilder)
 
 #endif  // PLANSYS2_EXECUTOR__BT_BUILDER_PLUGINS__STN_BT_BUILDER_HPP_

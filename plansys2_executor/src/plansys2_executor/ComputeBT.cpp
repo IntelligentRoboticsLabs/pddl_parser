@@ -46,7 +46,7 @@ namespace plansys2
 
 ComputeBT::ComputeBT()
 : rclcpp_lifecycle::LifecycleNode("compute_bt"),
-  bt_builder_loader_("plansys2_executor", "plansys2::BTBuilder")
+  bt_builder_loader_("plansys2_executor", "plansys2::bt_builder::BTBuilder")
 {
   using namespace std::placeholders;
 
@@ -255,7 +255,7 @@ ComputeBT::computeBTCallback(
   auto action_timeout_actions = this->get_parameter("action_timeouts.actions").as_string_array();
 
   for (const auto & plan_item : plan.value().items) {
-    auto index = BTBuilder::to_action_id(plan_item, 3);
+    auto index = plansys2::bt_builder::BTBuilder::to_action_id(plan_item, 3);
 
 
     (*action_map)[index] = ActionExecutionInfo();
@@ -265,10 +265,10 @@ ComputeBT::computeBTCallback(
     auto actions = domain_client_->getActions();
     std::string action_name_ = get_action_name(plan_item.action);
     if (std::find(actions.begin(), actions.end(), action_name_) != actions.end()) {
-      (*action_map)[index].action_info.action = domain_client_->getAction(
+      (*action_map)[index].action_info = domain_client_->getAction(
         action_name_, get_action_params(plan_item.action));
     } else {
-      (*action_map)[index].action_info.action = domain_client_->getDurativeAction(
+      (*action_map)[index].action_info = domain_client_->getDurativeAction(
         action_name_, get_action_params(plan_item.action));
     }
 
@@ -293,9 +293,9 @@ ComputeBT::computeBTCallback(
   }
   RCLCPP_INFO(get_logger(), "bt_builder_plugin: %s", bt_builder_plugin.c_str());
 
-  std::shared_ptr<plansys2::BTBuilder> bt_builder;
+  std::shared_ptr<plansys2::bt_builder::BTBuilder> bt_builder;
   try {
-    bt_builder = bt_builder_loader_.createSharedInstance("plansys2::" + bt_builder_plugin);
+    bt_builder = bt_builder_loader_.createSharedInstance("plansys2::bt_builder::" + bt_builder_plugin);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_ERROR(get_logger(), "pluginlib error: %s", ex.what());
   }

@@ -51,7 +51,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-class SimpleBTBuilderTest : public plansys2::SimpleBTBuilder
+class SimpleBTBuilderTest : public plansys2::bt_builder::SimpleBTBuilder
 {
 public:
   SimpleBTBuilderTest()
@@ -59,69 +59,69 @@ public:
 
   std::string get_tree(const plansys2_msgs::msg::Plan & current_plan)
   {
-    return SimpleBTBuilder::get_tree(current_plan);
+    return plansys2::bt_builder::SimpleBTBuilder::get_tree(current_plan);
   }
 
-  std::vector<plansys2::ActionStamped> get_plan_actions(const plansys2_msgs::msg::Plan & plan)
+  std::vector<plansys2::bt_builder::ActionStamped> get_plan_actions(const plansys2_msgs::msg::Plan & plan)
   {
-    return SimpleBTBuilder::get_plan_actions(plan);
+    return plansys2::bt_builder::SimpleBTBuilder::get_plan_actions(plan);
   }
 
   bool is_action_executable(
-    const plansys2::ActionStamped & action,
+    const plansys2::bt_builder::ActionStamped & action,
     const plansys2::State & state)
   {
-    return SimpleBTBuilder::is_action_executable(action, state);
+    return plansys2::bt_builder::SimpleBTBuilder::is_action_executable(action, state);
   }
 
-  plansys2::ActionGraph::Ptr get_graph(const plansys2_msgs::msg::Plan & current_plan)
+  plansys2::bt_builder::ActionGraph::Ptr get_graph(const plansys2_msgs::msg::Plan & current_plan)
   {
-    return SimpleBTBuilder::get_graph(current_plan);
+    return plansys2::bt_builder::SimpleBTBuilder::get_graph(current_plan);
   }
 
-  std::list<plansys2::ActionNode::Ptr> get_roots(
-    std::vector<plansys2::ActionStamped> & action_sequence,
+  std::list<plansys2::bt_builder::ActionNode::Ptr> get_roots(
+    std::vector<plansys2::bt_builder::ActionStamped> & action_sequence,
     const plansys2::State & state, int & node_counter)
   {
-    return SimpleBTBuilder::get_roots(
+    return plansys2::bt_builder::SimpleBTBuilder::get_roots(
       action_sequence, state, node_counter);
   }
 
-  plansys2::ActionNode::Ptr get_node_satisfy(
-    const plansys2_msgs::msg::Tree & requirement, const plansys2::ActionGraph::Ptr & graph,
-    const plansys2::ActionNode::Ptr & current)
+  plansys2::bt_builder::ActionNode::Ptr get_node_satisfy(
+    const plansys2_msgs::msg::Tree & requirement, const plansys2::bt_builder::ActionGraph::Ptr & graph,
+    const plansys2::bt_builder::ActionNode::Ptr & current)
   {
-    return SimpleBTBuilder::get_node_satisfy(requirement, graph, current);
+    return plansys2::bt_builder::SimpleBTBuilder::get_node_satisfy(requirement, graph, current);
   }
 
-  plansys2::ActionNode::Ptr get_node_satisfy(
-    const plansys2_msgs::msg::Tree & requirement, const plansys2::ActionNode::Ptr & node,
-    const plansys2::ActionNode::Ptr & current)
+  plansys2::bt_builder::ActionNode::Ptr get_node_satisfy(
+    const plansys2_msgs::msg::Tree & requirement, const plansys2::bt_builder::ActionNode::Ptr & node,
+    const plansys2::bt_builder::ActionNode::Ptr & current)
   {
-    return SimpleBTBuilder::get_node_satisfy(requirement, node, current);
+    return plansys2::bt_builder::SimpleBTBuilder::get_node_satisfy(requirement, node, current);
   }
 
-  void print_graph(const plansys2::ActionGraph::Ptr & graph) const
+  void print_graph(const plansys2::bt_builder::ActionGraph::Ptr & graph) const
   {
-    SimpleBTBuilder::print_graph(graph);
+    plansys2::bt_builder::SimpleBTBuilder::print_graph(graph);
   }
 
-  void print_graph_csv(const plansys2::ActionGraph::Ptr & graph) const
+  void print_graph_csv(const plansys2::bt_builder::ActionGraph::Ptr & graph) const
   {
-    SimpleBTBuilder::print_graph_csv(graph);
+    plansys2::bt_builder::SimpleBTBuilder::print_graph_csv(graph);
   }
 
   std::vector<std::tuple<uint32_t, uint32_t, uint32_t, std::string>> get_graph_tabular(
-    const plansys2::ActionGraph::Ptr & graph) const
+    const plansys2::bt_builder::ActionGraph::Ptr & graph) const
   {
-    return SimpleBTBuilder::get_graph_tabular(graph);
+    return plansys2::bt_builder::SimpleBTBuilder::get_graph_tabular(graph);
   }
 
   void remove_existing_requirements(
     std::vector<plansys2_msgs::msg::Tree> & requirements,
     const plansys2::State & state)
   {
-    SimpleBTBuilder::remove_existing_requirements(requirements, state);
+    plansys2::bt_builder::SimpleBTBuilder::remove_existing_requirements(requirements, state);
   }
 };
 
@@ -500,8 +500,8 @@ TEST(simple_btbuilder_tests, test_plan_2)
       action_node->action.action.get_at_end_effects(), state);
   }
 
-  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot1 wheels_zone)")));
-  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot2 steering_wheels_zone)")));
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot1 steering_wheels_zone)")));
+  ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot2 wheels_zone)")));
   ASSERT_TRUE(state.hasPredicate(parser::pddl::fromStringPredicate("(robot_at robot3 body_car_zone)")));
 
   tree.nodes.clear();
