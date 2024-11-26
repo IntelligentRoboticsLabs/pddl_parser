@@ -106,7 +106,7 @@ SimpleBTBuilder::get_node_satisfy(
   bool satisfied_after = plansys2::check(requirement, state);
 
   if (satisfied_after && !satisfied_before) {
-    ret = node;
+    return node;
   }
 
   // Traverse the rest of the graph.
@@ -114,7 +114,7 @@ SimpleBTBuilder::get_node_satisfy(
     auto node_ret = get_node_satisfy(requirement, arc, current);
 
     if (node_ret != nullptr) {
-      ret = node_ret;
+      return node_ret;
     }
   }
 
@@ -212,7 +212,7 @@ SimpleBTBuilder::get_node_satisfy(
   for (const auto & root : graph->roots) {
     auto node_satisfy = get_node_satisfy(requirement, root, current);
     if (node_satisfy != nullptr) {
-      ret = node_satisfy;
+      return node_satisfy;
     }
   }
 
