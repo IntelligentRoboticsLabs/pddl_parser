@@ -23,8 +23,12 @@ include_directories(include)
 
 add_library(${PROJECT_NAME} SHARED
   src/plansys2_core/Utils.cpp
+  src/plansys2_core/Action.cpp
+  src/plansys2_core/Graph.cpp
+  src/plansys2_core/State.cpp
 )
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+target_link_libraries(${PROJECT_NAME})
 
 install(DIRECTORY include/
   DESTINATION include/

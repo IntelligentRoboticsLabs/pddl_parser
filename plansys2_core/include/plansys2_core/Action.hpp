@@ -152,89 +152,17 @@ public:
     return std::visit([](auto&& arg) { return std::hash<std::decay_t<decltype(arg)>>{}(arg); }, *action_);
   }
 
-  std::string get_action_string() const
-  {
-    std::string action_string;
-    if (std::holds_alternative<plansys2::Action>(*action_)) {
-      action_string = parser::pddl::nameActionsToString(
-        std::make_shared<plansys2::Action>(std::get<plansys2::Action>(*action_)));
-    } else if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      action_string = parser::pddl::nameActionsToString(
-        std::make_shared<plansys2::DurativeAction>(std::get<plansys2::DurativeAction>(*action_)));
-    }
-    return action_string;
-  }
+  std::string get_action_string() const;
 
-  std::string get_action_name() const
-  {
-    std::string action_name;
-    if (std::holds_alternative<plansys2::Action>(*action_)) {
-      action_name = std::get<plansys2::Action>(*action_).name;
-    } else if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      action_name = std::get<plansys2::DurativeAction>(*action_).name;
-    }
-    return action_name;
-  }
+  std::string get_action_name() const;
 
-  std::vector<plansys2_msgs::msg::Param> get_action_params() const
-  {
-    std::vector<plansys2_msgs::msg::Param> params;
-    if (std::holds_alternative<plansys2::Action>(*action_)) {
-      params = std::get<plansys2::Action>(*action_).parameters;
-    } else if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      params = std::get<plansys2::DurativeAction>(*action_).parameters;
-    }
-    return params;
-  }
+  std::vector<plansys2_msgs::msg::Param> get_action_params() const;
 
-  plansys2_msgs::msg::Tree get_overall_requirements() const
-  {
-    plansys2_msgs::msg::Tree reqs;
-    if (std::holds_alternative<plansys2::Action>(*action_)) {
-      reqs = std::get<plansys2::Action>(*action_).preconditions;
-    } else if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      reqs = std::get<plansys2::DurativeAction>(*action_).over_all_requirements;
-    }
-    return reqs;
-  }
-
-  plansys2_msgs::msg::Tree get_at_start_requirements() const
-  {
-    plansys2_msgs::msg::Tree reqs;
-    if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      reqs = std::get<plansys2::DurativeAction>(*action_).at_start_requirements;
-    }
-    return reqs;
-  }
-
-  plansys2_msgs::msg::Tree get_at_end_requirements() const
-  {
-    plansys2_msgs::msg::Tree reqs;
-    if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      reqs = std::get<plansys2::DurativeAction>(*action_).at_end_requirements;
-    }
-    return reqs;
-  }
-
-  plansys2_msgs::msg::Tree get_at_start_effects() const
-  {
-    plansys2_msgs::msg::Tree effects;
-    if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      effects = std::get<plansys2::DurativeAction>(*action_).at_start_effects;
-    }
-    return effects;
-  }
-
-  plansys2_msgs::msg::Tree get_at_end_effects() const
-  {
-    plansys2_msgs::msg::Tree effects;
-    if (std::holds_alternative<plansys2::Action>(*action_)) {
-      effects = std::get<plansys2::Action>(*action_).effects;
-    } else if (std::holds_alternative<plansys2::DurativeAction>(*action_)) {
-      effects = std::get<plansys2::DurativeAction>(*action_).at_end_effects;
-    }
-    return effects;
-  }
+  plansys2_msgs::msg::Tree get_overall_requirements() const;
+  plansys2_msgs::msg::Tree get_at_start_requirements() const;
+  plansys2_msgs::msg::Tree get_at_end_requirements() const;
+  plansys2_msgs::msg::Tree get_at_start_effects() const;
+  plansys2_msgs::msg::Tree get_at_end_effects() const;
 
   bool is_action() const
   {
