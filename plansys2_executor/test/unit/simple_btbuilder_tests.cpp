@@ -1019,25 +1019,12 @@ TEST(simple_btbuilder_tests, test_plan_with_derived_existential)
   plansys2_msgs::msg::PlanItem plan_item_5;
   plansys2_msgs::msg::PlanItem plan_item_6;
   plan_item_0.action = "(start_robot bluerov)";
-  plan_item_0.time = 0;
   plan_item_1.action = "(reconfigure f_maintain_motion fd_unground fd_recover_thrusters)";
-  plan_item_1.time = 0;
-  // plan_item_1.time = 1;
   plan_item_2.action = "(reconfigure f_generate_search_path fd_unground fd_spiral_high)";
-  plan_item_2.time = 0;
-  // plan_item_2.time = 2;
   plan_item_3.action = "(search_pipeline a_search_pipeline pipeline bluerov fd_spiral_high fd_recover_thrusters)";
-  plan_item_3.time = 0;
-  // plan_item_3.time = 3;
   plan_item_4.action = "(reconfigure f_follow_pipeline fd_unground fd_follow_pipeline)";
-  plan_item_4.time = 0;
-  // plan_item_4.time = 4;
   plan_item_5.action = "(reconfigure f_generate_search_path fd_spiral_high fd_unground)";
-  plan_item_5.time = 0;
-  // plan_item_5.time = 5;
   plan_item_6.action = "(inspect_pipeline a_inspect_pipeline pipeline bluerov fd_follow_pipeline fd_recover_thrusters)";
-  // plan_item_6.time = 6;
-  plan_item_6.time = 0;
 
   plan.items.push_back(plan_item_0);
   plan.items.push_back(plan_item_1);

@@ -387,7 +387,14 @@ SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
   auto graph = ActionGraph::make_shared();
 
   auto action_sequence = get_plan_actions(current_plan);
+  std::vector<plansys2::ActionVariant> action_variant_vec;
+  for (const auto& action : action_sequence) {
+    action_variant_vec.push_back(action.action);
+  }
+
   auto state = problem_client_->getState();
+  state.addActionsAndPruneDerived(action_variant_vec);
+  plansys2::solveDerivedPredicates(state);
 
   // Get root actions that can be run in parallel
   graph->roots = get_roots(action_sequence, state, node_counter);
@@ -455,6 +462,8 @@ SimpleBTBuilder::get_graph(const plansys2_msgs::msg::Plan & current_plan)
     // The effects of the new node are not applied
     std::list<ActionNode::Ptr> used_nodes;
     state = problem_client_->getState();
+    state.addActionsAndPruneDerived(action_variant_vec);
+    plansys2::solveDerivedPredicates(state);
 
     get_state(new_node, used_nodes, state);
     new_node->state = state;
