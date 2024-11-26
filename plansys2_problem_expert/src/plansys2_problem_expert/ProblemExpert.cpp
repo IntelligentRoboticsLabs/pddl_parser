@@ -45,7 +45,6 @@ void ProblemExpert::updateInferredPredicates() {
 
 plansys2::State ProblemExpert::getState()
 {
-  updateInferredPredicates();
   return state_;
 }
 

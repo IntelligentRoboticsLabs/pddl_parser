@@ -1336,6 +1336,7 @@ TEST(utils, apply_with_derived)
   ASSERT_TRUE(problem_expert.addProblem(problem_str));
 
   auto state = problem_expert.getState();
+  solveDerivedPredicates(state);
   ASSERT_TRUE(state.getInstances().size() > 0);
   ASSERT_TRUE(state.getFunctions().size() > 0);
   ASSERT_TRUE(state.getPredicates().size() > 0);
@@ -1373,6 +1374,7 @@ TEST(utils, apply_with_derived_2)
   ASSERT_TRUE(problem_expert.addProblem(problem_str));
 
   auto state = problem_expert.getState();
+  solveDerivedPredicates(state);
   ASSERT_TRUE(state.getInstances().size() > 0);
   ASSERT_TRUE(state.getPredicates().size() > 0);
   ASSERT_TRUE(state.getInferredPredicates().size() > 0);
