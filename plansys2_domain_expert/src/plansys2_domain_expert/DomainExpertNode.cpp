@@ -155,7 +155,7 @@ DomainExpertNode::on_configure(const rclcpp_lifecycle::State & state)
       auto request = std::make_shared<plansys2_msgs::srv::ValidateDomain::Request>();
       request->domain = domain_expert_->getDomain();
       auto future_result = validate_domain_client_->async_send_request(std::move(request));
-      if (future_result.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+      if (future_result.wait_for(std::chrono::seconds(3)) != std::future_status::ready) {
         RCLCPP_ERROR(
           get_logger(), "Timed out waiting for service: %s",
           validate_domain_client_->get_service_name());
