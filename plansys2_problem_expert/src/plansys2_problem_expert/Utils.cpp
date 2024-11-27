@@ -705,7 +705,7 @@ bool apply(
       std::cerr << "Apply: Error parsing expresion [" << parser::pddl::toString(tree, node_id)
                 << "]" << std::endl;
   }
-  if (derive) {
+  if (derive && use_state) {
     solveDerivedPredicates(state, nodes_modified);
   }
   return success;

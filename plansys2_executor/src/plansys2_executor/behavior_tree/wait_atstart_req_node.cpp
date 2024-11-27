@@ -45,7 +45,11 @@ BT::NodeStatus WaitAtStartReq::tick()
   auto reqs_as = (*action_map_)[action].action_info.get_at_start_requirements();
   auto reqs_oa = (*action_map_)[action].action_info.get_overall_requirements();
 
-  bool check_as = check(reqs_as, problem_client_);
+  auto state = problem_client_->getState();
+  state.addActionsAndPruneDerived({(*action_map_)[action].action_info});
+  solveDerivedPredicates(state);
+
+  bool check_as = check(reqs_as, state);
   if (!check_as) {
     (*action_map_)[action].execution_error_info = "Error checking at start reqs";
 
@@ -56,7 +60,7 @@ BT::NodeStatus WaitAtStartReq::tick()
     return BT::NodeStatus::RUNNING;
   }
 
-  bool check_oa = check(reqs_oa, problem_client_);
+  bool check_oa = check(reqs_oa, state);
   if (!check_oa) {
     (*action_map_)[action].execution_error_info = "Error checking over all reqs";
 

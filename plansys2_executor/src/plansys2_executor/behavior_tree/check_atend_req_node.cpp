@@ -45,8 +45,11 @@ BT::NodeStatus CheckAtEndReq::tick()
   }
 
   auto reqs = (*action_map_)[action].action_info.get_at_end_requirements();
+  auto state = problem_client_->getState();
+  state.addActionsAndPruneDerived({(*action_map_)[action].action_info});
+  solveDerivedPredicates(state);
 
-  if (!check(reqs, problem_client_)) {
+  if (!check(reqs, state)) {
     (*action_map_)[action].execution_error_info = "Error checking at end requirements";
 
     RCLCPP_ERROR_STREAM(

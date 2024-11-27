@@ -32,3 +32,9 @@ target_compile_definitions(bt_node_test_charging
   PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_link_libraries(bt_node_test_charging ${PROJECT_NAME})
 ament_target_dependencies(bt_node_test_charging ${dependencies})
+
+ament_add_gtest(bt_node_test_suave bt_node_test_suave.cpp)
+target_compile_definitions(bt_node_test_suave
+  PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_link_libraries(bt_node_test_suave ${PROJECT_NAME})
+ament_target_dependencies(bt_node_test_suave ${dependencies})
