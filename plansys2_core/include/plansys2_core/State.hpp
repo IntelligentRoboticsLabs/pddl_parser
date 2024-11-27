@@ -103,11 +103,11 @@ public:
 
   bool addPredicate(const plansys2::Predicate & predicate)
   {
-    return predicates_.insert(predicate).second && inferred_predicates_.insert(predicate).second;
+    return predicates_.insert(predicate).second && addInferredPredicate(predicate);
   }
   bool addPredicate(plansys2::Predicate && predicate)
   {
-    return predicates_.insert(predicate).second && inferred_predicates_.insert(predicate).second;
+    return predicates_.insert(predicate).second && addInferredPredicate(predicate);
   }
 
   bool addInferredPredicate(const plansys2::Predicate & predicate);
@@ -164,6 +164,11 @@ public:
     return instances_.find(std::move(instance)) != instances_.end();
   }
 
+  bool hasPredicate(const std::string & predicate_str)
+  {
+    auto predicate = parser::pddl::fromStringPredicate(predicate_str);
+    return predicates_.find(predicate) != predicates_.end();
+  }
   bool hasPredicate(const plansys2::Predicate & predicate)
   {
     return predicates_.find(predicate) != predicates_.end();
@@ -173,6 +178,11 @@ public:
     return predicates_.find(std::move(predicate)) != predicates_.end();
   }
 
+  bool hasInferredPredicate(const std::string & predicate_str)
+  {
+    auto predicate = parser::pddl::fromStringPredicate(predicate_str);
+    return inferred_predicates_.find(predicate) != inferred_predicates_.end();
+  }
   bool hasInferredPredicate(const plansys2::Predicate & predicate)
   {
     return inferred_predicates_.find(predicate) != inferred_predicates_.end();
