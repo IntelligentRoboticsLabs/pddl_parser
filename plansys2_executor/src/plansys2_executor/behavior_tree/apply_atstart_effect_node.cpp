@@ -46,7 +46,7 @@ BT::NodeStatus ApplyAtStartEffect::tick()
 
   if (!(*action_map_)[action].at_start_effects_applied) {
     (*action_map_)[action].at_start_effects_applied = true;
-    apply(effect, problem_client_, 0);
+    plansys2::apply(effect, problem_client_);
   }
 
   return BT::NodeStatus::SUCCESS;
