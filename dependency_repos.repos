@@ -2,7 +2,7 @@ repositories:
   cascade_lifecycle:
     type: git
     url: https://github.com/fmrico/cascade_lifecycle.git
-    version: rolling
+    version: jazzy-devel
   popf:
     type: git
     url: https://github.com/fmrico/popf.git
