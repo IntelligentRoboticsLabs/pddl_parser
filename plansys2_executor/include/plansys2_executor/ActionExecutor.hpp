@@ -24,6 +24,7 @@
 #include "plansys2_msgs/msg/action_execution_info.hpp"
 #include "plansys2_msgs/msg/durative_action.hpp"
 #include "plansys2_msgs/msg/param.hpp"
+#include "plansys2_msgs/msg/plan_item.hpp"
 #include "plansys2_pddl_parser/Utils.hpp"
 #include "behaviortree_cpp/behavior_tree.h"
 
@@ -225,6 +226,7 @@ struct ActionVariant
 
 struct ActionExecutionInfo
 {
+  plansys2_msgs::msg::PlanItem plan_item;
   std::shared_ptr<ActionExecutor> action_executor = {nullptr};
   bool at_start_effects_applied = {false};
   bool at_end_effects_applied = {false};
