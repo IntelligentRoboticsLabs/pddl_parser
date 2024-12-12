@@ -101,6 +101,13 @@ ExecutorNode::ExecutorNode()
       &ExecutorNode::get_plan_service_callback,
       this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
+
+  get_remaining_plan_service_ = create_service<plansys2_msgs::srv::GetPlan>(
+    "executor/get_remaining_plan",
+    std::bind(
+      &ExecutorNode::get_remaining_plan_service_callback,
+      this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 }
 
 
@@ -170,6 +177,8 @@ ExecutorNode::on_configure(const rclcpp_lifecycle::State & state)
     "action_execution_info", 100);
   executing_plan_pub_ = create_publisher<plansys2_msgs::msg::Plan>(
     "executing_plan", rclcpp::QoS(100).transient_local());
+  remaining_plan_pub_ = create_publisher<plansys2_msgs::msg::Plan>(
+    "remaining_plan", rclcpp::QoS(100));
 
   domain_client_ = std::make_shared<plansys2::DomainExpertClient>();
   problem_client_ = std::make_shared<plansys2::ProblemExpertClient>();
@@ -186,6 +195,7 @@ ExecutorNode::on_activate(const rclcpp_lifecycle::State & state)
   dotgraph_pub_->on_activate();
   execution_info_pub_->on_activate();
   executing_plan_pub_->on_activate();
+  remaining_plan_pub_->on_activate();
   RCLCPP_INFO(get_logger(), "[%s] Activated", get_name());
 
   return CallbackReturnT::SUCCESS;
@@ -197,6 +207,7 @@ ExecutorNode::on_deactivate(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "[%s] Deactivating...", get_name());
   dotgraph_pub_->on_deactivate();
   executing_plan_pub_->on_deactivate();
+  remaining_plan_pub_->on_deactivate();
   RCLCPP_INFO(get_logger(), "[%s] Deactivated", get_name());
 
   return CallbackReturnT::SUCCESS;
@@ -208,6 +219,7 @@ ExecutorNode::on_cleanup(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "[%s] Cleaning up...", get_name());
   dotgraph_pub_.reset();
   executing_plan_pub_.reset();
+  remaining_plan_pub_.reset();
   RCLCPP_INFO(get_logger(), "[%s] Cleaned up", get_name());
 
   return CallbackReturnT::SUCCESS;
@@ -219,6 +231,7 @@ ExecutorNode::on_shutdown(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "[%s] Shutting down...", get_name());
   dotgraph_pub_.reset();
   executing_plan_pub_.reset();
+  remaining_plan_pub_.reset();
   RCLCPP_INFO(get_logger(), "[%s] Shutted down", get_name());
 
   return CallbackReturnT::SUCCESS;
@@ -250,7 +263,7 @@ ExecutorNode::get_ordered_sub_goals_service_callback(
 std::optional<std::vector<plansys2_msgs::msg::Tree>>
 ExecutorNode::getOrderedSubGoals()
 {
-  if (!current_plan_.has_value()) {
+  if (!complete_plan_.has_value()) {
     return {};
   }
 
@@ -273,7 +286,7 @@ ExecutorNode::getOrderedSubGoals()
     }
   }
 
-  for (const auto & plan_item : current_plan_.value().items) {
+  for (const auto & plan_item : complete_plan_.value().items) {
     auto actions = domain_client_->getActions();
     std::string action_name = get_action_name(plan_item.action);
     if (std::find(actions.begin(), actions.end(), action_name) != actions.end()) {
@@ -311,9 +324,24 @@ ExecutorNode::get_plan_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
 {
-  if (current_plan_) {
+  if (complete_plan_) {
     response->success = true;
-    response->plan = current_plan_.value();
+    response->plan = complete_plan_.value();
+  } else {
+    response->success = false;
+    response->error_info = "Plan not available";
+  }
+}
+
+void
+ExecutorNode::get_remaining_plan_service_callback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
+{
+  if (remaining_plan_) {
+    response->success = true;
+    response->plan = remaining_plan_.value();
   } else {
     response->success = false;
     response->error_info = "Plan not available";
@@ -327,7 +355,7 @@ ExecutorNode::handle_goal(
 {
   RCLCPP_DEBUG(this->get_logger(), "Received goal request with order");
 
-  current_plan_ = {};
+  complete_plan_ = {};
   ordered_sub_goals_ = {};
 
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -352,19 +380,22 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
 
   cancel_plan_requested_ = false;
 
-  current_plan_ = goal_handle->get_goal()->plan;
+  complete_plan_ = goal_handle->get_goal()->plan;
+  remaining_plan_ = complete_plan_;
 
-  if (!current_plan_.has_value()) {
+  if (!complete_plan_.has_value()) {
     RCLCPP_ERROR(get_logger(), "No plan found");
     result->success = false;
     goal_handle->succeed(result);
 
     // Publish void plan
     executing_plan_pub_->publish(plansys2_msgs::msg::Plan());
+    remaining_plan_pub_->publish(plansys2_msgs::msg::Plan());
     return;
   }
 
-  executing_plan_pub_->publish(current_plan_.value());
+  executing_plan_pub_->publish(complete_plan_.value());
+  remaining_plan_pub_->publish(complete_plan_.value());
 
   auto action_map = std::make_shared<std::map<std::string, ActionExecutionInfo>>();
   auto action_timeout_actions = this->get_parameter("action_timeouts.actions").as_string_array();
@@ -375,11 +406,12 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
   (*action_map)[":0"].at_start_effects_applied = true;
   (*action_map)[":0"].at_end_effects_applied = true;
 
-  for (const auto & plan_item : current_plan_.value().items) {
+  for (const auto & plan_item : complete_plan_.value().items) {
     auto index = BTBuilder::to_action_id(plan_item, 3);
 
 
     (*action_map)[index] = ActionExecutionInfo();
+    (*action_map)[index].plan_item = plan_item;
     (*action_map)[index].action_executor =
       ActionExecutor::make_shared(plan_item.action, shared_from_this());
 
@@ -432,7 +464,7 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
     // bt_builder->initialize(start_action_bt_xml_, end_action_bt_xml_, precision);
   }
 
-  auto bt_xml_tree = bt_builder->get_tree(current_plan_.value());
+  auto bt_xml_tree = bt_builder->get_tree(complete_plan_.value());
   if (bt_xml_tree.empty()) {
     RCLCPP_ERROR(get_logger(), "Error computing behavior tree!");
 
@@ -441,6 +473,7 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
 
     // Publish void plan
     executing_plan_pub_->publish(plansys2_msgs::msg::Plan());
+    remaining_plan_pub_->publish(plansys2_msgs::msg::Plan());
     return;
   }
 
@@ -486,6 +519,12 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
       for (const auto & msg : msgs) {
         execution_info_pub_->publish(msg);
       }
+      remaining_plan_pub_->publish(remaining_plan_.value());
+    });
+
+  auto update_plan_timer = create_wall_timer(
+    200ms, [this, &action_map]() {
+      update_plan(action_map, remaining_plan_);
     });
 
   rclcpp::Rate rate(10);
@@ -508,6 +547,9 @@ ExecutorNode::execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
 
     rate.sleep();
   }
+
+  // Publish void plan
+  remaining_plan_pub_->publish(plansys2_msgs::msg::Plan());
 
   if (cancel_plan_requested_) {
     tree.haltTree();
@@ -650,6 +692,33 @@ ExecutorNode::print_execution_info(
       fprintf(stderr, "\tAt end effects applied\n");
     } else {
       fprintf(stderr, "\tAt end effects NOT applied\n");
+    }
+  }
+}
+
+void
+ExecutorNode::update_plan(
+  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
+  std::optional<plansys2_msgs::msg::Plan> & remaining_plan)
+{
+  for (const auto & action : *action_map) {
+    switch (action.second.action_executor->get_internal_status()) {
+      case ActionExecutor::IDLE:
+      case ActionExecutor::DEALING:
+      case ActionExecutor::RUNNING:
+        break;
+      case ActionExecutor::SUCCESS:
+      case ActionExecutor::FAILURE:
+      case ActionExecutor::CANCELLED:
+        {
+          auto pos = std::find(
+            remaining_plan_.value().items.begin(), remaining_plan_.value().items.end(),
+            action.second.plan_item);
+          if (pos != remaining_plan_.value().items.end()) {
+            remaining_plan_.value().items.erase(pos);
+          }
+        }
+        break;
     }
   }
 }

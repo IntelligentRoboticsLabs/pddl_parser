@@ -38,6 +38,8 @@ ExecutorClient::ExecutorClient()
   get_ordered_sub_goals_client_ = node_->create_client<plansys2_msgs::srv::GetOrderedSubGoals>(
     "executor/get_ordered_sub_goals");
   get_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>("executor/get_plan");
+  get_remaining_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>(
+    "executor/get_remaining_plan");
 }
 
 ExecutorClient::ExecutorClient(const std::string & node_name)
@@ -49,6 +51,8 @@ ExecutorClient::ExecutorClient(const std::string & node_name)
   get_ordered_sub_goals_client_ = node_->create_client<plansys2_msgs::srv::GetOrderedSubGoals>(
     "executor/get_ordered_sub_goals");
   get_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>("executor/get_plan");
+  get_remaining_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>(
+    "executor/get_remaining_plan");
 }
 
 void
@@ -265,7 +269,7 @@ std::vector<plansys2_msgs::msg::Tree> ExecutorClient::getOrderedSubGoals()
   return ret;
 }
 
-std::optional<plansys2_msgs::msg::Plan> ExecutorClient::getPlan()
+std::optional<plansys2_msgs::msg::Plan> ExecutorClient::get_plan()
 {
   while (!get_plan_client_->wait_for_service(std::chrono::seconds(5))) {
     if (!rclcpp::ok()) {
@@ -295,6 +299,41 @@ std::optional<plansys2_msgs::msg::Plan> ExecutorClient::getPlan()
     RCLCPP_ERROR_STREAM(
       node_->get_logger(),
       get_plan_client_->get_service_name() << ": " <<
+        result.error_info);
+    return {};
+  }
+}
+
+std::optional<plansys2_msgs::msg::Plan> ExecutorClient::get_remaining_plan()
+{
+  while (!get_remaining_plan_client_->wait_for_service(std::chrono::seconds(5))) {
+    if (!rclcpp::ok()) {
+      return {};
+    }
+    RCLCPP_ERROR_STREAM(
+      node_->get_logger(),
+      get_remaining_plan_client_->get_service_name() <<
+        " service  client: waiting for service to appear...");
+  }
+
+  auto request = std::make_shared<plansys2_msgs::srv::GetPlan::Request>();
+
+  auto future_result = get_remaining_plan_client_->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(1)) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    return {};
+  }
+
+  auto result = *future_result.get();
+
+  if (result.success) {
+    return result.plan;
+  } else {
+    RCLCPP_ERROR_STREAM(
+      node_->get_logger(),
+      get_remaining_plan_client_->get_service_name() << ": " <<
         result.error_info);
     return {};
   }

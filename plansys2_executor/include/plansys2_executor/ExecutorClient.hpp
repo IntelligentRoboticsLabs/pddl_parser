@@ -45,7 +45,8 @@ public:
   bool execute_and_check_plan();
   void cancel_plan_execution();
   std::vector<plansys2_msgs::msg::Tree> getOrderedSubGoals();
-  std::optional<plansys2_msgs::msg::Plan> getPlan();
+  std::optional<plansys2_msgs::msg::Plan> get_plan();
+  std::optional<plansys2_msgs::msg::Plan> get_remaining_plan();
 
   ExecutePlan::Feedback getFeedBack() {return feedback_;}
   std::optional<ExecutePlan::Result> getResult();
@@ -57,6 +58,7 @@ private:
   rclcpp::Client<plansys2_msgs::srv::GetOrderedSubGoals>::SharedPtr
     get_ordered_sub_goals_client_;
   rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr get_plan_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr get_remaining_plan_client_;
 
   ExecutePlan::Feedback feedback_;
   rclcpp_action::ClientGoalHandle<ExecutePlan>::SharedPtr goal_handle_;

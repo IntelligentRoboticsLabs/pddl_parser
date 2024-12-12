@@ -259,6 +259,7 @@ ComputeBT::computeBTCallback(
 
 
     (*action_map)[index] = ActionExecutionInfo();
+    (*action_map)[index].plan_item = plan_item;
     (*action_map)[index].action_executor =
       ActionExecutor::make_shared(plan_item.action, shared_from_this());
 
