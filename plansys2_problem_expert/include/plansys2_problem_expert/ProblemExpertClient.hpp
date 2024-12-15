@@ -22,6 +22,8 @@
 #include "plansys2_problem_expert/ProblemExpertInterface.hpp"
 #include "plansys2_core/Types.hpp"
 
+#include "std_msgs/msg/string.hpp"
+
 #include "plansys2_msgs/msg/node.hpp"
 #include "plansys2_msgs/msg/param.hpp"
 #include "plansys2_msgs/msg/tree.hpp"
@@ -76,6 +78,9 @@ public:
   bool clearKnowledge();
 
   std::string getProblem();
+  std::string getProblem(bool use_cache);
+  std::string cached_problem_;
+
   bool addProblem(const std::string & problem_str);
 
   rclcpp::Time getUpdateTime() const {return update_time_;}
@@ -125,8 +130,12 @@ private:
     update_problem_function_client_;
   rclcpp::Client<plansys2_msgs::srv::IsProblemGoalSatisfied>::SharedPtr
     is_problem_goal_satisfied_client_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr problem_sub_;
+  
   rclcpp::Node::SharedPtr node_;
   rclcpp::Time update_time_;
+
+
 };
 
 }  // namespace plansys2
