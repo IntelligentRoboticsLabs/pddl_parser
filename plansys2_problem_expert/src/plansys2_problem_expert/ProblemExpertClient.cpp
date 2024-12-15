@@ -841,7 +841,6 @@ ProblemExpertClient::getProblem(bool use_cache)
   } else {
     return getProblem();
   }
-
 }
 
 std::string
