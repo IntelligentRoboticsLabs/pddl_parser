@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <tuple>
 
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
@@ -28,6 +29,9 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
+
+#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/blackboard.h"
 
 #include "plansys2_msgs/action/execute_plan.hpp"
 #include "plansys2_msgs/msg/action_execution_info.hpp"
@@ -45,6 +49,14 @@
 
 namespace plansys2
 {
+
+struct TreeInfo
+{
+  using Ptr = std::shared_ptr<TreeInfo>;
+  BT::Tree tree;
+  BT::Blackboard::Ptr blackboard;
+  std::shared_ptr<plansys2::BTBuilder> bt_builder;
+};
 
 class ExecutorNode : public rclcpp_lifecycle::LifecycleNode
 {
@@ -80,8 +92,10 @@ public:
 
 protected:
   bool cancel_plan_requested_;
-  std::optional<plansys2_msgs::msg::Plan> remaining_plan_;
-  std::optional<plansys2_msgs::msg::Plan> complete_plan_;
+  bool replan_requested_;
+
+  plansys2_msgs::msg::Plan remaining_plan_;
+  plansys2_msgs::msg::Plan complete_plan_;
   std::optional<std::vector<plansys2_msgs::msg::Tree>> ordered_sub_goals_;
 
   std::string action_bt_xml_;
@@ -103,7 +117,8 @@ protected:
     get_ordered_sub_goals_service_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr dotgraph_pub_;
 
-  std::optional<std::vector<plansys2_msgs::msg::Tree>> getOrderedSubGoals();
+  std::optional<std::vector<plansys2_msgs::msg::Tree>> get_ordered_subgoals(
+    const plansys2_msgs::msg::Plan & plan);
 
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_plan_service_;
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_remaining_plan_service_;
@@ -114,10 +129,8 @@ protected:
 
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
-
-  void execute(const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
-
   void handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
+  std::shared_ptr<GoalHandleExecutePlan> current_goal_handle_;
 
   std::vector<plansys2_msgs::msg::ActionExecutionInfo> get_feedback_info(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);
@@ -127,7 +140,22 @@ protected:
 
   void update_plan(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
-    std::optional<plansys2_msgs::msg::Plan> & remaining_plan);
+    plansys2_msgs::msg::Plan & remaining_plan);
+
+  bool init_plan_for_execution(const plansys2_msgs::msg::Plan & plan);
+
+  void execute_plan();
+  std::tuple<TreeInfo::Ptr, bool> get_tree_from_plan(const plansys2_msgs::msg::Plan & plan);
+  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> create_action_map_from_plan(
+    const plansys2_msgs::msg::Plan & plan);
+
+  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map_;
+
+  static const int IDLE_STATE = 0;
+  static const int EXECUTING_STATE = 1;
+  int executor_state_;
+
+  TreeInfo::Ptr current_tree_;
 };
 
 }  // namespace plansys2

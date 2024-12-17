@@ -245,8 +245,8 @@ ComputeBT::computeBTCallback(
 
   problem_client_->addProblem(problem_string);
 
-  auto domain = domain_client_->getDomain();
-  auto problem = problem_client_->getProblem();
+  auto domain = domain_client_->getDomain(true);
+  auto problem = problem_client_->getProblem(true);
   auto plan = planner_client_->getPlan(domain, problem);
 
   savePlan(plan.value(), problem_path.stem().u8string());
