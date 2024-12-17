@@ -131,11 +131,9 @@ private:
   rclcpp::Client<plansys2_msgs::srv::IsProblemGoalSatisfied>::SharedPtr
     is_problem_goal_satisfied_client_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr problem_sub_;
-  
+
   rclcpp::Node::SharedPtr node_;
   rclcpp::Time update_time_;
-
-
 };
 
 }  // namespace plansys2

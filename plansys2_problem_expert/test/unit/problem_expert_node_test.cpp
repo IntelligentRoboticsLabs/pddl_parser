@@ -202,7 +202,7 @@ TEST(problem_expert_node, addget_instances)
   ASSERT_EQ(last_knowledge_msg.predicates[1], "(robot_at r2d2 kitchen)");
   ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_at r2d2 kitchen))");
 
-  ASSERT_EQ(problem_client->getProblem(),problem_client->getProblem(true));
+  ASSERT_EQ(problem_client->getProblem(), problem_client->getProblem(true));
 
   ASSERT_TRUE(problem_client->clearKnowledge());
 

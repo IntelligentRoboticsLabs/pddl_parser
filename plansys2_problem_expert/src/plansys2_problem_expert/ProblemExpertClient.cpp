@@ -83,7 +83,7 @@ ProblemExpertClient::ProblemExpertClient()
   is_problem_goal_satisfied_client_ =
     node_->create_client<plansys2_msgs::srv::IsProblemGoalSatisfied>(
     "problem_expert/is_problem_goal_satisfied");
-  
+
   problem_sub_ = node_->create_subscription<std_msgs::msg::String>(
     "problem_expert/problem",
     rclcpp::QoS(100), [this](std_msgs::msg::String::SharedPtr msg) {

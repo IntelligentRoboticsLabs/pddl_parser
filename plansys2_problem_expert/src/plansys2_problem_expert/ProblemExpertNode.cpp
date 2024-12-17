@@ -325,7 +325,7 @@ ProblemExpertNode::add_problem_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
-      
+
       std_msgs::msg::String problem_msg;
       problem_msg.data = problem_expert_->getProblem();
       problem_pub_->publish(problem_msg);
@@ -380,7 +380,7 @@ ProblemExpertNode::add_problem_instance_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
-      
+
       std_msgs::msg::String problem_msg;
       problem_msg.data = problem_expert_->getProblem();
       problem_pub_->publish(problem_msg);
@@ -590,7 +590,6 @@ ProblemExpertNode::get_problem_service_callback(
     response->problem = problem_expert_->getProblem();
 
     std::cerr << "get_problem_service_callback [" << response->problem << "]" << std::endl;
-
   }
 }
 
@@ -652,7 +651,7 @@ ProblemExpertNode::clear_problem_knowledge_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
-      
+
       std_msgs::msg::String problem_msg;
       problem_msg.data = problem_expert_->getProblem();
       problem_pub_->publish(problem_msg);
