@@ -94,8 +94,10 @@ ExecutorClient::execute_and_check_plan()
       if (result_.result == nullptr) {
         RCLCPP_WARN(
           node_->get_logger(), "Plan failed due to a nullptr in the result");
-      } else if (result_.result->success) {
+      } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::SUCCESS) {
         RCLCPP_INFO(node_->get_logger(), "Plan Succeeded");
+      } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::PREEMPT) {
+        RCLCPP_INFO(node_->get_logger(), "Plan Preempted");
       } else {
         RCLCPP_ERROR(node_->get_logger(), "Plan Failed");
         for (auto msg : result_.result->action_execution_status) {
@@ -153,7 +155,9 @@ ExecutorClient::execute_and_check_plan()
       throw std::logic_error("ExecutorClient::executePlan: invalid status value");
   }
 
-  executing_plan_ = false;
+  if (result_.result->result != plansys2_msgs::action::ExecutePlan::Result::PREEMPT) {
+    executing_plan_ = false;
+  }
   goal_result_available_ = false;
 
   return false;  // Plan finished

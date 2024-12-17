@@ -1448,7 +1448,7 @@ TEST(executor, executor_client_execute_plan)
   ASSERT_TRUE(executor_client->getResult().has_value());
   auto result = executor_client->getResult().value();
 
-  ASSERT_TRUE(result.success);
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
   ASSERT_EQ(result.action_execution_status.size(), 2u);
   for (const auto & action_status : result.action_execution_status) {
     ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
@@ -1597,7 +1597,7 @@ TEST(executor, executor_client_execute_plan_2)
   ASSERT_TRUE(executor_client->getResult().has_value());
   auto result = executor_client->getResult().value();
 
-  ASSERT_TRUE(result.success);
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
   ASSERT_EQ(result.action_execution_status.size(), 2u);
   for (const auto & action_status : result.action_execution_status) {
     ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
@@ -1755,13 +1755,182 @@ TEST(executor, executor_client_execute_plan_3)
   ASSERT_TRUE(executor_client->getResult().has_value());
   auto result = executor_client->getResult().value();
 
-  ASSERT_TRUE(result.success);
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
   ASSERT_EQ(result.action_execution_status.size(), 5u);
   for (const auto & action_status : result.action_execution_status) {
     ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
   }
 
   ASSERT_EQ(changes_plan, 5);
+  ASSERT_EQ(current_plan.items.size(), 0);
+
+  finish = true;
+  t.join();
+}
+
+TEST(executor, executor_client_execute_plan_two_plans)
+{
+  auto test_node_1 = rclcpp::Node::make_shared("test_node_1");
+  auto test_node_2 = rclcpp::Node::make_shared("test_node_2");
+  auto test_node_3 = rclcpp::Node::make_shared("test_node_3");
+  auto test_lf_node = rclcpp_lifecycle::LifecycleNode::make_shared("test_lf_node");
+  auto domain_node = std::make_shared<plansys2::DomainExpertNode>();
+  auto problem_node = std::make_shared<plansys2::ProblemExpertNode>();
+  auto planner_node = std::make_shared<plansys2::PlannerNode>();
+  auto executor_node = std::make_shared<ExecutorNodeTest>();
+
+  auto move_action_node = MoveAction::make_shared("move_action_performer", 100ms);
+  move_action_node->set_parameter({"action_name", "move"});
+  move_action_node->set_runtime(2.0);
+
+  auto domain_client = std::make_shared<plansys2::DomainExpertClient>();
+  auto problem_client = std::make_shared<plansys2::ProblemExpertClient>();
+  auto planner_client = std::make_shared<plansys2::PlannerClient>();
+  auto executor_client = std::make_shared<plansys2::ExecutorClient>();
+
+  std::string pkgpath = ament_index_cpp::get_package_share_directory("plansys2_executor");
+
+  domain_node->set_parameter({"model_file", pkgpath + "/pddl/simple_move_example.pddl"});
+  problem_node->set_parameter({"model_file", pkgpath + "/pddl/simple_move_example.pddl"});
+
+  rclcpp::experimental::executors::EventsExecutor exe;
+
+  exe.add_node(domain_node->get_node_base_interface());
+  exe.add_node(problem_node->get_node_base_interface());
+  exe.add_node(planner_node->get_node_base_interface());
+  exe.add_node(executor_node->get_node_base_interface());
+  exe.add_node(move_action_node->get_node_base_interface());
+  exe.add_node(test_lf_node->get_node_base_interface());
+  exe.add_node(test_node_1->get_node_base_interface());
+
+  int changes_plan = 0;
+  plansys2_msgs::msg::Plan current_plan;
+  auto current_plan_sub = test_node_1->create_subscription<plansys2_msgs::msg::Plan>(
+    "/remaining_plan", rclcpp::QoS(100),
+    [&current_plan, &changes_plan](plansys2_msgs::msg::Plan::SharedPtr plan) {
+      if (plan->items.size() != current_plan.items.size()) {
+        changes_plan++;
+      }
+      current_plan = *plan;
+    });
+
+  bool finish = false;
+  std::thread t([&]() {
+      while (!finish) {exe.spin_some();}
+    });
+
+  domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  planner_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  move_action_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  test_lf_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  executor_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node_1->now();
+    while ((test_node_1->now() - start).seconds() < 0.5) {
+      rate.sleep();
+    }
+  }
+
+  domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+  problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+  planner_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+  executor_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+  test_lf_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node_1->now();
+    while ((test_node_1->now() - start).seconds() < 0.5) {
+      rate.sleep();
+    }
+  }
+
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"r2d2", "robot"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp1", "waypoint"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp2", "waypoint"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp3", "waypoint"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp4", "waypoint"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp5", "waypoint"}));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp1 wp2)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp2 wp1)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp2 wp3)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp3 wp2)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp3 wp4)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp4 wp3)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp4 wp5)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp5 wp4)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(robot_at r2d2 wp1)")));
+
+  problem_client->setGoal(plansys2::Goal("(and(robot_at r2d2 wp5))"));
+
+  auto domain = domain_client->getDomain(true);
+  auto problem = problem_client->getProblem(true);
+  auto plan = planner_client->getPlan(domain, problem);
+  ASSERT_FALSE(domain.empty());
+  ASSERT_FALSE(problem.empty());
+  ASSERT_TRUE(plan.has_value());
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node_1->now();
+
+    ASSERT_TRUE(executor_client->start_plan_execution(plan.value()));
+
+    while (rclcpp::ok() && executor_client->execute_and_check_plan()) {
+      auto feedback = executor_client->getFeedBack();
+      rate.sleep();
+    }
+  }
+
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 wp5)")));
+
+  ASSERT_TRUE(executor_client->getResult().has_value());
+  auto result = executor_client->getResult().value();
+
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
+  ASSERT_EQ(result.action_execution_status.size(), 5u);
+  for (const auto & action_status : result.action_execution_status) {
+    ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
+  }
+
+  ASSERT_EQ(changes_plan, 5);
+  ASSERT_EQ(current_plan.items.size(), 0);
+
+  problem_client->setGoal(plansys2::Goal("(and(robot_at r2d2 wp1))"));
+
+  problem = problem_client->getProblem(true);
+  plan = planner_client->getPlan(domain, problem);
+  ASSERT_FALSE(domain.empty());
+  ASSERT_FALSE(problem.empty());
+  ASSERT_TRUE(plan.has_value());
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node_1->now();
+
+    ASSERT_TRUE(executor_client->start_plan_execution(plan.value()));
+
+    while (rclcpp::ok() && executor_client->execute_and_check_plan()) {
+      auto feedback = executor_client->getFeedBack();
+      rate.sleep();
+    }
+  }
+
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 wp1)")));
+
+  ASSERT_TRUE(executor_client->getResult().has_value());
+  result = executor_client->getResult().value();
+
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
+  ASSERT_EQ(result.action_execution_status.size(), 5u);
+  for (const auto & action_status : result.action_execution_status) {
+    ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
+  }
+
+  ASSERT_EQ(changes_plan, 10);
   ASSERT_EQ(current_plan.items.size(), 0);
 
   finish = true;
@@ -1915,7 +2084,7 @@ TEST(executor, executor_client_execute_plan_replan)
   ASSERT_TRUE(executor_client->getResult().has_value());
   auto result = executor_client->getResult().value();
 
-  ASSERT_TRUE(result.success);
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
   ASSERT_EQ(result.action_execution_status.size(), 3u);
   for (const auto & action_status : result.action_execution_status) {
     ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
@@ -2098,6 +2267,8 @@ TEST(executor, executor_client_ordered_sub_goals)
   ASSERT_FALSE(problem.empty());
   ASSERT_TRUE(plan.has_value());
 
+
+  int subgoal_checked = false;
   {
     rclcpp::Rate rate(10);
     auto start = test_node_1->now();
@@ -2109,16 +2280,23 @@ TEST(executor, executor_client_ordered_sub_goals)
 
       ASSERT_LE(feedback.action_execution_status.size(), 5);
       rate.sleep();
+
+      auto actual_sub_goals = executor_client->getOrderedSubGoals();
+
+      if (!subgoal_checked) {
+        ASSERT_EQ(actual_sub_goals.size(), expected_sub_goals.size());
+        for (size_t i = 0; i < actual_sub_goals.size(); i++) {
+          ASSERT_EQ(
+            parser::pddl::toString(actual_sub_goals[i]),
+            parser::pddl::toString(expected_sub_goals[i]));
+        }
+        subgoal_checked = true;
+      }
     }
   }
-  std::vector<plansys2_msgs::msg::Tree> actual_sub_goals = executor_client->getOrderedSubGoals();
 
-  ASSERT_EQ(actual_sub_goals.size(), expected_sub_goals.size());
-  for (size_t i = 0; i < actual_sub_goals.size(); i++) {
-    ASSERT_EQ(
-      parser::pddl::toString(actual_sub_goals[i]),
-      parser::pddl::toString(expected_sub_goals[i]));
-  }
+  std::vector<plansys2_msgs::msg::Tree> actual_sub_goals = executor_client->getOrderedSubGoals();
+  ASSERT_TRUE(actual_sub_goals.empty());
 
   finish = true;
   t.join();
@@ -2382,7 +2560,7 @@ TEST(executor, action_timeout)
 
   ASSERT_TRUE(executor_client->getResult().has_value());
   auto result = executor_client->getResult().value();
-  ASSERT_FALSE(result.success);
+  ASSERT_EQ(result.result, plansys2_msgs::action::ExecutePlan::Result::FAILURE);
   ASSERT_EQ(
     result.action_execution_status[0].status,
     plansys2_msgs::msg::ActionExecutionInfo::CANCELLED);

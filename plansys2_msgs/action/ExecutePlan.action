@@ -1,6 +1,9 @@
 plansys2_msgs/Plan plan
 ---
-bool success
+int8 SUCCESS=1
+int8 FAILURE=2
+int8 PREEMPT=3
+int8 result
 plansys2_msgs/ActionExecutionInfo[] action_execution_status
 ---
 plansys2_msgs/ActionExecutionInfo[] action_execution_status

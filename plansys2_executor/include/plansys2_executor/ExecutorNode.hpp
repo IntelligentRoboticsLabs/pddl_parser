@@ -58,6 +58,15 @@ struct TreeInfo
   std::shared_ptr<plansys2::BTBuilder> bt_builder;
 };
 
+struct PlanRuntineInfo
+{
+  plansys2_msgs::msg::Plan remaining_plan;
+  plansys2_msgs::msg::Plan complete_plan;
+  std::vector<plansys2_msgs::msg::Tree> ordered_sub_goals;
+  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map;
+  TreeInfo::Ptr current_tree;
+};
+
 class ExecutorNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
@@ -94,9 +103,9 @@ protected:
   bool cancel_plan_requested_;
   bool replan_requested_;
 
-  plansys2_msgs::msg::Plan remaining_plan_;
-  plansys2_msgs::msg::Plan complete_plan_;
-  std::optional<std::vector<plansys2_msgs::msg::Tree>> ordered_sub_goals_;
+  plansys2_msgs::msg::Plan * remaining_plan_;
+  plansys2_msgs::msg::Plan * complete_plan_;
+  std::vector<plansys2_msgs::msg::Tree> * ordered_sub_goals_;
 
   std::string action_bt_xml_;
   std::string start_action_bt_xml_;
@@ -117,8 +126,7 @@ protected:
     get_ordered_sub_goals_service_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr dotgraph_pub_;
 
-  std::optional<std::vector<plansys2_msgs::msg::Tree>> get_ordered_subgoals(
-    const plansys2_msgs::msg::Plan & plan);
+  void get_ordered_subgoals(PlanRuntineInfo & plan_info);
 
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_plan_service_;
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_remaining_plan_service_;
@@ -138,24 +146,16 @@ protected:
   void print_execution_info(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> exec_info);
 
-  void update_plan(
-    std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map,
-    plansys2_msgs::msg::Plan & remaining_plan);
-
-  bool init_plan_for_execution(const plansys2_msgs::msg::Plan & plan);
+  void update_plan(PlanRuntineInfo & runtime_info);
+  bool init_plan_for_execution(PlanRuntineInfo & runtime_info);
 
   void execute_plan();
-  std::tuple<TreeInfo::Ptr, bool> get_tree_from_plan(const plansys2_msgs::msg::Plan & plan);
-  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> create_action_map_from_plan(
-    const plansys2_msgs::msg::Plan & plan);
-
-  std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map_;
+  bool get_tree_from_plan(PlanRuntineInfo & plan_info);
+  void create_plan_runtime_info(PlanRuntineInfo & plan_info);
 
   static const int IDLE_STATE = 0;
   static const int EXECUTING_STATE = 1;
   int executor_state_;
-
-  TreeInfo::Ptr current_tree_;
 };
 
 }  // namespace plansys2
