@@ -522,37 +522,6 @@ ExecutorNode::execute_plan()
 
   executor_state_ = EXECUTING_STATE;
 
-  executing_plan_pub_->publish(runtime_info.complete_plan);
-  auto update_plan_timer = create_wall_timer(
-    200ms, [this, &runtime_info]() {
-      if (!replan_requested_) {
-        update_plan(runtime_info);
-        remaining_plan_pub_->publish(runtime_info.remaining_plan);
-      }
-    });
-
-  auto info_pub = create_wall_timer(
-    1s, [this, &runtime_info]() {
-      if (!replan_requested_) {
-        auto msgs = get_feedback_info(runtime_info.action_map);
-        for (const auto & msg : msgs) {
-          execution_info_pub_->publish(msg);
-        }
-        remaining_plan_pub_->publish(runtime_info.remaining_plan);
-      }
-    });
-
-  auto publish_dotgraph_timer = create_wall_timer(
-    200ms, [this, &runtime_info]() {
-      if (!replan_requested_) {
-        std_msgs::msg::String dotgraph_msg;
-        dotgraph_msg.data = runtime_info.current_tree->bt_builder->get_dotgraph(
-          runtime_info.action_map, this->get_parameter("enable_dotgraph_legend").as_bool(),
-          this->get_parameter("print_graph").as_bool());
-        dotgraph_pub_->publish(dotgraph_msg);
-      }
-    });
-
   rclcpp::Rate rate(10);
   auto status = BT::NodeStatus::RUNNING;
 
@@ -578,6 +547,19 @@ ExecutorNode::execute_plan()
     }
 
     current_goal_handle_->publish_feedback(feedback);
+    
+    update_plan(runtime_info);
+    remaining_plan_pub_->publish(runtime_info.remaining_plan);
+    auto feedback_info_msgs = get_feedback_info(runtime_info.action_map);
+    for (const auto & msg : feedback_info_msgs) {
+      execution_info_pub_->publish(msg);
+    }
+    remaining_plan_pub_->publish(runtime_info.remaining_plan);
+    std_msgs::msg::String dotgraph_msg;
+    dotgraph_msg.data = runtime_info.current_tree->bt_builder->get_dotgraph(
+      runtime_info.action_map, this->get_parameter("enable_dotgraph_legend").as_bool(),
+      this->get_parameter("print_graph").as_bool());
+    dotgraph_pub_->publish(dotgraph_msg);
 
     rate.sleep();
   }
