@@ -206,6 +206,18 @@ public:
   int cycles_;
 };
 
+void clean_up_action_map(
+  std::shared_ptr<std::map<std::string, plansys2::ActionExecutionInfo>> action_map)
+{
+  if (action_map == nullptr) {return;}
+
+  for (auto action : *action_map) {
+    if (action.second.action_executor->get_status() == BT::NodeStatus::RUNNING) {
+      action.second.action_executor->cancel();
+    }
+  }
+}
+
 TEST(executor, action_executor_client)
 {
   auto test_node = rclcpp_lifecycle::LifecycleNode::make_shared("test_node");
@@ -1072,6 +1084,8 @@ TEST(executor, action_real_action_2)
     status = tree.tickOnce();
     ASSERT_EQ(CheckOverAllReqTest::test_status, BT::NodeStatus::FAILURE);
     ASSERT_EQ(status, BT::NodeStatus::FAILURE);
+
+    clean_up_action_map(action_map);
   } catch (const std::exception & e) {
     std::cerr << e.what() << '\n';
   }
@@ -1115,6 +1129,8 @@ TEST(executor, action_real_action_2)
     ASSERT_TRUE(
       problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 assembly_zone)")));
     ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
+
+    clean_up_action_map(action_map);
   } catch (const std::exception & e) {
     std::cerr << e.what() << '\n';
   }
@@ -2049,7 +2065,7 @@ TEST(executor, executor_client_execute_plan_replan)
 
     ASSERT_TRUE(executor_client->start_plan_execution(plan.value()));
 
-    while (rclcpp::ok() && test_node_1->now() - start < 6s) {
+    while (rclcpp::ok() && test_node_1->now() - start < 5s) {
       if (!executor_client->execute_and_check_plan()) {break;}
       auto feedback = executor_client->getFeedBack();
       rate.sleep();
@@ -2196,6 +2212,8 @@ TEST(executor, executor_client_execute_plan_multi_replan)
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp3", "waypoint"}));
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp4", "waypoint"}));
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp5", "waypoint"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp6", "waypoint"}));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance{"wp7", "waypoint"}));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp1 wp2)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp2 wp1)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp2 wp3)")));
@@ -2204,11 +2222,16 @@ TEST(executor, executor_client_execute_plan_multi_replan)
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp4 wp3)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp4 wp5)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp5 wp4)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp5 wp6)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp6 wp5)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp6 wp7)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp7 wp6)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(robot_at r2d2 wp1)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(robot_at c3po wp1)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(robot_at bb8 wp1)")));
 
-  problem_client->setGoal(plansys2::Goal("(and(robot_at r2d2 wp5)(robot_at c3po wp5)(robot_at bb8 wp5))"));
+  problem_client->setGoal(plansys2::Goal(
+    "(and(robot_at r2d2 wp7)(robot_at c3po wp7)(robot_at bb8 wp7))"));
 
   auto domain = domain_client->getDomain(true);
 
@@ -2233,9 +2256,10 @@ TEST(executor, executor_client_execute_plan_multi_replan)
 
   std::cerr << "Replanning ===================================" << std::endl;
 
-  problem_client->setGoal(plansys2::Goal("(and(robot_at r2d2 wp1)(robot_at c3po wp1)(robot_at bb8 wp1))"));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp4 wp7)")));
+  ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp7 wp4)")));
 
-  problem = problem_client->getProblem(true);
+  problem = problem_client->getProblem(false);  // Force sync
   plan = planner_client->getPlan(domain, problem);
   ASSERT_FALSE(domain.empty());
   ASSERT_FALSE(problem.empty());
@@ -2253,8 +2277,9 @@ TEST(executor, executor_client_execute_plan_multi_replan)
     }
   }
 
-
-  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 wp1)")));
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at r2d2 wp7)")));
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at c3po wp7)")));
+  ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at bb8 wp7)")));
 
   ASSERT_TRUE(executor_client->getResult().has_value());
   auto result = executor_client->getResult().value();
@@ -2265,7 +2290,7 @@ TEST(executor, executor_client_execute_plan_multi_replan)
     ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
   }
 
-  ASSERT_EQ(changes_plan, 5);
+  ASSERT_EQ(changes_plan, 6);
   ASSERT_EQ(current_plan.items.size(), 0);
 
   finish = true;

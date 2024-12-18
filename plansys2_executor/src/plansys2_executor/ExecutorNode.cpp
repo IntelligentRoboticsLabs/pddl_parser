@@ -262,7 +262,7 @@ ExecutorNode::get_ordered_sub_goals_service_callback(
 }
 
 void
-ExecutorNode::get_ordered_subgoals(PlanRuntineInfo & plan_info)
+ExecutorNode::get_ordered_subgoals(PlanRuntineInfo & runtime_info)
 {
   auto goal = problem_client_->getGoal();
   auto local_predicates = problem_client_->getPredicates();
@@ -275,14 +275,14 @@ ExecutorNode::get_ordered_subgoals(PlanRuntineInfo & plan_info)
     if (check(goal, local_predicates, local_functions, *it)) {
       plansys2_msgs::msg::Tree new_goal;
       parser::pddl::fromString(new_goal, "(and " + parser::pddl::toString(goal, (*it)) + ")");
-      plan_info.ordered_sub_goals.push_back(new_goal);
+      runtime_info.ordered_sub_goals.push_back(new_goal);
       it = unordered_subgoals.erase(it);
     } else {
       ++it;
     }
   }
 
-  for (const auto & plan_item : plan_info.complete_plan.items) {
+  for (const auto & plan_item : runtime_info.complete_plan.items) {
     auto actions = domain_client_->getActions();
     std::string action_name = get_action_name(plan_item.action);
     if (std::find(actions.begin(), actions.end(), action_name) != actions.end()) {
@@ -303,7 +303,7 @@ ExecutorNode::get_ordered_subgoals(PlanRuntineInfo & plan_info)
       if (check(goal, local_predicates, local_functions, *it)) {
         plansys2_msgs::msg::Tree new_goal;
         parser::pddl::fromString(new_goal, "(and " + parser::pddl::toString(goal, (*it)) + ")");
-        plan_info.ordered_sub_goals.push_back(new_goal);
+        runtime_info.ordered_sub_goals.push_back(new_goal);
         it = unordered_subgoals.erase(it);
       } else {
         ++it;
@@ -482,6 +482,7 @@ ExecutorNode::init_plan_for_execution(PlanRuntineInfo & runtime_info)
   if (runtime_info.action_map != nullptr) {
     for (auto & entry : *runtime_info.action_map) {
       ActionExecutionInfo & action_info = entry.second;
+      action_info.action_executor->cancel();
       action_info.action_executor->clean_up();
       action_info.action_executor = nullptr;
     }
@@ -497,6 +498,72 @@ ExecutorNode::init_plan_for_execution(PlanRuntineInfo & runtime_info)
   }
 
   return true;
+}
+
+bool
+ExecutorNode::replan_for_execution(PlanRuntineInfo & runtime_info)
+{
+  cancel_plan_requested_ = false;
+  replan_requested_ = false;
+
+  std::map<std::string, ActionExecutionInfo> previous_action_map = *runtime_info.action_map;
+
+  create_plan_runtime_info(runtime_info);
+
+  bool plan_success = get_tree_from_plan(runtime_info);
+
+  auto it = previous_action_map.begin();
+  while (it != previous_action_map.end()) {
+    if (it->second.action_executor->get_internal_status() != ActionExecutor::RUNNING) {
+      ActionExecutionInfo & action_info = it->second;
+      action_info.action_executor->clean_up();
+      action_info.action_executor = nullptr;
+      it = previous_action_map.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  for (auto action_info : previous_action_map) {
+    size_t pos = action_info.first.find(':');
+    std::string query_action_name = action_info.first.substr(0, pos) + ":0";
+
+    auto match_it = runtime_info.action_map->find(query_action_name);
+    if (match_it != runtime_info.action_map->end()) {
+      match_it->second.action_executor = action_info.second.action_executor;
+      match_it->second.at_start_effects_applied = action_info.second.at_start_effects_applied;
+      match_it->second.at_end_effects_applied = action_info.second.at_end_effects_applied;
+      match_it->second.at_start_effects_applied_time =
+        action_info.second.at_start_effects_applied_time;
+      match_it->second.execution_error_info = action_info.second.execution_error_info;
+      match_it->second.duration = action_info.second.duration;
+      match_it->second.duration_overrun_percentage =
+        action_info.second.duration_overrun_percentage;
+    } else {
+      action_info.second.action_executor->cancel();
+      action_info.second.action_executor->clean_up();
+      action_info.second.action_executor = nullptr;
+    }
+  }
+
+  if (!plan_success) {
+    return false;
+  }
+
+  return true;
+}
+
+void
+ExecutorNode::cancel_all_running_actions(PlanRuntineInfo & runtime_info)
+{
+  if (runtime_info.action_map != nullptr) {
+    for (auto & entry : *runtime_info.action_map) {
+      ActionExecutionInfo & action_info = entry.second;
+      if (action_info.action_executor->get_internal_status() == ActionExecutor::RUNNING) {
+        action_info.action_executor->cancel();
+      }
+    }
+  }
 }
 
 void
@@ -529,7 +596,7 @@ ExecutorNode::execute_plan()
     if (replan_requested_) {
       runtime_info.complete_plan = current_goal_handle_->get_goal()->plan;
       runtime_info.remaining_plan = current_goal_handle_->get_goal()->plan;
-      bool success = init_plan_for_execution(runtime_info);
+      bool success = replan_for_execution(runtime_info);
 
       if (!success) {
         result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
@@ -547,7 +614,7 @@ ExecutorNode::execute_plan()
     }
 
     current_goal_handle_->publish_feedback(feedback);
-    
+
     update_plan(runtime_info);
     remaining_plan_pub_->publish(runtime_info.remaining_plan);
     auto feedback_info_msgs = get_feedback_info(runtime_info.action_map);
@@ -565,11 +632,11 @@ ExecutorNode::execute_plan()
   }
 
   if (cancel_plan_requested_) {
-    runtime_info.current_tree->tree.haltTree();
+    cancel_all_running_actions(runtime_info);
   }
 
   if (status == BT::NodeStatus::FAILURE) {
-    runtime_info.current_tree->tree.haltTree();
+    cancel_all_running_actions(runtime_info);
     RCLCPP_ERROR(get_logger(), "Executor BT finished with FAILURE state");
   }
 

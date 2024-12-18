@@ -126,7 +126,7 @@ protected:
     get_ordered_sub_goals_service_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr dotgraph_pub_;
 
-  void get_ordered_subgoals(PlanRuntineInfo & plan_info);
+  void get_ordered_subgoals(PlanRuntineInfo & runtime_info);
 
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_plan_service_;
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr get_remaining_plan_service_;
@@ -148,10 +148,12 @@ protected:
 
   void update_plan(PlanRuntineInfo & runtime_info);
   bool init_plan_for_execution(PlanRuntineInfo & runtime_info);
+  bool replan_for_execution(PlanRuntineInfo & runtime_info);
 
   void execute_plan();
-  bool get_tree_from_plan(PlanRuntineInfo & plan_info);
-  void create_plan_runtime_info(PlanRuntineInfo & plan_info);
+  bool get_tree_from_plan(PlanRuntineInfo & runtime_info);
+  void create_plan_runtime_info(PlanRuntineInfo & runtime_info);
+  void cancel_all_running_actions(PlanRuntineInfo & runtime_info);
 
   static const int IDLE_STATE = 0;
   static const int EXECUTING_STATE = 1;
