@@ -23,6 +23,8 @@
 #include "plansys2_core/Types.hpp"
 #include "plansys2_domain_expert/DomainExpertInterface.hpp"
 
+#include "std_msgs/msg/string.hpp"
+
 #include "plansys2_msgs/msg/action.hpp"
 #include "plansys2_msgs/msg/derived.hpp"
 #include "plansys2_msgs/msg/durative_action.hpp"
@@ -157,6 +159,14 @@ public:
    */
   std::string getDomain();
 
+  /// Get the current cached domain, ready to be saved to file, or to initialize another domain.
+  /**
+   * \param[in] use_cache Use cache, if available.
+   * \return A string containing the domain.
+   */
+  std::string getDomain(bool use_cache);
+  std::string cached_domain_;
+
 private:
   rclcpp::Node::SharedPtr node_;
 
@@ -176,6 +186,7 @@ private:
   rclcpp::Client<plansys2_msgs::srv::GetDomainActionDetails>::SharedPtr get_action_details_client_;
   rclcpp::Client<plansys2_msgs::srv::GetDomainDurativeActionDetails>::SharedPtr
     get_durative_action_details_client_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr domain_sub_;
 };
 
 }  // namespace plansys2

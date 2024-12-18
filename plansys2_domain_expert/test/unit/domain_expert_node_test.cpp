@@ -75,6 +75,7 @@ TEST(domain_expert, lifecycle)
     domain_node->get_current_state().id(),
     lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
+  ASSERT_EQ(domain_client->getDomain(), domain_client->getDomain(true));
   auto domain_str = domain_client->getDomain();
 
   {

@@ -68,16 +68,11 @@ ExecutorClient::createActionClient()
 bool
 ExecutorClient::start_plan_execution(const plansys2_msgs::msg::Plan & plan)
 {
-  if (!executing_plan_) {
-    createActionClient();
-    auto success = on_new_goal_received(plan);
+  auto success = on_new_goal_received(plan);
 
-    if (success) {
-      executing_plan_ = true;
-      return true;
-    }
-  } else {
-    RCLCPP_INFO(node_->get_logger(), "Already executing a plan");
+  if (success) {
+    executing_plan_ = true;
+    return true;
   }
 
   return false;
@@ -99,8 +94,10 @@ ExecutorClient::execute_and_check_plan()
       if (result_.result == nullptr) {
         RCLCPP_WARN(
           node_->get_logger(), "Plan failed due to a nullptr in the result");
-      } else if (result_.result->success) {
+      } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::SUCCESS) {
         RCLCPP_INFO(node_->get_logger(), "Plan Succeeded");
+      } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::PREEMPT) {
+        RCLCPP_INFO(node_->get_logger(), "Plan Preempted");
       } else {
         RCLCPP_ERROR(node_->get_logger(), "Plan Failed");
         for (auto msg : result_.result->action_execution_status) {
@@ -158,7 +155,9 @@ ExecutorClient::execute_and_check_plan()
       throw std::logic_error("ExecutorClient::executePlan: invalid status value");
   }
 
-  executing_plan_ = false;
+  if (result_.result->result != plansys2_msgs::action::ExecutePlan::Result::PREEMPT) {
+    executing_plan_ = false;
+  }
   goal_result_available_ = false;
 
   return false;  // Plan finished
@@ -350,9 +349,11 @@ ExecutorClient::feedback_callback(
 void
 ExecutorClient::result_callback(const GoalHandleExecutePlan::WrappedResult & result)
 {
-  goal_result_available_ = true;
-  result_ = result;
-  feedback_ = ExecutePlan::Feedback();
+  if (goal_handle_.get()->get_goal_id() == result.goal_id) {
+    goal_result_available_ = true;
+    result_ = result;
+    feedback_ = ExecutePlan::Feedback();
+  }
 }
 
 std::optional<ExecutePlan::Result>

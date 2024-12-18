@@ -881,10 +881,16 @@ Terminal::execute_plan(const plansys2_msgs::msg::Plan & plan)
 
   std::cout << std::endl;
 
-  if (executor_client_->getResult().value().success) {
-    std::cout << "Successful finished " << std::endl;
-  } else {
-    std::cout << "Finished with error(s) " << std::endl;
+  switch (executor_client_->getResult().value().result) {
+    case plansys2_msgs::action::ExecutePlan::Result::SUCCESS:
+      std::cout << "Successful finished " << std::endl;
+      break;
+    case plansys2_msgs::action::ExecutePlan::Result::PREEMPT:
+      std::cout << "Preempted " << std::endl;
+      break;
+    case plansys2_msgs::action::ExecutePlan::Result::FAILURE:
+      std::cout << "Finished with error(s) " << std::endl;
+      break;
   }
 }
 

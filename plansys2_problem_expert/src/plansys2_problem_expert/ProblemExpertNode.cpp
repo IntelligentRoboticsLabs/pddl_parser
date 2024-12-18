@@ -201,6 +201,10 @@ ProblemExpertNode::ProblemExpertNode()
       this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
+  problem_pub_ = create_publisher<std_msgs::msg::String>(
+    "problem_expert/problem",
+    rclcpp::QoS(100));
+
   update_pub_ = create_publisher<std_msgs::msg::Empty>(
     "problem_expert/update_notify",
     rclcpp::QoS(100));
@@ -261,6 +265,7 @@ ProblemExpertNode::on_activate(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "[%s] Activating...", get_name());
   update_pub_->on_activate();
   knowledge_pub_->on_activate();
+  problem_pub_->on_activate();
   RCLCPP_INFO(get_logger(), "[%s] Activated", get_name());
   return CallbackReturnT::SUCCESS;
 }
@@ -271,6 +276,7 @@ ProblemExpertNode::on_deactivate(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "[%s] Deactivating...", get_name());
   update_pub_->on_deactivate();
   knowledge_pub_->on_deactivate();
+  problem_pub_->on_deactivate();
   RCLCPP_INFO(get_logger(), "[%s] Deactivated", get_name());
 
   return CallbackReturnT::SUCCESS;
@@ -319,6 +325,10 @@ ProblemExpertNode::add_problem_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info = "Problem not valid";
     }
@@ -341,6 +351,10 @@ ProblemExpertNode::add_problem_goal_service_callback(
       if (response->success) {
         update_pub_->publish(std_msgs::msg::Empty());
         knowledge_pub_->publish(*get_knowledge_as_msg());
+
+        std_msgs::msg::String problem_msg;
+        problem_msg.data = problem_expert_->getProblem();
+        problem_pub_->publish(problem_msg);
       } else {
         response->error_info = "Goal not valid";
       }
@@ -366,6 +380,10 @@ ProblemExpertNode::add_problem_instance_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info = "Instance not valid";
     }
@@ -387,6 +405,10 @@ ProblemExpertNode::add_problem_predicate_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info =
         "Predicate [" + parser::pddl::toString(request->node) + "] not valid";
@@ -409,6 +431,10 @@ ProblemExpertNode::add_problem_function_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info =
         "Function [" + parser::pddl::toString(request->node) + "] not valid";
@@ -562,6 +588,8 @@ ProblemExpertNode::get_problem_service_callback(
   } else {
     response->success = true;
     response->problem = problem_expert_->getProblem();
+
+    std::cerr << "get_problem_service_callback [" << response->problem << "]" << std::endl;
   }
 }
 
@@ -597,6 +625,10 @@ ProblemExpertNode::remove_problem_goal_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info = "Error clearing goal";
     }
@@ -619,6 +651,10 @@ ProblemExpertNode::clear_problem_knowledge_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info = "Error clearing knowledge";
     }
@@ -641,6 +677,11 @@ ProblemExpertNode::remove_problem_instance_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
+
     } else {
       response->error_info = "Error removing instance";
     }
@@ -662,6 +703,10 @@ ProblemExpertNode::remove_problem_predicate_service_callback(
     if (response->success) {
       update_pub_->publish(std_msgs::msg::Empty());
       knowledge_pub_->publish(*get_knowledge_as_msg());
+
+      std_msgs::msg::String problem_msg;
+      problem_msg.data = problem_expert_->getProblem();
+      problem_pub_->publish(problem_msg);
     } else {
       response->error_info = "Error removing predicate";
     }

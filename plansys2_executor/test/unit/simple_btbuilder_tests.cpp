@@ -219,7 +219,8 @@ TEST(simple_btbuilder_tests, test_plan_1)
 
   ASSERT_TRUE(problem_client->setGoal(plansys2::Goal("(and(robot_at leia bathroom))")));
 
-  auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
+  auto plan = planner_client->getPlan(
+    domain_client->getDomain(true), problem_client->getProblem(true));
   ASSERT_TRUE(plan);
 
 
@@ -496,7 +497,9 @@ TEST(simple_btbuilder_tests, test_plan_2)
       plansys2::Goal(
         "(and(car_assembled car_1)(car_assembled car_2)(car_assembled car_3))")));
 
-  auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
+  auto plan = planner_client->getPlan(
+    domain_client->getDomain(true), problem_client->getProblem(true));
+
   ASSERT_TRUE(plan);
 
   auto predicates = problem_client->getPredicates();
@@ -660,7 +663,9 @@ TEST(simple_btbuilder_tests, test_plan_3)
       plansys2::Goal(
         "(and (patrolled ro1) (patrolled ro2) (patrolled ro3))")));
 
-  auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
+  auto plan = planner_client->getPlan(
+    domain_client->getDomain(true), problem_client->getProblem(true));
+
   ASSERT_TRUE(plan);
 
   auto bt = btbuilder->get_tree(plan.value());
@@ -775,7 +780,9 @@ TEST(simple_btbuilder_tests, test_plan_4)
       plansys2::Goal(
         "(and (dish_prepared cake)(dish_prepared omelette))")));
 
-  auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
+  auto plan = planner_client->getPlan(
+    domain_client->getDomain(true), problem_client->getProblem(true));
+
   ASSERT_TRUE(plan);
 
   btbuilder->print_graph(btbuilder->get_graph(plan.value()));
@@ -849,7 +856,9 @@ TEST(simple_btbuilder_tests, test_plan_5)
     std::istreambuf_iterator<char>());
   ASSERT_TRUE(problem_client->addProblem(problem_str));
 
-  auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
+  auto plan = planner_client->getPlan(
+    domain_client->getDomain(true), problem_client->getProblem(true));
+
   ASSERT_TRUE(plan);
 
   auto action_graph = btbuilder->get_graph(plan.value());
@@ -961,7 +970,9 @@ TEST(simple_btbuilder_tests, test_plan_6)
     std::istreambuf_iterator<char>());
   ASSERT_TRUE(problem_client->addProblem(problem_str));
 
-  auto plan = planner_client->getPlan(domain_client->getDomain(), problem_client->getProblem());
+  auto plan = planner_client->getPlan(
+    domain_client->getDomain(true), problem_client->getProblem(true));
+
   ASSERT_TRUE(plan);
 
   auto action_graph = btbuilder->get_graph(plan.value());

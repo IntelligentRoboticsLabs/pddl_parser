@@ -47,6 +47,14 @@ ActionExecutor::ActionExecutor(
 }
 
 void
+ActionExecutor::clean_up()
+{
+  if (action_hub_sub_ != nullptr) {
+    action_hub_sub_->clear_on_new_message_callback();
+  }
+}
+
+void
 ActionExecutor::action_hub_callback(const plansys2_msgs::msg::ActionExecution::SharedPtr msg)
 {
   last_msg = *msg;

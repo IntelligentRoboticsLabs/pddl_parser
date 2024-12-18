@@ -43,6 +43,12 @@ WaitAtStartReq::tick()
   std::string action;
   getInput("action", action);
 
+  if (action_map_ != nullptr && (*action_map_)[action].action_executor != nullptr &&
+    (*action_map_)[action].action_executor->get_internal_status() == ActionExecutor::RUNNING)
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
+
   auto node = config().blackboard->get<rclcpp_lifecycle::LifecycleNode::SharedPtr>("node");
 
   auto reqs_as = (*action_map_)[action].action_info.get_at_start_requirements();

@@ -77,6 +77,8 @@ public:
   std::string get_feedback() const {return feedback_;}
   float get_completion() const {return completion_;}
 
+  void clean_up();
+
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 

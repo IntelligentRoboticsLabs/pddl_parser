@@ -202,6 +202,8 @@ TEST(problem_expert_node, addget_instances)
   ASSERT_EQ(last_knowledge_msg.predicates[1], "(robot_at r2d2 kitchen)");
   ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_at r2d2 kitchen))");
 
+  ASSERT_EQ(problem_client->getProblem(), problem_client->getProblem(true));
+
   ASSERT_TRUE(problem_client->clearKnowledge());
 
   {
@@ -614,7 +616,7 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
     });
 
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("leia", "robot")));
-  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("Jack", "person")));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("jack", "person")));
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("bedroom", "room")));
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("kitchen", "room")));
   ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("m1", "message")));
@@ -630,7 +632,7 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
   ASSERT_EQ(knowledge_msg_counter, 5u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 5u);
   ASSERT_EQ(last_knowledge_msg.instances[0], "leia");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "Jack");
+  ASSERT_EQ(last_knowledge_msg.instances[1], "jack");
   ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
   ASSERT_EQ(last_knowledge_msg.instances[3], "kitchen");
   ASSERT_EQ(last_knowledge_msg.instances[4], "m1");
@@ -640,9 +642,9 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
   ASSERT_TRUE(
     problem_client->addPredicate(plansys2::Predicate("(robot_at leia kitchen)")));
   ASSERT_TRUE(
-    problem_client->addPredicate(plansys2::Predicate("(person_at Jack bedroom)")));
+    problem_client->addPredicate(plansys2::Predicate("(person_at jack bedroom)")));
 
-  std::string expression = "(and (robot_talk leia m1 Jack))";
+  std::string expression = "(and (robot_talk leia m1 jack))";
   plansys2_msgs::msg::Tree goal;
   parser::pddl::fromString(goal, expression);
   ASSERT_TRUE(problem_client->setGoal(goal));
@@ -659,32 +661,32 @@ TEST(problem_expert_node, addget_goal_is_satisfied)
   ASSERT_EQ(knowledge_msg_counter, 8u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 5u);
   ASSERT_EQ(last_knowledge_msg.instances[0], "leia");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "Jack");
+  ASSERT_EQ(last_knowledge_msg.instances[1], "jack");
   ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
   ASSERT_EQ(last_knowledge_msg.instances[3], "kitchen");
   ASSERT_EQ(last_knowledge_msg.instances[4], "m1");
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 2u);
   ASSERT_EQ(last_knowledge_msg.predicates[0], "(robot_at leia kitchen)");
-  ASSERT_EQ(last_knowledge_msg.predicates[1], "(person_at Jack bedroom)");
-  ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_talk leia m1 Jack))");
+  ASSERT_EQ(last_knowledge_msg.predicates[1], "(person_at jack bedroom)");
+  ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_talk leia m1 jack))");
 
   ASSERT_TRUE(
-    problem_client->addPredicate(plansys2::Predicate("(robot_talk leia m1 Jack)")));
+    problem_client->addPredicate(plansys2::Predicate("(robot_talk leia m1 jack)")));
 
   ASSERT_TRUE(problem_client->isGoalSatisfied(goal));
 
   ASSERT_EQ(knowledge_msg_counter, 9u);
   ASSERT_EQ(last_knowledge_msg.instances.size(), 5u);
   ASSERT_EQ(last_knowledge_msg.instances[0], "leia");
-  ASSERT_EQ(last_knowledge_msg.instances[1], "Jack");
+  ASSERT_EQ(last_knowledge_msg.instances[1], "jack");
   ASSERT_EQ(last_knowledge_msg.instances[2], "bedroom");
   ASSERT_EQ(last_knowledge_msg.instances[3], "kitchen");
   ASSERT_EQ(last_knowledge_msg.instances[4], "m1");
   ASSERT_EQ(last_knowledge_msg.predicates.size(), 3u);
   ASSERT_EQ(last_knowledge_msg.predicates[0], "(robot_at leia kitchen)");
-  ASSERT_EQ(last_knowledge_msg.predicates[1], "(person_at Jack bedroom)");
-  ASSERT_EQ(last_knowledge_msg.predicates[2], "(robot_talk leia m1 Jack)");
-  ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_talk leia m1 Jack))");
+  ASSERT_EQ(last_knowledge_msg.predicates[1], "(person_at jack bedroom)");
+  ASSERT_EQ(last_knowledge_msg.predicates[2], "(robot_talk leia m1 jack)");
+  ASSERT_EQ(last_knowledge_msg.goal, "(and (robot_talk leia m1 jack))");
 
   finish = true;
   t.join();

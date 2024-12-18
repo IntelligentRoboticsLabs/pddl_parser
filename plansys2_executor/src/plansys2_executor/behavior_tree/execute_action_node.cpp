@@ -35,19 +35,6 @@ ExecuteAction::ExecuteAction(
 void
 ExecuteAction::halt()
 {
-  std::string action;
-  getInput("action", action);
-
-  size_t delim = action.find(":");
-  auto action_expr = action.substr(0, delim);
-
-  if (action_map_ == nullptr || (*action_map_)[action].action_executor == nullptr) {
-    return;
-  }
-
-  if ((*action_map_)[action].action_executor->get_status() == BT::NodeStatus::RUNNING) {
-    (*action_map_)[action].action_executor->cancel();
-  }
 }
 
 BT::NodeStatus

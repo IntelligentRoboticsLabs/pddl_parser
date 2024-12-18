@@ -136,7 +136,7 @@ TEST(test_1, test_1)
 
   auto result = executor_client->getResult();
 
-  ASSERT_TRUE(result.value().success);
+  ASSERT_EQ(result.value().result, plansys2_msgs::action::ExecutePlan::Result::SUCCESS);
 
   ASSERT_TRUE(
     execution_logger->sorted(

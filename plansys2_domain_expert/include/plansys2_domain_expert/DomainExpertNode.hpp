@@ -267,6 +267,8 @@ private:
     validate_domain_client_;
   rclcpp::CallbackGroup::SharedPtr validate_domain_callback_group_;
 
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr domain_pub_;
+
   std::unique_ptr<plansys2::POPFPlanSolver> popf_plan_solver_;
 };
 
