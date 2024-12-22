@@ -318,7 +318,12 @@ ExecutorNode::get_plan_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
 {
-  response->plan = *complete_plan_;
+  if (complete_plan_ != nullptr) {
+    response->success = true;
+    response->plan = *complete_plan_;
+  } else {
+    response->success = false;
+  }
 }
 
 void
@@ -327,7 +332,12 @@ ExecutorNode::get_remaining_plan_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
 {
-  response->plan = *remaining_plan_;
+  if (remaining_plan_ != nullptr) {
+    response->success = true;
+    response->plan = *remaining_plan_;
+  } else {
+    response->success = false;
+  }
 }
 
 rclcpp_action::GoalResponse
@@ -678,6 +688,9 @@ ExecutorNode::execute_plan()
 
   executor_state_ = IDLE_STATE;
   runtime_info = PlanRuntineInfo();
+  complete_plan_ = nullptr;
+  remaining_plan_ = nullptr;
+  ordered_sub_goals_ = nullptr;
 }
 
 void
