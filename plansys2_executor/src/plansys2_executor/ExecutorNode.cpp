@@ -581,6 +581,8 @@ ExecutorNode::execute_plan()
   remaining_plan_ = &runtime_info.remaining_plan;
   ordered_sub_goals_ = &runtime_info.ordered_sub_goals;
 
+  executing_plan_pub_->publish(*complete_plan_);
+
   if (!init_plan_for_execution(runtime_info)) {
     result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
     current_goal_handle_->succeed(result);
