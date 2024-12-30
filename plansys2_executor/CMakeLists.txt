@@ -28,6 +28,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(dependencies
     Eigen3
+    eigen3_cmake_module
     rclcpp
     rclcpp_lifecycle
     lifecycle_msgs
