@@ -11,7 +11,9 @@
   <license>Apache License, Version 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <buildtool_depend>eigen3_cmake_module</buildtool_depend>
+  <build_depend>eigen</build_depend>
 
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
@@ -29,10 +31,11 @@
   <depend>behaviortree_cpp</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
-  <depend>eigen</depend>
-  <depend>eigen3_cmake_module</depend>
 
   <exec_depend>popf</exec_depend>
+
+  <buildtool_export_depend>eigen3_cmake_module</buildtool_export_depend>
+  <build_export_depend>eigen</build_export_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
