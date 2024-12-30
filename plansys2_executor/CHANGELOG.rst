@@ -2,8 +2,8 @@
 Changelog for package plansys2_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.18 (2024-12-30)
+-------------------
 * Fix get plan services
 * Contributors: Francisco Martín Rico
 
