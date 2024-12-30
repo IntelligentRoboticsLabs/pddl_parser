@@ -2,6 +2,11 @@
 Changelog for package plansys2_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix get plan services
+* Contributors: Francisco Martín Rico
+
 2.0.17 (2024-12-30)
 -------------------
 * Fixing Eigen deps
