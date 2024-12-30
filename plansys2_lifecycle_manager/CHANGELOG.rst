@@ -2,6 +2,9 @@
 Changelog for package plansys2_lifecycle_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.15 (2024-12-03)
 -------------------
 
