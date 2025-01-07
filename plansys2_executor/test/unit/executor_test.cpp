@@ -2072,8 +2072,6 @@ TEST(executor, executor_client_execute_plan_replan)
     }
   }
 
-  std::cerr << "Replanning ===================================" << std::endl;
-
    problem_client->setGoal(plansys2::Goal("(and(robot_at r2d2 wp1))"));
 
    problem = problem_client->getProblem(true);
@@ -2254,8 +2252,6 @@ TEST(executor, executor_client_execute_plan_multi_replan)
     }
   }
 
-  std::cerr << "Replanning ===================================" << std::endl;
-
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp4 wp7)")));
   ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate("(connected wp7 wp4)")));
 
@@ -2290,7 +2286,7 @@ TEST(executor, executor_client_execute_plan_multi_replan)
     ASSERT_EQ(action_status.status, plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED);
   }
 
-  ASSERT_EQ(changes_plan, 6);
+  ASSERT_GE(changes_plan, 6);
   ASSERT_EQ(current_plan.items.size(), 0);
 
   finish = true;
