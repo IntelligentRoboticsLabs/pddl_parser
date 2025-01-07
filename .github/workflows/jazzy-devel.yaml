@@ -19,7 +19,9 @@ jobs:
     steps:
       - name: Install popf deps
         run: sudo apt-get install libfl-dev
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          ref: jazzy-devel
       - name: Setup ROS 2
         uses: ros-tooling/setup-ros@0.7.9
         with:
