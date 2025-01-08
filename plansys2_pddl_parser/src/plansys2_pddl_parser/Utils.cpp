@@ -274,10 +274,6 @@ std::tuple<uint8_t, int> getExpr(const std::string & input)
     }
   }
 
-  if (expr_type == plansys2_msgs::msg::Node::UNKNOWN) {
-    std::cerr << "getExpr: Error parsing expresion [" << input << "]" << std::endl;
-  }
-
   return std::make_tuple(expr_type, first);
 }
 
