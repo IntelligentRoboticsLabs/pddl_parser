@@ -40,7 +40,7 @@ public:
 
   std::optional<std::filesystem::path> create_folders(const std::string & node_namespace);
 
-  void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &);
+  void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &) override;
 
   std::optional<plansys2_msgs::msg::Plan> getPlan(
     const std::string & domain, const std::string & problem,

@@ -188,8 +188,8 @@ ExecutorClient::on_new_goal_received(const plansys2_msgs::msg::Plan & plan)
     return false;
   }
 
-  goal_handle_ = future_goal_handle.get();
-  if (!goal_handle_) {
+  goal_handlers_.push_back(future_goal_handle.get());
+  if (!goal_handlers_.back()) {
     RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by the action server");
     return false;
   }
@@ -205,7 +205,7 @@ ExecutorClient::should_cancel_goal()
   }
 
   rclcpp::spin_some(node_);
-  auto status = goal_handle_->get_status();
+  auto status = goal_handlers_.back()->get_status();
 
   return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
          status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
@@ -215,7 +215,7 @@ void
 ExecutorClient::cancel_plan_execution()
 {
   if (should_cancel_goal()) {
-    auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+    auto future_cancel = action_client_->async_cancel_goal(goal_handlers_.back());
     if (rclcpp::spin_until_future_complete(
         node_->get_node_base_interface(), future_cancel, 3s) !=
       rclcpp::FutureReturnCode::SUCCESS)
@@ -349,7 +349,7 @@ ExecutorClient::feedback_callback(
 void
 ExecutorClient::result_callback(const GoalHandleExecutePlan::WrappedResult & result)
 {
-  if (goal_handle_.get()->get_goal_id() == result.goal_id) {
+  if (goal_handlers_.back().get()->get_goal_id() == result.goal_id) {
     goal_result_available_ = true;
     result_ = result;
     feedback_ = ExecutePlan::Feedback();

@@ -583,8 +583,8 @@ ExecutorNode::execute_plan()
   auto result = std::make_shared<ExecutePlan::Result>();
 
   PlanRuntineInfo runtime_info;
-  runtime_info.complete_plan = current_goal_handle_->get_goal()->plan;
-  runtime_info.remaining_plan = current_goal_handle_->get_goal()->plan;
+  runtime_info.complete_plan = goal_handlers_.back()->get_goal()->plan;
+  runtime_info.remaining_plan = goal_handlers_.back()->get_goal()->plan;
   runtime_info.ordered_sub_goals = {};
 
   complete_plan_ = &runtime_info.complete_plan;
@@ -595,7 +595,7 @@ ExecutorNode::execute_plan()
 
   if (!init_plan_for_execution(runtime_info)) {
     result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-    current_goal_handle_->succeed(result);
+    goal_handlers_.back()->succeed(result);
     return;
   }
 
@@ -606,13 +606,13 @@ ExecutorNode::execute_plan()
 
   while (status == BT::NodeStatus::RUNNING && !cancel_plan_requested_) {
     if (replan_requested_) {
-      runtime_info.complete_plan = current_goal_handle_->get_goal()->plan;
-      runtime_info.remaining_plan = current_goal_handle_->get_goal()->plan;
+      runtime_info.complete_plan = goal_handlers_.back()->get_goal()->plan;
+      runtime_info.remaining_plan = goal_handlers_.back()->get_goal()->plan;
       bool success = replan_for_execution(runtime_info);
 
       if (!success) {
         result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-        current_goal_handle_->succeed(result);
+        goal_handlers_.back()->succeed(result);
         return;
       }
     }
@@ -625,7 +625,7 @@ ExecutorNode::execute_plan()
       status = BT::NodeStatus::FAILURE;
     }
 
-    current_goal_handle_->publish_feedback(feedback);
+    goal_handlers_.back()->publish_feedback(feedback);
 
     update_plan(runtime_info);
     remaining_plan_pub_->publish(runtime_info.remaining_plan);
@@ -673,9 +673,9 @@ ExecutorNode::execute_plan()
 
   if (rclcpp::ok()) {
     if (cancel_plan_requested_) {
-      current_goal_handle_->canceled(result);
+      goal_handlers_.back()->canceled(result);
     } else {
-      current_goal_handle_->succeed(result);
+      goal_handlers_.back()->succeed(result);
     }
     if (result->result == plansys2_msgs::action::ExecutePlan::Result::SUCCESS) {
       RCLCPP_INFO(this->get_logger(), "Plan Succeeded");
@@ -698,15 +698,16 @@ ExecutorNode::handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_
 {
   if (executor_state_ != EXECUTING_STATE) {
     using namespace std::placeholders;
-    current_goal_handle_ = goal_handle;
+
+    goal_handlers_.push_back(goal_handle);
 
     std::thread{std::bind(&ExecutorNode::execute_plan, this)}.detach();
   } else {
-    // auto result = std::make_shared<ExecutePlan::Result>();
-    // result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-    // current_goal_handle_->succeed(result);
-
-    current_goal_handle_ = goal_handle;
+    auto result = std::make_shared<ExecutePlan::Result>();
+    result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
+    goal_handlers_.back()->succeed(result);
+    
+    goal_handlers_.push_back(goal_handle);
     replan_requested_ = true;
   }
 }

@@ -20,6 +20,7 @@
 #include <string>
 #include <map>
 #include <tuple>
+#include <list>
 
 #include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
@@ -138,7 +139,8 @@ protected:
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
   void handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
-  std::shared_ptr<GoalHandleExecutePlan> current_goal_handle_;
+  
+  std::list<std::shared_ptr<GoalHandleExecutePlan>> goal_handlers_;
 
   std::vector<plansys2_msgs::msg::ActionExecutionInfo> get_feedback_info(
     std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map);

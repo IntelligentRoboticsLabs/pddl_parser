@@ -73,11 +73,15 @@ void POPFPlanSolver::configure(
   lc_node_ = lc_node;
 
   arguments_parameter_name_ = plugin_name + ".arguments";
-  lc_node_->declare_parameter<std::string>(arguments_parameter_name_, "");
-
   output_dir_parameter_name_ = plugin_name + ".output_dir";
-  lc_node_->declare_parameter<std::string>(
-    output_dir_parameter_name_, std::filesystem::temp_directory_path());
+
+  if (!lc_node_->has_parameter(arguments_parameter_name_)) {
+    lc_node_->declare_parameter<std::string>(arguments_parameter_name_, "");
+  }
+  if (!lc_node_->has_parameter(output_dir_parameter_name_)) {
+    lc_node_->declare_parameter<std::string>(
+      output_dir_parameter_name_, std::filesystem::temp_directory_path());
+  }
 }
 
 std::optional<plansys2_msgs::msg::Plan>
@@ -112,12 +116,15 @@ POPFPlanSolver::getPlan(
   problem_out << problem;
   problem_out.close();
 
-  RCLCPP_INFO(
-    lc_node_->get_logger(), "[%s-popf] called with timeout %f seconds",
-    lc_node_->get_name(), solver_timeout.seconds());
 
   const auto plan_file_path = output_dir / std::filesystem::path("plan");
   const auto args = lc_node_->get_parameter(arguments_parameter_name_).value_to_string();
+
+  RCLCPP_INFO(
+    lc_node_->get_logger(),
+    "[%s-popf] called with timeout %f seconds with args [%s] with output dir %s",
+    lc_node_->get_name(), solver_timeout.seconds(), args.c_str(), output_dir.c_str());
+
   const int status = system(
     ("ros2 run popf popf " + args + " " +
     domain_file_path.string() + " " + problem_file_path.string() + " > " + plan_file_path.string())

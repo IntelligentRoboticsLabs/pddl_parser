@@ -223,17 +223,17 @@ PlannerNode::get_plan_service_callback(
     }
   }
 
-  plansys2_msgs::msg::PlanArray plans;
+  std::vector<plansys2_msgs::msg::Plan> plans;
   bool anyplan = false;
   for (auto & result : results) {
     if (result.second.has_value()) {
-      plans.plan_array.push_back(result.second.value());      
+      plans.push_back(result.second.value());      
       anyplan = true;
     }
   }
 
-  std::sort(plans.plan_array.begin(), plans.plan_array.end(),
-    [](const plansys2_msgs::msg::PlanItem & a, const plansys2_msgs::msg::PlanArray & b)
+  std::sort(plans.begin(), plans.end(),
+    [](const plansys2_msgs::msg::Plan & a, const plansys2_msgs::msg::Plan & b)
     { 
       return a.items.size() < b.items.size(); 
     });
@@ -241,7 +241,7 @@ PlannerNode::get_plan_service_callback(
   std::cerr << "get_plan_array_service_callback end" << std::endl;
   if (anyplan) {
     response->success = true;
-    response->plan = response->plan_array.plan_array.front();
+    response->plan = plans.front();
   } else {
     response->success = false;
     response->error_info = "Plan not found";
