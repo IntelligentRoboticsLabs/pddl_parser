@@ -29,6 +29,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
 #include "plansys2_msgs/srv/get_plan.hpp"
+#include "plansys2_msgs/srv/get_plan_array.hpp"
 #include "plansys2_msgs/srv/validate_domain.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -44,6 +45,7 @@ class PlannerNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
   PlannerNode();
+  ~PlannerNode();
 
   using CallbackReturnT =
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -62,6 +64,11 @@ public:
     const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
     const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response);
 
+  void get_plan_array_service_callback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Request> request,
+    const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Response> response);
+
   void validate_domain_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<plansys2_msgs::srv::ValidateDomain::Request> request,
@@ -78,6 +85,8 @@ private:
 
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr
     get_plan_service_;
+  rclcpp::Service<plansys2_msgs::srv::GetPlanArray>::SharedPtr
+    get_plan_array_service_;
   rclcpp::Service<plansys2_msgs::srv::ValidateDomain>::SharedPtr
     validate_domain_service_;
 };
@@ -107,6 +116,20 @@ std::string get_plugin_type_param(
     exit(-1);
   }
   return plugin_type;
+}
+
+template<typename NodeT>
+std::string get_args_param(
+  NodeT node,
+  const std::string & plugin_name)
+{
+  declare_parameter_if_not_declared(node, plugin_name + ".args", rclcpp::ParameterValue(""));
+  std::string plugin_arg;
+  if (!node->get_parameter(plugin_name + ".args", plugin_arg)) {
+    RCLCPP_FATAL(node->get_logger(), "'args' param not defined for %s", plugin_name.c_str());
+    exit(-1);
+  }
+  return plugin_arg;
 }
 
 }  // namespace plansys2

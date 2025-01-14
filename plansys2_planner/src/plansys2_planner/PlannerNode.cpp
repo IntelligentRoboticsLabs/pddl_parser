@@ -39,6 +39,19 @@ PlannerNode::PlannerNode()
   declare_parameter("plan_solver_timeout", timeout);
 }
 
+PlannerNode::~PlannerNode()
+{
+  std::vector<std::string> loaded_libraries = lp_loader_.getRegisteredLibraries();
+
+  for (const auto & library : loaded_libraries) {
+    try {
+        lp_loader_.unloadLibraryForClass(library);
+        std::cout << "Successfully unloaded library: " << library << std::endl;
+    } catch (const pluginlib::LibraryUnloadException & e) {
+        std::cerr << "Failed to unload library: " << library << ". Error: " << e.what() << std::endl;
+    }
+  }
+}
 
 using CallbackReturnT =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -72,7 +85,9 @@ PlannerNode::on_configure(const rclcpp_lifecycle::State & state)
         plansys2::PlanSolverBase::Ptr solver =
           lp_loader_.createUniqueInstance(solver_types_[i]);
 
+        std::cerr << "====================== 1 " << std::endl;
         solver->configure(node, solver_ids_[i]);
+        std::cerr << "====================== 2 " << std::endl;
 
         RCLCPP_INFO(
           get_logger(), "Created solver : %s of type %s",
@@ -98,6 +113,13 @@ PlannerNode::on_configure(const rclcpp_lifecycle::State & state)
     "planner/get_plan",
     std::bind(
       &PlannerNode::get_plan_service_callback,
+      this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
+
+  get_plan_array_service_ = create_service<plansys2_msgs::srv::GetPlanArray>(
+    "planner/get_plan_array",
+    std::bind(
+      &PlannerNode::get_plan_array_service_callback,
       this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
@@ -161,12 +183,128 @@ PlannerNode::get_plan_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
 {
-  auto plan = solvers_.begin()->second->getPlan(
-    request->domain, request->problem, get_namespace(), solver_timeout_);
+  std::cerr << "get_plan_array_service_callback 1" << std::endl;
+  std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
+  std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
 
-  if (plan) {
+  for (auto & solver : solvers_) {
+    std::cerr << "get_plan_array_service_callback future for " << solver.first << std::endl;
+
+    futures[solver.first] = std::async(std::launch::async,
+      &plansys2::PlanSolverBase::getPlan,solver.second,
+      request->domain, request->problem, get_namespace(), solver_timeout_);
+  }
+
+  auto start = now();
+
+  size_t pending_result = solvers_.size();
+  while (pending_result > 0 || now() - start > solver_timeout_) {
+    for (auto & fut : futures) {
+      if (results.find(fut.first) == results.end()) {
+        if (fut.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+          std::cerr << "get_plan_array_service_callback result ready for " << fut.first << std::endl;
+          results[fut.first] = fut.second.get();
+          pending_result--;
+        }
+      }
+    }
+  }
+
+  // Destroying unfinished futures
+  for (auto & fut : futures) {
+    if (results.find(fut.first) == results.end()) {
+      std::cerr << "Destroying unfinished future for " << fut.first << std::endl;
+      try {
+        // Retrieve and discard the result to avoid blocking in destructor
+        fut.second.get();
+      } catch (const std::exception &e) {
+        std::cerr << "Exception while destroying future for " << fut.first << ": " << e.what() << std::endl;
+      }
+    }
+  }
+
+  plansys2_msgs::msg::PlanArray plans;
+  bool anyplan = false;
+  for (auto & result : results) {
+    if (result.second.has_value()) {
+      plans.plan_array.push_back(result.second.value());      
+      anyplan = true;
+    }
+  }
+
+  std::sort(plans.plan_array.begin(), plans.plan_array.end(),
+    [](const plansys2_msgs::msg::PlanItem & a, const plansys2_msgs::msg::PlanArray & b)
+    { 
+      return a.items.size() < b.items.size(); 
+    });
+
+  std::cerr << "get_plan_array_service_callback end" << std::endl;
+  if (anyplan) {
     response->success = true;
-    response->plan = plan.value();
+    response->plan = response->plan_array.plan_array.front();
+  } else {
+    response->success = false;
+    response->error_info = "Plan not found";
+  }
+}
+
+void
+PlannerNode::get_plan_array_service_callback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Request> request,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Response> response)
+{
+  std::cerr << "get_plan_array_service_callback 1" << std::endl;
+  std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
+  std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
+
+  for (auto & solver : solvers_) {
+    std::cerr << "get_plan_array_service_callback future for " << solver.first << std::endl;
+
+    futures[solver.first] = std::async(std::launch::async,
+      &plansys2::PlanSolverBase::getPlan,solver.second,
+      request->domain, request->problem, get_namespace(), solver_timeout_);
+  }
+
+  auto start = now();
+
+  size_t pending_result = solvers_.size();
+  while (pending_result > 0 || now() - start > solver_timeout_) {
+    for (auto & fut : futures) {
+      if (results.find(fut.first) == results.end()) {
+        if (fut.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+          std::cerr << "get_plan_array_service_callback result ready for " << fut.first << std::endl;
+          results[fut.first] = fut.second.get();
+          pending_result--;
+        }
+      }
+    }
+  }
+
+  // Destroying unfinished futures
+  for (auto & fut : futures) {
+    if (results.find(fut.first) == results.end()) {
+      std::cerr << "Destroying unfinished future for " << fut.first << std::endl;
+      try {
+        // Retrieve and discard the result to avoid blocking in destructor
+        fut.second.get();
+      } catch (const std::exception &e) {
+        std::cerr << "Exception while destroying future for " << fut.first << ": " << e.what() << std::endl;
+      }
+    }
+  }
+
+  bool anyplan = false;
+  for (auto & result : results) {
+    if (result.second.has_value()) {
+      response->plan_array.plan_array.push_back(result.second.value());      
+      anyplan = true;
+    }
+  }
+
+  std::cerr << "get_plan_array_service_callback end" << std::endl;
+  if (anyplan) {
+    response->success = true;
   } else {
     response->success = false;
     response->error_info = "Plan not found";

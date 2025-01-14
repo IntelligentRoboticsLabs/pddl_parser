@@ -22,6 +22,7 @@
 #include "plansys2_planner/PlannerInterface.hpp"
 
 #include "plansys2_msgs/srv/get_plan.hpp"
+#include "plansys2_msgs/srv/get_plan_array.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -37,9 +38,15 @@ public:
     const std::string & domain, const std::string & problem,
     const std::string & node_namespace = "");
 
+  plansys2_msgs::msg::PlanArray getPlanArray(
+    const std::string & domain, const std::string & problem,
+    const std::string & node_namespace = "");
+
 private:
   rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr
     get_plan_client_;
+  rclcpp::Client<plansys2_msgs::srv::GetPlanArray>::SharedPtr
+    get_plan_array_client_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Duration solver_timeout_ = rclcpp::Duration(15, 0);
