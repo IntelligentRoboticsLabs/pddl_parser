@@ -588,8 +588,6 @@ ProblemExpertNode::get_problem_service_callback(
   } else {
     response->success = true;
     response->problem = problem_expert_->getProblem();
-
-    std::cerr << "get_problem_service_callback [" << response->problem << "]" << std::endl;
   }
 }
 

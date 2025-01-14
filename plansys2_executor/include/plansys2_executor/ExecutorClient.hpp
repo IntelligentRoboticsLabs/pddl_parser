@@ -18,6 +18,7 @@
 #include <optional>
 #include <string>
 #include <memory>
+#include <list>
 #include <vector>
 
 #include "plansys2_msgs/action/execute_plan.hpp"

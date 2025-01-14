@@ -706,7 +706,7 @@ ExecutorNode::handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_
     auto result = std::make_shared<ExecutePlan::Result>();
     result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
     goal_handlers_.back()->succeed(result);
-    
+
     goal_handlers_.push_back(goal_handle);
     replan_requested_ = true;
   }

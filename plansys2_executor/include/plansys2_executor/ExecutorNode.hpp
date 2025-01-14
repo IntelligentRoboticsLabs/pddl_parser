@@ -139,7 +139,7 @@ protected:
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
   void handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_handle);
-  
+
   std::list<std::shared_ptr<GoalHandleExecutePlan>> goal_handlers_;
 
   std::vector<plansys2_msgs::msg::ActionExecutionInfo> get_feedback_info(

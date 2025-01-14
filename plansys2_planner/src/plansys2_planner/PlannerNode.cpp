@@ -45,10 +45,11 @@ PlannerNode::~PlannerNode()
 
   for (const auto & library : loaded_libraries) {
     try {
-        lp_loader_.unloadLibraryForClass(library);
-        std::cout << "Successfully unloaded library: " << library << std::endl;
+      lp_loader_.unloadLibraryForClass(library);
+      std::cout << "Successfully unloaded library: " << library << std::endl;
     } catch (const pluginlib::LibraryUnloadException & e) {
-        std::cerr << "Failed to unload library: " << library << ". Error: " << e.what() << std::endl;
+      std::cerr << "Failed to unload library: " << library <<
+        ". Error: " << e.what() << std::endl;
     }
   }
 }
@@ -85,9 +86,7 @@ PlannerNode::on_configure(const rclcpp_lifecycle::State & state)
         plansys2::PlanSolverBase::Ptr solver =
           lp_loader_.createUniqueInstance(solver_types_[i]);
 
-        std::cerr << "====================== 1 " << std::endl;
         solver->configure(node, solver_ids_[i]);
-        std::cerr << "====================== 2 " << std::endl;
 
         RCLCPP_INFO(
           get_logger(), "Created solver : %s of type %s",
@@ -183,15 +182,12 @@ PlannerNode::get_plan_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
 {
-  std::cerr << "get_plan_array_service_callback 1" << std::endl;
   std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
   std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
 
   for (auto & solver : solvers_) {
-    std::cerr << "get_plan_array_service_callback future for " << solver.first << std::endl;
-
     futures[solver.first] = std::async(std::launch::async,
-      &plansys2::PlanSolverBase::getPlan,solver.second,
+      &plansys2::PlanSolverBase::getPlan, solver.second,
       request->domain, request->problem, get_namespace(), solver_timeout_);
   }
 
@@ -202,7 +198,6 @@ PlannerNode::get_plan_service_callback(
     for (auto & fut : futures) {
       if (results.find(fut.first) == results.end()) {
         if (fut.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-          std::cerr << "get_plan_array_service_callback result ready for " << fut.first << std::endl;
           results[fut.first] = fut.second.get();
           pending_result--;
         }
@@ -210,15 +205,14 @@ PlannerNode::get_plan_service_callback(
     }
   }
 
-  // Destroying unfinished futures
   for (auto & fut : futures) {
     if (results.find(fut.first) == results.end()) {
-      std::cerr << "Destroying unfinished future for " << fut.first << std::endl;
       try {
-        // Retrieve and discard the result to avoid blocking in destructor
         fut.second.get();
-      } catch (const std::exception &e) {
-        std::cerr << "Exception while destroying future for " << fut.first << ": " << e.what() << std::endl;
+      } catch (const std::exception & e) {
+        RCLCPP_WARN_STREAM(
+          get_logger(), "Exception while destroying future for "
+            << fut.first << ": " << e.what());
       }
     }
   }
@@ -227,18 +221,17 @@ PlannerNode::get_plan_service_callback(
   bool anyplan = false;
   for (auto & result : results) {
     if (result.second.has_value()) {
-      plans.push_back(result.second.value());      
+      plans.push_back(result.second.value());
       anyplan = true;
     }
   }
 
   std::sort(plans.begin(), plans.end(),
     [](const plansys2_msgs::msg::Plan & a, const plansys2_msgs::msg::Plan & b)
-    { 
-      return a.items.size() < b.items.size(); 
+    {
+      return a.items.size() < b.items.size();
     });
 
-  std::cerr << "get_plan_array_service_callback end" << std::endl;
   if (anyplan) {
     response->success = true;
     response->plan = plans.front();
@@ -254,15 +247,12 @@ PlannerNode::get_plan_array_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Response> response)
 {
-  std::cerr << "get_plan_array_service_callback 1" << std::endl;
   std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
   std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
 
   for (auto & solver : solvers_) {
-    std::cerr << "get_plan_array_service_callback future for " << solver.first << std::endl;
-
     futures[solver.first] = std::async(std::launch::async,
-      &plansys2::PlanSolverBase::getPlan,solver.second,
+      &plansys2::PlanSolverBase::getPlan, solver.second,
       request->domain, request->problem, get_namespace(), solver_timeout_);
   }
 
@@ -273,7 +263,6 @@ PlannerNode::get_plan_array_service_callback(
     for (auto & fut : futures) {
       if (results.find(fut.first) == results.end()) {
         if (fut.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-          std::cerr << "get_plan_array_service_callback result ready for " << fut.first << std::endl;
           results[fut.first] = fut.second.get();
           pending_result--;
         }
@@ -284,12 +273,13 @@ PlannerNode::get_plan_array_service_callback(
   // Destroying unfinished futures
   for (auto & fut : futures) {
     if (results.find(fut.first) == results.end()) {
-      std::cerr << "Destroying unfinished future for " << fut.first << std::endl;
       try {
         // Retrieve and discard the result to avoid blocking in destructor
         fut.second.get();
-      } catch (const std::exception &e) {
-        std::cerr << "Exception while destroying future for " << fut.first << ": " << e.what() << std::endl;
+      } catch (const std::exception & e) {
+        RCLCPP_WARN_STREAM(
+          get_logger(), "Exception while destroying future for "
+            << fut.first << ": " << e.what());
       }
     }
   }
@@ -297,12 +287,11 @@ PlannerNode::get_plan_array_service_callback(
   bool anyplan = false;
   for (auto & result : results) {
     if (result.second.has_value()) {
-      response->plan_array.plan_array.push_back(result.second.value());      
+      response->plan_array.plan_array.push_back(result.second.value());
       anyplan = true;
     }
   }
 
-  std::cerr << "get_plan_array_service_callback end" << std::endl;
   if (anyplan) {
     response->success = true;
   } else {
