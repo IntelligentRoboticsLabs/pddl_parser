@@ -702,9 +702,9 @@ ExecutorNode::handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_
 
     std::thread{std::bind(&ExecutorNode::execute_plan, this)}.detach();
   } else {
-    auto result = std::make_shared<ExecutePlan::Result>();
-    result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-    current_goal_handle_->succeed(result);
+    // auto result = std::make_shared<ExecutePlan::Result>();
+    // result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
+    // current_goal_handle_->succeed(result);
 
     current_goal_handle_ = goal_handle;
     replan_requested_ = true;
