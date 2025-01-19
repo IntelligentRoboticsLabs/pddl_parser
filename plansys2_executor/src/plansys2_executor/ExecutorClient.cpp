@@ -81,25 +81,23 @@ ExecutorClient::start_plan_execution(const plansys2_msgs::msg::Plan & plan)
 bool
 ExecutorClient::execute_and_check_plan()
 {
-  if (rclcpp::ok() && !goal_result_available_) {
-    rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_);
 
-    if (!goal_result_available_) {
-      return true;  // Plan not finished
-    }
+  if (!goal_result_available_) {
+    return true;  // Plan not finished
   }
 
   switch (result_.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       if (result_.result == nullptr) {
         RCLCPP_WARN(
-          node_->get_logger(), "Plan failed due to a nullptr in the result");
+          node_->get_logger(), "execute_and_check_plan: Plan failed due to a nullptr in the result");
       } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::SUCCESS) {
-        RCLCPP_INFO(node_->get_logger(), "Plan Succeeded");
+        RCLCPP_INFO(node_->get_logger(), "execute_and_check_plan: Plan Succeeded");
       } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::PREEMPT) {
-        RCLCPP_INFO(node_->get_logger(), "Plan Preempted");
+        RCLCPP_INFO(node_->get_logger(), "execute_and_check_plan: Plan Preempted");
       } else {
-        RCLCPP_ERROR(node_->get_logger(), "Plan Failed");
+        RCLCPP_ERROR(node_->get_logger(), "execute_and_check_plan: Plan Failed");
         for (auto msg : result_.result->action_execution_status) {
           switch (msg.status) {
             case plansys2_msgs::msg::ActionExecutionInfo::SUCCEEDED:
@@ -188,8 +186,8 @@ ExecutorClient::on_new_goal_received(const plansys2_msgs::msg::Plan & plan)
     return false;
   }
 
-  goal_handlers_.push_back(future_goal_handle.get());
-  if (!goal_handlers_.back()) {
+  goal_handler_ = future_goal_handle.get();
+  if (!goal_handler_) {
     RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by the action server");
     return false;
   }
@@ -205,7 +203,7 @@ ExecutorClient::should_cancel_goal()
   }
 
   rclcpp::spin_some(node_);
-  auto status = goal_handlers_.back()->get_status();
+  auto status = goal_handler_->get_status();
 
   return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
          status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
@@ -215,7 +213,7 @@ void
 ExecutorClient::cancel_plan_execution()
 {
   if (should_cancel_goal()) {
-    auto future_cancel = action_client_->async_cancel_goal(goal_handlers_.back());
+    auto future_cancel = action_client_->async_cancel_goal(goal_handler_);
     if (rclcpp::spin_until_future_complete(
         node_->get_node_base_interface(), future_cancel, 3s) !=
       rclcpp::FutureReturnCode::SUCCESS)
@@ -349,7 +347,9 @@ ExecutorClient::feedback_callback(
 void
 ExecutorClient::result_callback(const GoalHandleExecutePlan::WrappedResult & result)
 {
-  if (goal_handlers_.back().get()->get_goal_id() == result.goal_id) {
+  std::cerr << "ExecutorClient::result_callback 1" << std::endl;
+  if (goal_handler_->get_goal_id() == result.goal_id) {
+  std::cerr << "ExecutorClient::result_callback 2" << std::endl;
     goal_result_available_ = true;
     result_ = result;
     feedback_ = ExecutePlan::Feedback();

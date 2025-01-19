@@ -39,6 +39,7 @@
 #include "plansys2_executor/behavior_tree/check_atend_req_node.hpp"
 #include "plansys2_executor/behavior_tree/check_timeout_node.hpp"
 #include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/restore_atstart_effect_node.hpp"
 #include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
 
 namespace plansys2
@@ -245,8 +246,8 @@ ComputeBT::computeBTCallback(
 
   problem_client_->addProblem(problem_string);
 
-  auto domain = domain_client_->getDomain(true);
-  auto problem = problem_client_->getProblem(true);
+  auto domain = domain_client_->getDomain();
+  auto problem = problem_client_->getProblem();
   auto plan = planner_client_->getPlan(domain, problem);
 
   savePlan(plan.value(), problem_path.stem().u8string());
@@ -336,6 +337,7 @@ ComputeBT::computeBTCallback(
   factory.registerNodeType<WaitAtStartReq>("WaitAtStartReq");
   factory.registerNodeType<CheckAtEndReq>("CheckAtEndReq");
   factory.registerNodeType<ApplyAtStartEffect>("ApplyAtStartEffect");
+  factory.registerNodeType<RestoreAtStartEffect>("RestoreAtStartEffect");
   factory.registerNodeType<ApplyAtEndEffect>("ApplyAtEndEffect");
   factory.registerNodeType<CheckTimeout>("CheckTimeout");
 

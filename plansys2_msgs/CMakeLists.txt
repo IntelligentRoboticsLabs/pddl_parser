@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Plan.msg"
   "msg/PlanArray.msg"
   "msg/PlanItem.msg"
+  "msg/Problem.msg"
   "msg/Tree.msg"
   "srv/AddProblem.srv"
   "srv/AddProblemGoal.srv"

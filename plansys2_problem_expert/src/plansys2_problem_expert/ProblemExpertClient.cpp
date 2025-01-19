@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <memory>
 
 #include "plansys2_pddl_parser/Utils.hpp"
 
@@ -84,11 +85,20 @@ ProblemExpertClient::ProblemExpertClient()
     node_->create_client<plansys2_msgs::srv::IsProblemGoalSatisfied>(
     "problem_expert/is_problem_goal_satisfied");
 
-  problem_sub_ = node_->create_subscription<std_msgs::msg::String>(
+  problem_sub_ = node_->create_subscription<plansys2_msgs::msg::Problem>(
     "problem_expert/problem",
-    rclcpp::QoS(100), [this](std_msgs::msg::String::SharedPtr msg) {
-      cached_problem_ = msg->data;
+    rclcpp::QoS(100), [this](plansys2_msgs::msg::Problem::SharedPtr msg) {
+      cached_problem_ = msg->problem;
+      problem_ts_ = msg->stamp;
     });
+
+  update_problem_sub_ = node_->create_subscription<std_msgs::msg::Empty>(
+    "problem_expert/update_notify", 100,
+    [this](std_msgs::msg::Empty::SharedPtr msg){
+      update_time_ = this->node_->now();
+    });
+
+  problem_ts_ = node_->now();
 }
 
 std::vector<plansys2::Instance>
@@ -833,6 +843,12 @@ ProblemExpertClient::clearKnowledge()
   }
 }
 
+std::tuple<std::string, rclcpp::Time>
+ProblemExpertClient::getProblemWithTimestamp(bool use_cache)
+{
+  return {getProblem(use_cache), problem_ts_};
+}
+
 std::string
 ProblemExpertClient::getProblem(bool use_cache)
 {
@@ -869,6 +885,9 @@ ProblemExpertClient::getProblem()
   auto result = *future_result.get();
 
   if (result.success) {
+    cached_problem_ = result.problem;
+    problem_ts_ = result.stamp;
+
     return result.problem;
   } else {
     RCLCPP_ERROR_STREAM(

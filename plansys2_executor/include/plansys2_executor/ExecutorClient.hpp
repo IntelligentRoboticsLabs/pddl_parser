@@ -62,7 +62,7 @@ private:
   rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr get_remaining_plan_client_;
 
   ExecutePlan::Feedback feedback_;
-  std::list<rclcpp_action::ClientGoalHandle<ExecutePlan>::SharedPtr> goal_handlers_;
+  rclcpp_action::ClientGoalHandle<ExecutePlan>::SharedPtr goal_handler_;
   rclcpp_action::ClientGoalHandle<ExecutePlan>::WrappedResult result_;
 
   bool goal_result_available_{false};

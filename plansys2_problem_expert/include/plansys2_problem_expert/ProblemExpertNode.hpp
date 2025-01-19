@@ -24,6 +24,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
 #include "plansys2_msgs/msg/knowledge.hpp"
+#include "plansys2_msgs/msg/problem.hpp"
 #include "plansys2_msgs/srv/affect_node.hpp"
 #include "plansys2_msgs/srv/affect_param.hpp"
 #include "plansys2_msgs/srv/add_problem.hpp"
@@ -222,7 +223,7 @@ private:
 
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Empty>::SharedPtr update_pub_;
   rclcpp_lifecycle::LifecyclePublisher<plansys2_msgs::msg::Knowledge>::SharedPtr knowledge_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr problem_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<plansys2_msgs::msg::Problem>::SharedPtr problem_pub_;
 };
 
 }  // namespace plansys2

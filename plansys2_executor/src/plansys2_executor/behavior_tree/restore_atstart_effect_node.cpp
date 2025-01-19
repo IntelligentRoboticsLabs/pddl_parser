@@ -1,4 +1,4 @@
-// Copyright 2020 Intelligent Robotics Lab
+// Copyright 2025 Intelligent Robotics Lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,13 @@
 #include <string>
 #include <map>
 #include <memory>
-#include <tuple>
 
-#include "plansys2_executor/behavior_tree/check_overall_req_node.hpp"
-#include "plansys2_msgs/msg/action.hpp"
+#include "plansys2_executor/behavior_tree/restore_atstart_effect_node.hpp"
 
 namespace plansys2
 {
 
-CheckOverAllReq::CheckOverAllReq(
+RestoreAtStartEffect::RestoreAtStartEffect(
   const std::string & xml_tag_name,
   const BT::NodeConfig & conf)
 : ActionNodeBase(xml_tag_name, conf)
@@ -38,34 +36,27 @@ CheckOverAllReq::CheckOverAllReq(
 }
 
 BT::NodeStatus
-CheckOverAllReq::tick()
+RestoreAtStartEffect::tick()
 {
   std::string action;
   getInput("action", action);
 
-  if (status() != BT::NodeStatus::IDLE &&
-    last_check_problem_ts_ > problem_client_->getUpdateTime())
-  {
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  auto node = config().blackboard->get<rclcpp_lifecycle::LifecycleNode::SharedPtr>("node");
-
-  auto reqs = (*action_map_)[action].action_info.get_overall_requirements();
-  last_check_problem_ts_ = node->now();
-
-  if (!check(reqs, problem_client_)) {
-    (*action_map_)[action].execution_error_info = "Error checking over all requirements";
-
-    RCLCPP_ERROR_STREAM(
-      node->get_logger(),
-      "[" << action << "]" << (*action_map_)[action].execution_error_info << ": " <<
-        parser::pddl::toString(reqs));
-
+  if ((*action_map_)[action].action_info.is_action()) {
     return BT::NodeStatus::FAILURE;
-  } else {
-    return BT::NodeStatus::SUCCESS;
   }
+
+  auto effect = (*action_map_)[action].action_info.get_at_start_effects();
+
+  if ((*action_map_)[action].at_start_effects_applied) {
+    (*action_map_)[action].at_start_effects_applied = false;
+ 
+    std::vector<plansys2::Predicate> predicates;
+    std::vector<plansys2::Function> functions;
+    std::tuple<bool, bool, double> ret =  evaluate(
+      effect, problem_client_, predicates, functions, true, false, 0, true);
+  }
+
+  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace plansys2
