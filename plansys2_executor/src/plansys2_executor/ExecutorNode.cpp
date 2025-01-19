@@ -725,153 +725,146 @@ ExecutorNode::execution_cycle()
 {
   rclcpp::Rate rate(50);
   while (rclcpp::ok()) {
+    auto feedback = std::make_shared<ExecutePlan::Feedback>();
+    auto result = std::make_shared<ExecutePlan::Result>();
 
-  auto feedback = std::make_shared<ExecutePlan::Feedback>();
-  auto result = std::make_shared<ExecutePlan::Result>();
-
-  switch (executor_state_) {
-    case STATE_IDLE:
-      if (new_plan_received_) {
-        new_plan_received_ = false;
-
-        current_goal_handle_ = new_goal_handle_;
-
-        runtime_info_ = PlanRuntineInfo();
-        runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
-        runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
-
-        if (!init_plan_for_execution(runtime_info_)) {
-          executor_state_ = STATE_ABORTING;
-        } else {
-          executor_state_ = STATE_EXECUTING;
-        }
-      }
-      break;
-    case STATE_EXECUTING:
-      {
-        BT::NodeStatus status;
-        try {
-          status = runtime_info_.current_tree->tree.tickOnce();
-        } catch (std::exception & e) {
-          std::cerr << e.what() << std::endl;
-          executor_state_ = STATE_FAILED;
-        }
-
-        auto feedback_info_msgs = get_feedback_info(runtime_info_.action_map);
-        feedback->action_execution_status = feedback_info_msgs;
-        current_goal_handle_->publish_feedback(feedback);
-        for (const auto & msg : feedback_info_msgs) {
-          execution_info_pub_->publish(msg);
-        }
-
-        update_plan(runtime_info_);
-        remaining_plan_pub_->publish(runtime_info_.remaining_plan);
-        executing_plan_pub_->publish(runtime_info_.complete_plan);
-
-        std_msgs::msg::String dotgraph_msg;
-        dotgraph_msg.data = runtime_info_.current_tree->bt_builder->get_dotgraph(
-          runtime_info_.action_map, this->get_parameter("enable_dotgraph_legend").as_bool(),
-          this->get_parameter("print_graph").as_bool());
-        dotgraph_pub_->publish(dotgraph_msg);
-
-        if (status == BT::NodeStatus::SUCCESS) {
-          executor_state_ = STATE_SUCCEDED;
-        } else if (status == BT::NodeStatus::FAILURE) {
-          executor_state_ = STATE_FAILED;
-        } else if (cancel_requested_) {
-          cancel_requested_ = false;
-          executor_state_ = STATE_CANCELLED;
-        } else if (new_plan_received_) {
+    switch (executor_state_) {
+      case STATE_IDLE:
+        if (new_plan_received_) {
           new_plan_received_ = false;
-          executor_state_ = STATE_REPLANNING;
-        }  
-      }
-      break;
 
-    case STATE_REPLANNING:
-      result->result = plansys2_msgs::action::ExecutePlan::Result::PREEMPT;
+          current_goal_handle_ = new_goal_handle_;
 
-      if (current_goal_handle_->is_canceling()) {
-        std::cerr << "\t previous is cancelling" << std::endl;
-      } else if (current_goal_handle_->is_active()) {
-        std::cerr << "\t previous is active" << std::endl;
-        current_goal_handle_->abort(result);
-      } else {
-        current_goal_handle_ = new_goal_handle_;
-        
-        runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
-        runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
-        // runtime_info_.ordered_sub_goals = {};
+          runtime_info_ = PlanRuntineInfo();
+          runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
+          runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
 
-        if (!replan_for_execution(runtime_info_)) {
-          executor_state_ = STATE_ERROR;
-        } else {
-          executor_state_ = STATE_EXECUTING;
+          if (!init_plan_for_execution(runtime_info_)) {
+            executor_state_ = STATE_ABORTING;
+          } else {
+            executor_state_ = STATE_EXECUTING;
+          }
         }
-      }
+        break;
+      case STATE_EXECUTING:
+        {
+          BT::NodeStatus status;
+          try {
+            status = runtime_info_.current_tree->tree.tickOnce();
+          } catch (std::exception & e) {
+            std::cerr << e.what() << std::endl;
+            executor_state_ = STATE_FAILED;
+          }
 
-      break;
+          auto feedback_info_msgs = get_feedback_info(runtime_info_.action_map);
+          feedback->action_execution_status = feedback_info_msgs;
+          current_goal_handle_->publish_feedback(feedback);
+          for (const auto & msg : feedback_info_msgs) {
+            execution_info_pub_->publish(msg);
+          }
 
-    case STATE_ABORTING:
-      cancel_all_running_actions(runtime_info_);
+          update_plan(runtime_info_);
+          remaining_plan_pub_->publish(runtime_info_.remaining_plan);
+          executing_plan_pub_->publish(runtime_info_.complete_plan);
+
+          std_msgs::msg::String dotgraph_msg;
+          dotgraph_msg.data = runtime_info_.current_tree->bt_builder->get_dotgraph(
+            runtime_info_.action_map, this->get_parameter("enable_dotgraph_legend").as_bool(),
+            this->get_parameter("print_graph").as_bool());
+          dotgraph_pub_->publish(dotgraph_msg);
+
+          if (status == BT::NodeStatus::SUCCESS) {
+            executor_state_ = STATE_SUCCEDED;
+          } else if (status == BT::NodeStatus::FAILURE) {
+            executor_state_ = STATE_FAILED;
+          } else if (cancel_requested_) {
+            cancel_requested_ = false;
+            executor_state_ = STATE_CANCELLED;
+          } else if (new_plan_received_) {
+            new_plan_received_ = false;
+            executor_state_ = STATE_REPLANNING;
+          }  
+        }
+        break;
+      case STATE_REPLANNING:
+        result->result = plansys2_msgs::action::ExecutePlan::Result::PREEMPT;
+
+        if (current_goal_handle_->is_canceling()) {
+          std::cerr << "\t previous is cancelling" << std::endl;
+        } else if (current_goal_handle_->is_active()) {
+          std::cerr << "\t previous is active" << std::endl;
+          current_goal_handle_->abort(result);
+        } else {
+          current_goal_handle_ = new_goal_handle_;
+        
+          runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
+          runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
+          // runtime_info_.ordered_sub_goals = {};
+
+          if (!replan_for_execution(runtime_info_)) {
+            executor_state_ = STATE_ERROR;
+          } else {
+            executor_state_ = STATE_EXECUTING;
+          }
+        }
+
+        break;
+      case STATE_ABORTING:
+        cancel_all_running_actions(runtime_info_);
       
-      runtime_info_.ordered_sub_goals = {};
+        runtime_info_.ordered_sub_goals = {};
 
-      result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-      result->action_execution_status = get_feedback_info(runtime_info_.action_map);
+        result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
+        result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
-      current_goal_handle_->abort(result);
-      executor_state_ = STATE_IDLE;
-      break;
+        current_goal_handle_->abort(result);
+        executor_state_ = STATE_IDLE;
+        break;
+      case STATE_CANCELLED:
+        cancel_all_running_actions(runtime_info_);
 
-    case STATE_CANCELLED:
-      cancel_all_running_actions(runtime_info_);
+        runtime_info_.ordered_sub_goals = {};
 
-      runtime_info_.ordered_sub_goals = {};
+        result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
+        result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
-      result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-      result->action_execution_status = get_feedback_info(runtime_info_.action_map);
+        current_goal_handle_->canceled(result);
+        executor_state_ = STATE_IDLE;
+        break;
+      case STATE_FAILED:
+        cancel_all_running_actions(runtime_info_);
 
-      current_goal_handle_->canceled(result);
-      executor_state_ = STATE_IDLE;
-      break;
+        runtime_info_.ordered_sub_goals = {};
 
-    case STATE_FAILED:
-      cancel_all_running_actions(runtime_info_);
+        result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
+        result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
-      runtime_info_.ordered_sub_goals = {};
+        current_goal_handle_->succeed(result);
+        executor_state_ = STATE_IDLE;
+        break;
+      case STATE_ERROR:
+        cancel_all_running_actions(runtime_info_);
 
-      result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-      result->action_execution_status = get_feedback_info(runtime_info_.action_map);
+        runtime_info_.ordered_sub_goals = {};
 
-      current_goal_handle_->succeed(result);
-      executor_state_ = STATE_IDLE;
-      break;
+        result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
+        result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
-    case STATE_ERROR:
-      cancel_all_running_actions(runtime_info_);
+        current_goal_handle_->abort(result);
+        executor_state_ = STATE_IDLE;
+        break;
+      case STATE_SUCCEDED:
+        result->result = plansys2_msgs::action::ExecutePlan::Result::SUCCESS;
+        result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
-      runtime_info_.ordered_sub_goals = {};
+        runtime_info_.ordered_sub_goals = {};
 
-      result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
-      result->action_execution_status = get_feedback_info(runtime_info_.action_map);
+        current_goal_handle_->succeed(result);
+        executor_state_ = STATE_IDLE;
+        break;
+    }
 
-      current_goal_handle_->abort(result);
-      executor_state_ = STATE_IDLE;
-      break;
-
-    case STATE_SUCCEDED:
-      result->result = plansys2_msgs::action::ExecutePlan::Result::SUCCESS;
-      result->action_execution_status = get_feedback_info(runtime_info_.action_map);
-
-      runtime_info_.ordered_sub_goals = {};
-
-      current_goal_handle_->succeed(result);
-      executor_state_ = STATE_IDLE;
-      break;
-  }
-
-  rate.sleep();
+    rate.sleep();
   }
 }
 
