@@ -1,3 +1,7 @@
+plansys2:
+  ros__parameters:
+    use_real_time: false
+    
 planner_client:
   ros__parameters:
     plan_solver_timeout: 15.0  

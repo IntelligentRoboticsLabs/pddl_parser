@@ -11,7 +11,7 @@ find_package(plansys2_problem_expert REQUIRED)
 
 find_package(Qt5Widgets REQUIRED)
 
-set(CMAKE_CXX_STANDARD 17)
+
 
 set(dependencies
   rclcpp

@@ -33,14 +33,14 @@ class POPFPlanSolver : public PlanSolverBase
 private:
   std::string arguments_parameter_name_;
   std::string output_dir_parameter_name_;
-  rclcpp_lifecycle::LifecycleNode::SharedPtr lc_node_;
+  bool cancel_requested_;
 
 public:
   POPFPlanSolver();
 
   std::optional<std::filesystem::path> create_folders(const std::string & node_namespace);
 
-  void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &);
+  void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &) override;
 
   std::optional<plansys2_msgs::msg::Plan> getPlan(
     const std::string & domain, const std::string & problem,
@@ -50,6 +50,9 @@ public:
   bool isDomainValid(
     const std::string & domain,
     const std::string & node_namespace = "");
+
+protected:
+  std::optional<plansys2_msgs::msg::Plan> parse_plan_result(const std::string & plan_path);
 };
 
 }  // namespace plansys2

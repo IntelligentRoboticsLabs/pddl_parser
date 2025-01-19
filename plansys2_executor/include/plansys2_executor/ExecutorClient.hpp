@@ -18,6 +18,7 @@
 #include <optional>
 #include <string>
 #include <memory>
+#include <list>
 #include <vector>
 
 #include "plansys2_msgs/action/execute_plan.hpp"
@@ -61,7 +62,7 @@ private:
   rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr get_remaining_plan_client_;
 
   ExecutePlan::Feedback feedback_;
-  rclcpp_action::ClientGoalHandle<ExecutePlan>::SharedPtr goal_handle_;
+  rclcpp_action::ClientGoalHandle<ExecutePlan>::SharedPtr goal_handler_;
   rclcpp_action::ClientGoalHandle<ExecutePlan>::WrappedResult result_;
 
   bool goal_result_available_{false};

@@ -1,4 +1,4 @@
-// Copyright 2020 Intelligent Robotics Lab
+// Copyright 2025 Intelligent Robotics Lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PLANSYS2_EXECUTOR__BEHAVIOR_TREE__CHECK_OVERALL_REQ_NODE_HPP_
-#define PLANSYS2_EXECUTOR__BEHAVIOR_TREE__CHECK_OVERALL_REQ_NODE_HPP_
+#ifndef PLANSYS2_EXECUTOR__BEHAVIOR_TREE__RESTORE_ATSTART_EFFECT_NODE_HPP_
+#define PLANSYS2_EXECUTOR__BEHAVIOR_TREE__RESTORE_ATSTART_EFFECT_NODE_HPP_
 
 #include <map>
 #include <string>
@@ -30,10 +30,10 @@
 namespace plansys2
 {
 
-class CheckOverAllReq : public BT::ActionNodeBase
+class RestoreAtStartEffect : public BT::ActionNodeBase
 {
 public:
-  CheckOverAllReq(
+  RestoreAtStartEffect(
     const std::string & xml_tag_name,
     const BT::NodeConfig & conf);
 
@@ -44,16 +44,15 @@ public:
   {
     return BT::PortsList(
       {
-        BT::InputPort<std::string>("action", "Action whose over all reqs must stop"),
+        BT::InputPort<std::string>("action", "Action whose at end reqs must stop"),
       });
   }
 
 private:
   std::shared_ptr<std::map<std::string, ActionExecutionInfo>> action_map_;
   std::shared_ptr<plansys2::ProblemExpertClient> problem_client_;
-  rclcpp::Time last_check_problem_ts_;
 };
 
 }  // namespace plansys2
 
-#endif  // PLANSYS2_EXECUTOR__BEHAVIOR_TREE__CHECK_OVERALL_REQ_NODE_HPP_
+#endif  // PLANSYS2_EXECUTOR__BEHAVIOR_TREE__RESTORE_ATSTART_EFFECT_NODE_HPP_

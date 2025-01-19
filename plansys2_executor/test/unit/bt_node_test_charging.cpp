@@ -42,6 +42,7 @@
 #include "plansys2_executor/behavior_tree/execute_action_node.hpp"
 #include "plansys2_executor/behavior_tree/wait_atstart_req_node.hpp"
 #include "plansys2_executor/behavior_tree/apply_atstart_effect_node.hpp"
+#include "plansys2_executor/behavior_tree/restore_atstart_effect_node.hpp"
 #include "plansys2_executor/behavior_tree/apply_atend_effect_node.hpp"
 
 #include "lifecycle_msgs/msg/state.hpp"
@@ -296,6 +297,135 @@ TEST(problem_expert, apply_atstart_effect_test)
       }
     }
     ASSERT_FALSE(problem_client->existPredicate(plansys2::Predicate("(robot_at robot1 wp1)")));
+  } catch (std::exception & e) {
+    std::cerr << e.what() << std::endl;
+  }
+
+  finish = true;
+  t.join();
+}
+
+TEST(problem_expert, restore_atstart_effect_test)
+{
+  auto test_node = rclcpp::Node::make_shared("test_node");
+  auto test_lc_node = rclcpp_lifecycle::LifecycleNode::make_shared("test_lc_node");
+  auto domain_node = std::make_shared<plansys2::DomainExpertNode>();
+  auto problem_node = std::make_shared<plansys2::ProblemExpertNode>();
+
+  auto domain_client = std::make_shared<plansys2::DomainExpertClient>();
+  auto problem_client = std::make_shared<plansys2::ProblemExpertClient>();
+
+  std::string pkgpath = ament_index_cpp::get_package_share_directory("plansys2_executor");
+
+  domain_node->set_parameter({"model_file", pkgpath + "/pddl/domain_charging.pddl"});
+  problem_node->set_parameter({"model_file", pkgpath + "/pddl/domain_charging.pddl"});
+
+  rclcpp::experimental::executors::EventsExecutor exe;
+
+  exe.add_node(domain_node->get_node_base_interface());
+  exe.add_node(problem_node->get_node_base_interface());
+
+  bool finish = false;
+  std::thread t([&]() {
+      while (!finish) {exe.spin_some();}
+    });
+
+
+  domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+  problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node->now();
+    while ((test_node->now() - start).seconds() < 0.5) {
+      rate.sleep();
+    }
+  }
+
+  domain_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+  problem_node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
+  {
+    rclcpp::Rate rate(10);
+    auto start = test_node->now();
+    while ((test_node->now() - start).seconds() < 0.5) {
+      rate.sleep();
+    }
+  }
+
+  auto action_map = std::make_shared<std::map<std::string, plansys2::ActionExecutionInfo>>();
+  (*action_map)["(move robot1 wp1 wp2):5"] = plansys2::ActionExecutionInfo();
+  (*action_map)["(move robot1 wp1 wp2):5"].action_info =
+    domain_client->getDurativeAction(
+    plansys2::get_action_name("(move robot1 wp1 wp2)"),
+    plansys2::get_action_params("(move robot1 wp1 wp2)"));
+
+  ASSERT_NE(
+    (*action_map)["(move robot1 wp1 wp2):5"].action_info.action.index(),
+    std::variant_npos);
+
+  std::string bt_xml_tree =
+    R"(
+    <root BTCPP_format="4" main_tree_to_execute = "MainTree" >
+      <BehaviorTree ID="MainTree">
+        <Sequence name="root_sequence">
+          <ApplyAtStartEffect action="(move robot1 wp1 wp2):5"/>
+          <RestoreAtStartEffect action="(move robot1 wp1 wp2):5"/>
+      </Sequence>
+      </BehaviorTree>
+    </root>
+  )";
+
+  auto blackboard = BT::Blackboard::create();
+
+  blackboard->set("action_map", action_map);
+  blackboard->set("node", test_lc_node);
+  blackboard->set("problem_client", problem_client);
+
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<plansys2::ExecuteAction>("ExecuteAction");
+  factory.registerNodeType<plansys2::ApplyAtStartEffect>("ApplyAtStartEffect");
+  factory.registerNodeType<plansys2::RestoreAtStartEffect>("RestoreAtStartEffect");
+
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("robot1", "robot")));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("wp1", "waypoint")));
+  ASSERT_TRUE(problem_client->addInstance(plansys2::Instance("wp2", "waypoint")));
+
+  try {
+    std::vector<std::string> predicates = {
+      "(robot_at robot1 wp1)",
+      "(charger_at wp2)",
+      "(connected wp1 wp2)"};
+
+    for (const auto & pred : predicates) {
+      ASSERT_TRUE(problem_client->addPredicate(plansys2::Predicate(pred)));
+    }
+
+    std::vector<std::string> functions = {
+      "(= (speed robot1) 3)",
+      "(= (max_range robot1) 75)",
+      "(= (state_of_charge robot1) 99)",
+      "(= (distance wp1 wp2) 15)",
+      "(= (distance wp2 wp1) 15)"};
+
+    for (const auto & func : functions) {
+      ASSERT_TRUE(problem_client->addFunction(plansys2::Function(func)));
+    }
+
+    auto tree = factory.createTreeFromText(bt_xml_tree, blackboard);
+
+    auto status = BT::NodeStatus::RUNNING;
+    status = tree.tickOnce();
+    ASSERT_EQ(status, BT::NodeStatus::SUCCESS);
+
+    {
+      rclcpp::Rate rate(10);
+      auto start = test_node->now();
+      while ((test_node->now() - start).seconds() < 0.5) {
+        rate.sleep();
+      }
+    }
+    ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_at robot1 wp1)")));
   } catch (std::exception & e) {
     std::cerr << e.what() << std::endl;
   }

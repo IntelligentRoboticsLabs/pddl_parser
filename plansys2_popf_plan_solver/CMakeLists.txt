@@ -8,7 +8,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(plansys2_core REQUIRED)
 find_package(pluginlib REQUIRED)
 
-set(CMAKE_CXX_STANDARD 17)
+
 
 set(dependencies
   rclcpp
