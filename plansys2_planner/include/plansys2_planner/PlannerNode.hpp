@@ -74,6 +74,11 @@ public:
     const std::shared_ptr<plansys2_msgs::srv::ValidateDomain::Request> request,
     const std::shared_ptr<plansys2_msgs::srv::ValidateDomain::Response> response);
 
+  plansys2_msgs::msg::PlanArray get_plan_array(
+    const std::string & domain, const std::string & problem);
+
+  void set_timeout(rclcpp::Duration solver_timeout) {solver_timeout_ = solver_timeout;}
+
 private:
   pluginlib::ClassLoader<plansys2::PlanSolverBase> lp_loader_;
   SolverMap solvers_;

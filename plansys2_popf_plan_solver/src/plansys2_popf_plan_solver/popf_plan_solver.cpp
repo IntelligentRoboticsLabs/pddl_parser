@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/stat.h>
-#include <sys/types.h>
 
-#include <filesystem>
-#include <string>
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
 #include <fstream>
 
 #include "plansys2_msgs/msg/plan_item.hpp"
@@ -90,21 +83,14 @@ POPFPlanSolver::getPlan(
   const std::string & node_namespace,
   const rclcpp::Duration solver_timeout)
 {
-  if (system(nullptr) == 0) {
-    return {};
-  }
-
   // Set up the folders
   const auto output_dir_maybe = create_folders(node_namespace);
   if (!output_dir_maybe) {
     return {};
   }
   const auto & output_dir = output_dir_maybe.value();
-  RCLCPP_INFO(
+  RCLCPP_DEBUG(
     lc_node_->get_logger(), "Writing planning results to %s.", output_dir.string().c_str());
-
-  // Perform planning
-  plansys2_msgs::msg::Plan ret;
 
   const auto domain_file_path = output_dir / std::filesystem::path("domain.pddl");
   std::ofstream domain_out(domain_file_path);
@@ -120,23 +106,27 @@ POPFPlanSolver::getPlan(
   const auto plan_file_path = output_dir / std::filesystem::path("plan");
   const auto args = lc_node_->get_parameter(arguments_parameter_name_).value_to_string();
 
-  RCLCPP_INFO(
+  RCLCPP_DEBUG(
     lc_node_->get_logger(),
     "[%s-popf] called with timeout %f seconds with args [%s] with output dir %s",
     lc_node_->get_name(), solver_timeout.seconds(), args.c_str(), output_dir.c_str());
 
-  const int status = system(
-    ("ros2 run popf popf " + args + " " +
-    domain_file_path.string() + " " + problem_file_path.string() + " > " + plan_file_path.string())
-    .c_str());
+  bool success = execute_planner("ros2 run popf popf " +
+      domain_file_path.string() + " " +  problem_file_path.string(), solver_timeout, plan_file_path.string());
 
-  if (status == -1) {
-    return {};
-  }
+  if (!success) {return {};}
 
+  return parse_plan_result(plan_file_path.string());
+}
+
+std::optional<plansys2_msgs::msg::Plan>
+POPFPlanSolver::parse_plan_result(const std::string & plan_path)
+{
   std::string line;
-  std::ifstream plan_file(plan_file_path);
+  std::ifstream plan_file(plan_path);
   bool solution = false;
+
+  plansys2_msgs::msg::Plan plan;
 
   if (plan_file.is_open()) {
     while (getline(plan_file, line)) {
@@ -159,17 +149,17 @@ POPFPlanSolver::getPlan(
         item.action = action;
         item.duration = std::stof(duration);
 
-        ret.items.push_back(item);
+        plan.items.push_back(item);
       }
     }
     plan_file.close();
   }
 
-  if (ret.items.empty()) {
+  if (solution && !plan.items.empty()) {
+    return plan;
+  } else {
     return {};
   }
-
-  return ret;
 }
 
 bool
@@ -187,7 +177,7 @@ POPFPlanSolver::isDomainValid(
     return {};
   }
   const auto & output_dir = output_dir_maybe.value();
-  RCLCPP_INFO(
+  RCLCPP_DEBUG(
     lc_node_->get_logger(), "Writing domain validation results to %s.",
     output_dir.string().c_str()
   );

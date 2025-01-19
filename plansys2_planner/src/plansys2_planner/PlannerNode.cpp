@@ -176,11 +176,8 @@ PlannerNode::on_error(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
-void
-PlannerNode::get_plan_service_callback(
-  const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
-  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
+plansys2_msgs::msg::PlanArray
+PlannerNode::get_plan_array(const std::string & domain, const std::string & problem)
 {
   std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
   std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
@@ -188,22 +185,29 @@ PlannerNode::get_plan_service_callback(
   for (auto & solver : solvers_) {
     futures[solver.first] = std::async(std::launch::async,
       &plansys2::PlanSolverBase::getPlan, solver.second,
-      request->domain, request->problem, get_namespace(), solver_timeout_);
+      domain, problem, get_namespace(), solver_timeout_);
   }
 
   auto start = now();
 
   size_t pending_result = solvers_.size();
-  while (pending_result > 0 || now() - start > solver_timeout_) {
+  while (pending_result > 0 && now() - start < solver_timeout_) {
     for (auto & fut : futures) {
       if (results.find(fut.first) == results.end()) {
-        if (fut.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        if (fut.second.wait_for(1ms) == std::future_status::ready) {
           results[fut.first] = fut.second.get();
           pending_result--;
         }
       }
     }
   }
+
+  for (auto & solver : solvers_) {
+    if (results.find(solver.first) == results.end()) {
+      solver.second->cancel();
+    }
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   for (auto & fut : futures) {
     if (results.find(fut.first) == results.end()) {
@@ -217,24 +221,34 @@ PlannerNode::get_plan_service_callback(
     }
   }
 
-  std::vector<plansys2_msgs::msg::Plan> plans;
-  bool anyplan = false;
+  plansys2_msgs::msg::PlanArray plans;
   for (auto & result : results) {
     if (result.second.has_value()) {
-      plans.push_back(result.second.value());
-      anyplan = true;
+      plans.plan_array.push_back(result.second.value());
     }
   }
 
-  std::sort(plans.begin(), plans.end(),
+  std::sort(plans.plan_array.begin(), plans.plan_array.end(),
     [](const plansys2_msgs::msg::Plan & a, const plansys2_msgs::msg::Plan & b)
     {
       return a.items.size() < b.items.size();
     });
 
-  if (anyplan) {
+  return plans;
+}
+
+
+void
+PlannerNode::get_plan_service_callback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
+{
+  auto plans = get_plan_array(request->domain, request->problem);
+
+  if (!plans.plan_array.empty()) {
     response->success = true;
-    response->plan = plans.front();
+    response->plan = plans.plan_array.front();
   } else {
     response->success = false;
     response->error_info = "Plan not found";
@@ -247,52 +261,9 @@ PlannerNode::get_plan_array_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Response> response)
 {
-  std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
-  std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
+  response->plan_array = get_plan_array(request->domain, request->problem);
 
-  for (auto & solver : solvers_) {
-    futures[solver.first] = std::async(std::launch::async,
-      &plansys2::PlanSolverBase::getPlan, solver.second,
-      request->domain, request->problem, get_namespace(), solver_timeout_);
-  }
-
-  auto start = now();
-
-  size_t pending_result = solvers_.size();
-  while (pending_result > 0 || now() - start > solver_timeout_) {
-    for (auto & fut : futures) {
-      if (results.find(fut.first) == results.end()) {
-        if (fut.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-          results[fut.first] = fut.second.get();
-          pending_result--;
-        }
-      }
-    }
-  }
-
-  // Destroying unfinished futures
-  for (auto & fut : futures) {
-    if (results.find(fut.first) == results.end()) {
-      try {
-        // Retrieve and discard the result to avoid blocking in destructor
-        fut.second.get();
-      } catch (const std::exception & e) {
-        RCLCPP_WARN_STREAM(
-          get_logger(), "Exception while destroying future for "
-            << fut.first << ": " << e.what());
-      }
-    }
-  }
-
-  bool anyplan = false;
-  for (auto & result : results) {
-    if (result.second.has_value()) {
-      response->plan_array.plan_array.push_back(result.second.value());
-      anyplan = true;
-    }
-  }
-
-  if (anyplan) {
+  if (!response->plan_array.plan_array.empty()) {
     response->success = true;
   } else {
     response->success = false;
