@@ -738,6 +738,7 @@ ExecutorNode::execution_cycle()
           runtime_info_ = PlanRuntineInfo();
           runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
           runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
+          executing_plan_pub_->publish(runtime_info_.complete_plan);
 
           if (!init_plan_for_execution(runtime_info_)) {
             executor_state_ = STATE_ABORTING;
@@ -765,7 +766,6 @@ ExecutorNode::execution_cycle()
 
           update_plan(runtime_info_);
           remaining_plan_pub_->publish(runtime_info_.remaining_plan);
-          executing_plan_pub_->publish(runtime_info_.complete_plan);
 
           std_msgs::msg::String dotgraph_msg;
           dotgraph_msg.data = runtime_info_.current_tree->bt_builder->get_dotgraph(
@@ -799,6 +799,7 @@ ExecutorNode::execution_cycle()
         
           runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
           runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
+          executing_plan_pub_->publish(runtime_info_.complete_plan);
           // runtime_info_.ordered_sub_goals = {};
 
           if (!replan_for_execution(runtime_info_)) {
