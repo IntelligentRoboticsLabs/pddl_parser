@@ -43,7 +43,7 @@ public:
    */
   virtual void configure(
     rclcpp_lifecycle::LifecycleNode::SharedPtr lc_node,
-    const std::string & plugin_name) {}
+    const std::string & plugin_name) = 0;
 
   /**
    * @brief Returns a plan given a PDDL domain and problem definition.
@@ -66,6 +66,16 @@ public:
   virtual bool isDomainValid(
     const std::string & domain,
     const std::string & node_namespace = "") = 0;
+
+  virtual void cancel() {cancel_requested_ = true;}
+  virtual bool execute_planner(
+    const std::string & command,
+    const rclcpp::Duration & solver_timeout, const std::string & plan_path);
+
+protected:
+  rclcpp_lifecycle::LifecycleNode::SharedPtr lc_node_;
+  bool cancel_requested_;
+  char ** tokenize(const std::string & command);
 };
 
 }  // namespace plansys2

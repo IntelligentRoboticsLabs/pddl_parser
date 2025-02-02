@@ -39,6 +39,20 @@ PlannerNode::PlannerNode()
   declare_parameter("plan_solver_timeout", timeout);
 }
 
+PlannerNode::~PlannerNode()
+{
+  std::vector<std::string> loaded_libraries = lp_loader_.getRegisteredLibraries();
+
+  for (const auto & library : loaded_libraries) {
+    try {
+      lp_loader_.unloadLibraryForClass(library);
+      std::cout << "Successfully unloaded library: " << library << std::endl;
+    } catch (const pluginlib::LibraryUnloadException & e) {
+      std::cerr << "Failed to unload library: " << library <<
+        ". Error: " << e.what() << std::endl;
+    }
+  }
+}
 
 using CallbackReturnT =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -101,6 +115,13 @@ PlannerNode::on_configure(const rclcpp_lifecycle::State & state)
       this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
+  get_plan_array_service_ = create_service<plansys2_msgs::srv::GetPlanArray>(
+    "planner/get_plan_array",
+    std::bind(
+      &PlannerNode::get_plan_array_service_callback,
+      this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
+
   validate_domain_service_ = create_service<plansys2_msgs::srv::ValidateDomain>(
     "planner/validate_domain",
     std::bind(
@@ -155,18 +176,95 @@ PlannerNode::on_error(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
+plansys2_msgs::msg::PlanArray
+PlannerNode::get_plan_array(const std::string & domain, const std::string & problem)
+{
+  std::map<std::string, std::future<std::optional<plansys2_msgs::msg::Plan>>> futures;
+  std::map<std::string, std::optional<plansys2_msgs::msg::Plan>> results;
+
+  for (auto & solver : solvers_) {
+    futures[solver.first] = std::async(std::launch::async,
+      &plansys2::PlanSolverBase::getPlan, solver.second,
+      domain, problem, get_namespace(), solver_timeout_);
+  }
+
+  auto start = now();
+
+  size_t pending_result = solvers_.size();
+  while (pending_result > 0 && now() - start < solver_timeout_) {
+    for (auto & fut : futures) {
+      if (results.find(fut.first) == results.end()) {
+        if (fut.second.wait_for(1ms) == std::future_status::ready) {
+          results[fut.first] = fut.second.get();
+          pending_result--;
+        }
+      }
+    }
+  }
+
+  for (auto & solver : solvers_) {
+    if (results.find(solver.first) == results.end()) {
+      solver.second->cancel();
+    }
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  for (auto & fut : futures) {
+    if (results.find(fut.first) == results.end()) {
+      try {
+        fut.second.get();
+      } catch (const std::exception & e) {
+        RCLCPP_WARN_STREAM(
+          get_logger(), "Exception while destroying future for "
+            << fut.first << ": " << e.what());
+      }
+    }
+  }
+
+  plansys2_msgs::msg::PlanArray plans;
+  for (auto & result : results) {
+    if (result.second.has_value()) {
+      plans.plan_array.push_back(result.second.value());
+    }
+  }
+
+  std::sort(plans.plan_array.begin(), plans.plan_array.end(),
+    [](const plansys2_msgs::msg::Plan & a, const plansys2_msgs::msg::Plan & b)
+    {
+      return a.items.size() < b.items.size();
+    });
+
+  return plans;
+}
+
+
 void
 PlannerNode::get_plan_service_callback(
   const std::shared_ptr<rmw_request_id_t> request_header,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
 {
-  auto plan = solvers_.begin()->second->getPlan(
-    request->domain, request->problem, get_namespace(), solver_timeout_);
+  auto plans = get_plan_array(request->domain, request->problem);
 
-  if (plan) {
+  if (!plans.plan_array.empty()) {
     response->success = true;
-    response->plan = plan.value();
+    response->plan = plans.plan_array.front();
+  } else {
+    response->success = false;
+    response->error_info = "Plan not found";
+  }
+}
+
+void
+PlannerNode::get_plan_array_service_callback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Request> request,
+  const std::shared_ptr<plansys2_msgs::srv::GetPlanArray::Response> response)
+{
+  response->plan_array = get_plan_array(request->domain, request->problem);
+
+  if (!response->plan_array.plan_array.empty()) {
+    response->success = true;
   } else {
     response->success = false;
     response->error_info = "Plan not found";

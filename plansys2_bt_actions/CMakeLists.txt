@@ -13,7 +13,7 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 
-set(CMAKE_CXX_STANDARD 17)
+
 
 set(dependencies
     rclcpp

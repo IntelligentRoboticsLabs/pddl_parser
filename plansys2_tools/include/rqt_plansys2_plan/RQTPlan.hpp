@@ -71,6 +71,7 @@ private:
 
   std::map<std::string, plansys2_msgs::msg::ActionExecutionInfo::UniquePtr> plan_info_;
   plansys2_msgs::msg::Plan::UniquePtr plan_;
+  plansys2_msgs::msg::Plan::UniquePtr new_plan_;
 
   rclcpp::Subscription<plansys2_msgs::msg::ActionExecutionInfo>::SharedPtr action_execution_info_;
   rclcpp::Subscription<plansys2_msgs::msg::Plan>::SharedPtr executing_plan_;

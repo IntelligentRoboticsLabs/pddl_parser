@@ -1,0 +1,6 @@
+string domain
+string problem
+---
+bool success
+plansys2_msgs/PlanArray plan_array
+string error_info

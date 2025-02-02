@@ -672,7 +672,6 @@ TEST(simple_btbuilder_tests, test_plan_3)
 
   std::cerr << bt << std::endl;
 
-
   finish = true;
   t.join();
 }

@@ -904,7 +904,6 @@ Terminal::execute_action(std::vector<std::string> & command)
 
   complete_action.pop_back();
 
-  std::cerr << "<[" << complete_action << "]" << std::endl;
   plansys2_msgs::msg::PlanItem action;
   action.time = 0.0;
   action.action = complete_action;

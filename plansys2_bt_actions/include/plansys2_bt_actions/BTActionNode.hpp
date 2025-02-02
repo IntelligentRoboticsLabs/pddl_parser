@@ -316,7 +316,13 @@ public:
 protected:
   void cancel_goal()
   {
-    future_cancer_handle_ = action_client_->async_cancel_goal(goal_handle_);
+    if (goal_handle_ == nullptr) {
+      future_cancer_handle_ = action_client_->async_cancel_goal(goal_handle_);
+    } else {
+      if (!createActionClient(action_name_)) {
+        RCLCPP_ERROR(node_->get_logger(), "Failed to create action client");
+      }
+    }
   }
 
   bool should_cancel_goal()
@@ -324,6 +330,11 @@ protected:
     // Shut the node down if it is currently running
     if (status() != BT::NodeStatus::RUNNING) {
       return false;
+    }
+
+    // Goal handle has dissapear
+    if (goal_handle_ == nullptr) {
+      return true;
     }
 
     auto status = goal_handle_->get_status();

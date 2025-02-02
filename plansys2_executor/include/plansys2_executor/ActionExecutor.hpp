@@ -58,6 +58,8 @@ public:
   explicit ActionExecutor(
     const std::string & action, rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
+  ~ActionExecutor();
+
   BT::NodeStatus tick(const rclcpp::Time & now);
   void cancel();
   BT::NodeStatus get_status();
@@ -68,7 +70,7 @@ public:
   void set_internal_status(Status state) {state_ = state;}
   std::string get_action_name() const {return action_name_;}
   std::vector<std::string> get_action_params() const {return action_params_;}
-  plansys2_msgs::msg::ActionExecution last_msg;
+  plansys2_msgs::msg::ActionExecution::SharedPtr last_msg_;
 
   rclcpp::Time get_start_time() const {return start_execution_;}
   rclcpp::Time get_current_time() const {return node_->now();}
@@ -98,7 +100,7 @@ protected:
     action_hub_pub_;
   rclcpp::Subscription<plansys2_msgs::msg::ActionExecution>::SharedPtr action_hub_sub_;
 
-  void action_hub_callback(const plansys2_msgs::msg::ActionExecution::SharedPtr msg);
+  void action_hub_callback(plansys2_msgs::msg::ActionExecution::SharedPtr msg);
   void request_for_performers();
   void confirm_performer(const std::string & node_id);
   void reject_performer(const std::string & node_id);

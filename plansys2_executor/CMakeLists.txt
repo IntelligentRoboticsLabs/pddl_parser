@@ -23,7 +23,7 @@ find_package(behaviortree_cpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
-set(CMAKE_CXX_STANDARD 17)
+
 
 set(dependencies
     eigen3_cmake_module
@@ -62,6 +62,7 @@ set(EXECUTOR_SOURCES
   src/plansys2_executor/behavior_tree/check_atend_req_node.cpp
   src/plansys2_executor/behavior_tree/check_timeout_node.cpp
   src/plansys2_executor/behavior_tree/apply_atstart_effect_node.cpp
+  src/plansys2_executor/behavior_tree/restore_atstart_effect_node.cpp
   src/plansys2_executor/behavior_tree/apply_atend_effect_node.cpp
 )
 

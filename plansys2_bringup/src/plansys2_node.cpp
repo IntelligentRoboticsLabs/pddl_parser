@@ -34,6 +34,11 @@ int main(int argc, char ** argv)
 
   rclcpp::experimental::executors::EventsExecutor exe;
 
+  auto main_node = rclcpp::Node::make_shared("plansys2");
+  bool real_time = false;
+  main_node->declare_parameter("use_real_time", real_time);
+  main_node->get_parameter("use_real_time", real_time);
+
   auto domain_node = std::make_shared<plansys2::DomainExpertNode>();
   auto problem_node = std::make_shared<plansys2::ProblemExpertNode>();
   auto planner_node = std::make_shared<plansys2::PlannerNode>();
@@ -72,7 +77,29 @@ int main(int argc, char ** argv)
     return -1;
   }
 
-  exe.spin();
+  if (real_time) {
+    RCLCPP_INFO(main_node->get_logger(), "Set PlanSys2 to execute in Real Time");
+    auto rt_thread = std::thread(
+      [&]() {
+        sched_param sch;
+        sch.sched_priority = 80;
+
+        if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
+          RCLCPP_ERROR(main_node->get_logger(), "Failed to tet PlanSys2 to execute in Real Time.");
+          RCLCPP_ERROR(main_node->get_logger(), "Set use_real_time param to false");
+          RCLCPP_ERROR(main_node->get_logger(), "or set your system to have permissions.");
+          throw std::runtime_error{std::string("failed to set sched: ") + std::strerror(errno)};
+        }
+
+        exe.spin();
+    });
+
+    rt_thread.join();
+  } else {
+    RCLCPP_INFO(main_node->get_logger(), "Set PlanSys2 to execute with normal priority");
+    exe.spin();
+  }
+
   rclcpp::shutdown();
   return 0;
 }

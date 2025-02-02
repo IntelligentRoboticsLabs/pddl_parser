@@ -7,7 +7,7 @@ find_package(rclcpp REQUIRED)
 find_package(plansys2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
-set(CMAKE_CXX_STANDARD 17)
+
 
 set(dependencies
     rclcpp
