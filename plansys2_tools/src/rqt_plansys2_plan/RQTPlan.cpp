@@ -198,7 +198,8 @@ RQTPlan::spin_loop()
 
     plan_info_.clear();
     for (const auto & item : plan_->items) {
-      std::string full_name = item.action + ":" + std::to_string(static_cast<int>(item.time * 1000));
+      std::string full_name = item.action + ":" +
+        std::to_string(static_cast<int>(item.time * 1000));
       plan_info_[full_name] = nullptr;
     }
 

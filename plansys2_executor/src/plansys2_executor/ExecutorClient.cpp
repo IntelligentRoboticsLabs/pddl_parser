@@ -91,7 +91,8 @@ ExecutorClient::execute_and_check_plan()
     case rclcpp_action::ResultCode::SUCCEEDED:
       if (result_.result == nullptr) {
         RCLCPP_WARN(
-          node_->get_logger(), "execute_and_check_plan: Plan failed due to a nullptr in the result");
+          node_->get_logger(),
+          "execute_and_check_plan: Plan failed due to a nullptr in the result");
       } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::SUCCESS) {
         RCLCPP_INFO(node_->get_logger(), "execute_and_check_plan: Plan Succeeded");
       } else if (result_.result->result == plansys2_msgs::action::ExecutePlan::Result::PREEMPT) {
@@ -347,9 +348,7 @@ ExecutorClient::feedback_callback(
 void
 ExecutorClient::result_callback(const GoalHandleExecutePlan::WrappedResult & result)
 {
-  std::cerr << "ExecutorClient::result_callback 1" << std::endl;
   if (goal_handler_->get_goal_id() == result.goal_id) {
-  std::cerr << "ExecutorClient::result_callback 2" << std::endl;
     goal_result_available_ = true;
     result_ = result;
     feedback_ = ExecutePlan::Feedback();

@@ -83,14 +83,14 @@ int main(int argc, char ** argv)
       [&]() {
         sched_param sch;
         sch.sched_priority = 80;
-      
+
         if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
           RCLCPP_ERROR(main_node->get_logger(), "Failed to tet PlanSys2 to execute in Real Time.");
           RCLCPP_ERROR(main_node->get_logger(), "Set use_real_time param to false");
-          RCLCPP_ERROR(main_node->get_logger(), "or set your system to have permissions.");          
-          throw std::runtime_error{std::string("failed to set scheduler: ") + std::strerror(errno)};
+          RCLCPP_ERROR(main_node->get_logger(), "or set your system to have permissions.");
+          throw std::runtime_error{std::string("failed to set sched: ") + std::strerror(errno)};
         }
-      
+
         exe.spin();
     });
 

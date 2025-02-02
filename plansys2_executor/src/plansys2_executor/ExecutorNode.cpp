@@ -258,8 +258,8 @@ ExecutorNode::get_ordered_sub_goals_service_callback(
   const std::shared_ptr<plansys2_msgs::srv::GetOrderedSubGoals::Request> request,
   const std::shared_ptr<plansys2_msgs::srv::GetOrderedSubGoals::Response> response)
 {
-    response->sub_goals = runtime_info_.ordered_sub_goals;
-    response->success = true;
+  response->sub_goals = runtime_info_.ordered_sub_goals;
+  response->success = true;
 }
 
 void
@@ -342,8 +342,6 @@ ExecutorNode::get_remaining_plan_service_callback(
   }
 }
 
-
-
 void
 ExecutorNode::create_plan_runtime_info(PlanRuntineInfo & runtime_info)
 {
@@ -393,6 +391,7 @@ ExecutorNode::create_plan_runtime_info(PlanRuntineInfo & runtime_info)
       (*runtime_info.action_map)[index].duration_overrun_percentage);
   }
 
+  runtime_info.ordered_sub_goals = {};
   get_ordered_subgoals(runtime_info);
 }
 
@@ -463,7 +462,8 @@ ExecutorNode::get_tree_from_plan(PlanRuntineInfo & runtime_info)
   runtime_info.current_tree = std::make_shared<TreeInfo>();
   *runtime_info.current_tree = {
     factory.createTreeFromText(bt_xml_tree, blackboard), blackboard, bt_builder};
-  return true;
+
+  return runtime_info.current_tree != nullptr;
 }
 
 bool
@@ -715,7 +715,7 @@ void
 ExecutorNode::handle_accepted(const std::shared_ptr<GoalHandleExecutePlan> goal_handle)
 {
   RCLCPP_INFO(this->get_logger(), "Accepted new goal");
-  
+
   new_goal_handle_ = goal_handle;
   new_plan_received_ = true;
 }
@@ -783,23 +783,22 @@ ExecutorNode::execution_cycle()
           } else if (new_plan_received_) {
             new_plan_received_ = false;
             executor_state_ = STATE_REPLANNING;
-          }  
+          }
         }
         break;
       case STATE_REPLANNING:
         result->result = plansys2_msgs::action::ExecutePlan::Result::PREEMPT;
 
         if (current_goal_handle_->is_canceling()) {
-          std::cerr << "\t previous is cancelling" << std::endl;
+          RCLCPP_DEBUG(get_logger(), "previous is cancelling");
         } else if (current_goal_handle_->is_active()) {
-          std::cerr << "\t previous is active" << std::endl;
+          RCLCPP_DEBUG(get_logger(), "previous is active");
           current_goal_handle_->abort(result);
         } else {
           current_goal_handle_ = new_goal_handle_;
-        
+
           runtime_info_.complete_plan = current_goal_handle_->get_goal()->plan;
           runtime_info_.remaining_plan = current_goal_handle_->get_goal()->plan;
-          // runtime_info_.ordered_sub_goals = {};
 
           if (!replan_for_execution(runtime_info_)) {
             executor_state_ = STATE_ERROR;
@@ -811,8 +810,6 @@ ExecutorNode::execution_cycle()
         break;
       case STATE_ABORTING:
         cancel_all_running_actions(runtime_info_);
-      
-        runtime_info_.ordered_sub_goals = {};
 
         result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
         result->action_execution_status = get_feedback_info(runtime_info_.action_map);
@@ -823,8 +820,6 @@ ExecutorNode::execution_cycle()
       case STATE_CANCELLED:
         cancel_all_running_actions(runtime_info_);
 
-        runtime_info_.ordered_sub_goals = {};
-
         result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
         result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
@@ -833,8 +828,6 @@ ExecutorNode::execution_cycle()
         break;
       case STATE_FAILED:
         cancel_all_running_actions(runtime_info_);
-
-        runtime_info_.ordered_sub_goals = {};
 
         result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
         result->action_execution_status = get_feedback_info(runtime_info_.action_map);
@@ -845,8 +838,6 @@ ExecutorNode::execution_cycle()
       case STATE_ERROR:
         cancel_all_running_actions(runtime_info_);
 
-        runtime_info_.ordered_sub_goals = {};
-
         result->result = plansys2_msgs::action::ExecutePlan::Result::FAILURE;
         result->action_execution_status = get_feedback_info(runtime_info_.action_map);
 
@@ -856,8 +847,6 @@ ExecutorNode::execution_cycle()
       case STATE_SUCCEDED:
         result->result = plansys2_msgs::action::ExecutePlan::Result::SUCCESS;
         result->action_execution_status = get_feedback_info(runtime_info_.action_map);
-
-        runtime_info_.ordered_sub_goals = {};
 
         current_goal_handle_->succeed(result);
         executor_state_ = STATE_IDLE;

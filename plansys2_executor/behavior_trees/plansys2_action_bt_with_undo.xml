@@ -7,7 +7,9 @@ WAIT_PREV_ACTIONS
       <CheckOverAllReq action="ACTION_ID"/>
       <ExecuteAction action="ACTION_ID"/>
     </ReactiveSequence>
-     <RestoreAtStartEffect action="ACTION_ID"/>
+    <Inverter>
+      <RestoreAtStartEffect action="ACTION_ID"/>
+    </Inverter>
   </Fallback>
   <CheckAtEndReq action="ACTION_ID"/>
   <ApplyAtEndEffect action="ACTION_ID"/>

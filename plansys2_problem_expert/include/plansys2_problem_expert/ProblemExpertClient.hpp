@@ -17,6 +17,7 @@
 
 #include <optional>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "plansys2_problem_expert/ProblemExpertInterface.hpp"

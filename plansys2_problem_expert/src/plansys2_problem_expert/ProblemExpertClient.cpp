@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <memory>
 
 #include "plansys2_pddl_parser/Utils.hpp"
 

@@ -49,14 +49,14 @@ RestoreAtStartEffect::tick()
 
   if ((*action_map_)[action].at_start_effects_applied) {
     (*action_map_)[action].at_start_effects_applied = false;
- 
+
     std::vector<plansys2::Predicate> predicates;
     std::vector<plansys2::Function> functions;
-    std::tuple<bool, bool, double> ret =  evaluate(
+    std::tuple<bool, bool, double> ret = evaluate(
       effect, problem_client_, predicates, functions, true, false, 0, true);
   }
 
-  return BT::NodeStatus::FAILURE;
+  return BT::NodeStatus::SUCCESS;
 }
 
 }  // namespace plansys2

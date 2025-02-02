@@ -13,10 +13,11 @@
 // limitations under the License.
 
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 #include <filesystem>
 #include <string>
@@ -24,7 +25,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <unistd.h>
 #include <csignal>
 #include <atomic>
 #include <thread>
@@ -40,7 +40,7 @@ using namespace std::chrono_literals;  // NOLINT
 namespace plansys2
 {
 
-char**
+char **
 PlanSolverBase::tokenize(const std::string & command)
 {
   std::vector<std::string> tokens;
@@ -51,20 +51,21 @@ PlanSolverBase::tokenize(const std::string & command)
     tokens.push_back(token);
   }
 
-  char** argv = new char*[tokens.size() + 2];
+  char ** argv = new char *[tokens.size() + 2];
 
   for (size_t i = 0; i < tokens.size(); ++i) {
     argv[i] = new char[tokens[i].size() + 1];
-    std::strcpy(argv[i], tokens[i].c_str());
+    std::snprintf(argv[i], tokens[i].size() + 1, "%s", tokens[i].c_str());
   }
 
-  argv[tokens.size()] = nullptr; // Null-terminate the array
+  argv[tokens.size()] = nullptr;  // Null-terminate the array
 
   return argv;
 }
 
-bool 
-PlanSolverBase::execute_planner(const std::string & command,
+bool
+PlanSolverBase::execute_planner(
+  const std::string & command,
   const rclcpp::Duration & solver_timeout, const std::string & plan_path)
 {
   cancel_requested_ = false;
@@ -88,20 +89,20 @@ PlanSolverBase::execute_planner(const std::string & command,
     exit(EXIT_FAILURE);
   } else {
     std::thread monitor_thread([&]() {
-      while (!cancel_requested_ && !child_finish &&
+        while (!cancel_requested_ && !child_finish &&
         lc_node_->now() - start < solver_timeout)
-      {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-      kill(pid, SIGKILL);
-    });
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        kill(pid, SIGKILL);
+      });
 
     close(pipe_fd[1]);
     int output_fd = open(plan_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (output_fd == -1) {
       RCLCPP_ERROR(lc_node_->get_logger(), "Open failed");
       close(pipe_fd[0]);
-    
+
       child_finish = true;
       monitor_thread.join();
       return false;
@@ -115,7 +116,7 @@ PlanSolverBase::execute_planner(const std::string & command,
 
     close(pipe_fd[0]);
     close(output_fd);
-  
+
     int status;
     waitpid(pid, &status, 0);
 
@@ -128,8 +129,8 @@ PlanSolverBase::execute_planner(const std::string & command,
     } else if (WIFEXITED(status)) {
       RCLCPP_DEBUG_STREAM(
         lc_node_->get_logger(), "Child process exited with status: " << WEXITSTATUS(status));
-      
-      if (WEXITSTATUS(status) != 0) {return false;};
+
+      if (WEXITSTATUS(status) != 0) {return false;}
     }
   }
   return true;
@@ -137,4 +138,3 @@ PlanSolverBase::execute_planner(const std::string & command,
 
 
 }  // namespace plansys2
-

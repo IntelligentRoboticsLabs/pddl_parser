@@ -457,11 +457,11 @@ TEST(planner_expert, generate_plans_stress)
   }
 
   planner_node->set_timeout(5s);
-  
+
   auto plans = planner_client->getPlanArray(
     domain_client->getDomain(), problem_client->getProblem());
   ASSERT_EQ(3u, plans.plan_array.size());
-  
+
   auto plan = planner_client->getPlan(
     domain_client->getDomain(), problem_client->getProblem());
 

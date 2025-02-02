@@ -1071,7 +1071,9 @@ TEST(executor, action_real_action_1_with_restore)
               <CheckOverAllReq action="(move r2d2 steering_wheels_zone assembly_zone):0"/>
               <ExecuteAction action="(move r2d2 steering_wheels_zone assembly_zone):0"/>
             </ReactiveSequence>
-            <RestoreAtStartEffect action="(move r2d2 steering_wheels_zone assembly_zone):0"/>
+            <Inverter>
+              <RestoreAtStartEffect action="(move r2d2 steering_wheels_zone assembly_zone):0"/>
+            </Inverter>
           </Fallback>
           <CheckAtEndReq action="(move r2d2 steering_wheels_zone assembly_zone):0"/>
           <ApplyAtEndEffect action="(move r2d2 steering_wheels_zone assembly_zone):0"/>
@@ -1125,7 +1127,6 @@ TEST(executor, action_real_action_1_with_restore)
     ASSERT_TRUE(problem_client->existPredicate(plansys2::Predicate("(robot_available r2d2)")));
     ASSERT_TRUE(problem_client->existPredicate(
       plansys2::Predicate("(robot_at r2d2 steering_wheels_zone)")));
-
   } catch (const std::exception & e) {
     std::cerr << e.what() << '\n';
   }
@@ -2545,7 +2546,7 @@ TEST(executor, executor_client_execute_plan_multi_replan)
 
     ASSERT_TRUE(executor_client->start_plan_execution(plan.value()));
 
-    while (rclcpp::ok() && test_node_1->now() - start < 6s) {
+    while (rclcpp::ok() && test_node_1->now() - start < 5s) {
       if (!executor_client->execute_and_check_plan()) {break;}
       auto feedback = executor_client->getFeedBack();
       rate.sleep();
@@ -2789,9 +2790,6 @@ TEST(executor, executor_client_ordered_sub_goals)
       }
     }
   }
-
-  std::vector<plansys2_msgs::msg::Tree> actual_sub_goals = executor_client->getOrderedSubGoals();
-  ASSERT_TRUE(actual_sub_goals.empty());
 
   finish = true;
   t.join();

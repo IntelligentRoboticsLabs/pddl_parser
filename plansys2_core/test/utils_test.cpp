@@ -53,8 +53,7 @@ using namespace std::chrono_literals;  // NOLINT
 class PlannerTest : public plansys2::PlanSolverBase
 {
 public:
-
- void configure(
+  void configure(
     rclcpp_lifecycle::LifecycleNode::SharedPtr lc_node,
     const std::string & plugin_name)
   {
@@ -67,7 +66,7 @@ public:
     std::vector<std::string> result;
 
     for (int i = 0; argv[i] != nullptr; ++i) {
-        result.emplace_back(argv[i]);
+      result.emplace_back(argv[i]);
     }
 
     return result;
@@ -98,7 +97,7 @@ TEST(utils_test, tokenizer_tests)
 
   auto ret_1 = planner.tokenize_test("myplanner");
   ASSERT_EQ(ret_1.size(), 1u);
-  ASSERT_EQ(ret_1,std::vector<std::string>({"myplanner"}));
+  ASSERT_EQ(ret_1, std::vector<std::string>({"myplanner"}));
 
   auto ret_2 = planner.tokenize_test("./myplanner");
   ASSERT_EQ(ret_2.size(), 1u);
@@ -123,7 +122,7 @@ TEST(utils_test, tokenizer_tests)
   auto ret_7 = planner.tokenize_test("myplanner subcmd1 subcmd2 subcmd3 subcmd4");
   ASSERT_EQ(ret_7.size(), 5u);
   ASSERT_EQ(ret_7, std::vector<std::string>(
-    {"myplanner", "subcmd1", "subcmd2", "subcmd3",  "subcmd4"}));
+      {"myplanner", "subcmd1", "subcmd2", "subcmd3", "subcmd4"}));
 }
 
 TEST(utils_test, run_planner_ok)

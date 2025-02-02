@@ -112,8 +112,6 @@ ActionExecutor::action_hub_callback(plansys2_msgs::msg::ActionExecution::SharedP
         state_time_ = node_->now();
 
         action_hub_pub_->on_deactivate();
-        action_hub_pub_ = nullptr;
-        action_hub_sub_ = nullptr;
       }
       break;
     default:
