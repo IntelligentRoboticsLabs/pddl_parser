@@ -226,7 +226,7 @@ TEST(planner_expert, generate_plans)
   domain_node->set_parameter({"model_file", pkgpath + "/pddl/domain_simple.pddl"});
   problem_node->set_parameter({"model_file", pkgpath + "/pddl/domain_simple.pddl"});
 
-  std::vector<std::string> solver_plugins = {"POPF1", "POPF2", "OPTICS"};
+  std::vector<std::string> solver_plugins = {"POPF1", "POPF2", "POPF3"};
   planner_node->set_parameter({"plan_solver_plugins", solver_plugins});
 
   plansys2::declare_parameter_if_not_declared(
@@ -248,13 +248,13 @@ TEST(planner_expert, generate_plans)
     planner_node, "POPF2.output_dir",
     rclcpp::ParameterValue(std::string()));
   plansys2::declare_parameter_if_not_declared(
-    planner_node, "OPTICS.plugin",
+    planner_node, "POPF3.plugin",
     rclcpp::ParameterValue(std::string()));
   plansys2::declare_parameter_if_not_declared(
-    planner_node, "OPTICS.arguments",
+    planner_node, "POPF3.arguments",
     rclcpp::ParameterValue(std::string()));
   plansys2::declare_parameter_if_not_declared(
-    planner_node, "OPTICS.output_dir",
+    planner_node, "POPF3.output_dir",
     rclcpp::ParameterValue(std::string()));
 
   planner_node->set_parameter({"POPF1.plugin", "plansys2/POPFPlanSolver"});
@@ -262,8 +262,8 @@ TEST(planner_expert, generate_plans)
   planner_node->set_parameter({"POPF1.output_dir", "/tmp/POPF1"});
   planner_node->set_parameter({"POPF2.plugin", "plansys2/POPFPlanSolver"});
   planner_node->set_parameter({"POPF2.output_dir", "/tmp/POPF2"});
-  planner_node->set_parameter({"OPTICS.plugin", "plansys2/OPTICPlanSolver"});
-  planner_node->set_parameter({"OPTICS.output_dir", "/tmp/OPTICS"});
+  planner_node->set_parameter({"POPF3.plugin", "plansys2/POPFPlanSolver"});
+  planner_node->set_parameter({"POPF3.output_dir", "/tmp/POPF3"});
 
 
   rclcpp::experimental::executors::EventsExecutor exe;
@@ -348,7 +348,7 @@ TEST(planner_expert, generate_plans_stress)
   domain_node->set_parameter({"model_file", pkgpath + "/pddl/domain_simple.pddl"});
   problem_node->set_parameter({"model_file", pkgpath + "/pddl/domain_simple.pddl"});
 
-  std::vector<std::string> solver_plugins = {"POPF1", "POPF2", "OPTICS"};
+  std::vector<std::string> solver_plugins = {"POPF1", "POPF2", "POPF3"};
   planner_node->set_parameter({"plan_solver_plugins", solver_plugins});
 
   plansys2::declare_parameter_if_not_declared(
@@ -370,13 +370,13 @@ TEST(planner_expert, generate_plans_stress)
     planner_node, "POPF2.output_dir",
     rclcpp::ParameterValue(std::string()));
   plansys2::declare_parameter_if_not_declared(
-    planner_node, "OPTICS.plugin",
+    planner_node, "POPF3.plugin",
     rclcpp::ParameterValue(std::string()));
   plansys2::declare_parameter_if_not_declared(
-    planner_node, "OPTICS.arguments",
+    planner_node, "POPF3.arguments",
     rclcpp::ParameterValue(std::string()));
   plansys2::declare_parameter_if_not_declared(
-    planner_node, "OPTICS.output_dir",
+    planner_node, "POPF3.output_dir",
     rclcpp::ParameterValue(std::string()));
 
   planner_node->set_parameter({"POPF1.plugin", "plansys2/POPFPlanSolver"});
@@ -384,8 +384,8 @@ TEST(planner_expert, generate_plans_stress)
   planner_node->set_parameter({"POPF1.output_dir", "/tmp/POPF1"});
   planner_node->set_parameter({"POPF2.plugin", "plansys2/POPFPlanSolver"});
   planner_node->set_parameter({"POPF2.output_dir", "/tmp/POPF2"});
-  planner_node->set_parameter({"OPTICS.plugin", "plansys2/OPTICPlanSolver"});
-  planner_node->set_parameter({"OPTICS.output_dir", "/tmp/OPTICS"});
+  planner_node->set_parameter({"POPF3.plugin", "plansys2/POPFPlanSolver"});
+  planner_node->set_parameter({"POPF3.output_dir", "/tmp/POPF3"});
 
 
   rclcpp::experimental::executors::EventsExecutor exe;
