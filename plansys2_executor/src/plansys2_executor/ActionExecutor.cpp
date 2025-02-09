@@ -173,6 +173,7 @@ ActionExecutor::get_status()
       return BT::NodeStatus::SUCCESS;
       break;
     case FAILURE:
+    case CANCELLED:
       return BT::NodeStatus::FAILURE;
       break;
     default:
@@ -240,6 +241,10 @@ ActionExecutor::cancel()
   msg.arguments = action_params_;
 
   action_hub_pub_->publish(msg);
+
+  action_hub_pub_->on_deactivate();
+  action_hub_pub_ = nullptr;
+  action_hub_sub_ = nullptr;
 }
 
 std::string
